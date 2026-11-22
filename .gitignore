@@ -32,3 +32,6 @@ Assets/posters/
 *.o
 *.pyc
 __pycache__/
+
+# Firmware images embed the FDS BIOS and demo ROMs.
+*.hex
