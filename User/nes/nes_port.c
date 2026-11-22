@@ -119,8 +119,18 @@ static uint32_t notice_until;
 static uint8_t disk_combo_latched;
 static unsigned disk_shown=~0u;
 
-/* Joystick shield buttons: PC0..PC6 wired as A,B,C,D,E,F,KEY. Active low
- * against the internal pull-ups, so a pressed button reads 0 in IDR. */
+/* Joystick shield buttons on CN3 pins 18,20,22,24,26,28,30 - one column, so a
+ * single strip reaches all seven. Active low against the internal pull-ups. */
+typedef struct {GPIO_TypeDef *port;uint16_t pin;} PadPin;
+static const PadPin pad_pins[7]={
+    {GPIOC,GPIO_PIN_6},  /* A   CN3-18 */
+    {GPIOC,GPIO_PIN_7},  /* B   CN3-20 */
+    {GPIOE,GPIO_PIN_4},  /* C   CN3-22 */
+    {GPIOB,GPIO_PIN_6},  /* D   CN3-24 */
+    {GPIOE,GPIO_PIN_5},  /* E   CN3-26 */
+    {GPIOE,GPIO_PIN_6},  /* F   CN3-28 */
+    {GPIOB,GPIO_PIN_9}   /* KEY CN3-30 */
+};
 #define PAD_A   0x01u
 #define PAD_B   0x02u
 #define PAD_C   0x04u
@@ -135,18 +145,21 @@ static void pad_init(void)
 {
     static uint8_t done;
     GPIO_InitTypeDef io={0};
+    unsigned i;
     if(done)return;done=1;
     __HAL_RCC_GPIOC_CLK_ENABLE();
-    io.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOE_CLK_ENABLE();
     io.Mode=GPIO_MODE_INPUT;io.Pull=GPIO_PULLUP;io.Speed=GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIOC,&io);
+    for(i=0;i<7;i++){io.Pin=pad_pins[i].pin;HAL_GPIO_Init(pad_pins[i].port,&io);}
     pad_src=PAD_ALL;
 }
 static uint8_t pad_poll(uint32_t now)
 {
-    uint8_t raw;
+    uint8_t raw=0;
+    unsigned i;
     pad_init();
-    raw=(uint8_t)(~(GPIOC->IDR>>0)&PAD_ALL);
+    for(i=0;i<7;i++)if(HAL_GPIO_ReadPin(pad_pins[i].port,pad_pins[i].pin)==GPIO_PIN_RESET)raw|=(uint8_t)(1u<<i);
     if(raw!=pad_src){pad_src=raw;pad_changed=now;}
     if((uint32_t)(now-pad_changed)>=20)pad_stable=raw;
     return pad_stable;

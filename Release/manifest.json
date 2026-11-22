@@ -1,6 +1,6 @@
 ﻿{
     "version":  "0.43",
-    "git_commit":  "c53cdfd9794c245eaf89cfadbc1b0d763c1cb939",
+    "git_commit":  "643d5a8bb1c806cb2906b6d84d765c547c8caaf4",
     "source_dirty":  true,
     "target":  "STM32F407ZGT6 / Batianhu V2 / 480x800 MCU LCD",
     "compiler":  "Arm Compiler 6.24 (Keil project selection)",
@@ -73,23 +73,23 @@
     "files":  {
                   "NesFire_v0.43.hex":  {
                                             "bytes":  535765,
-                                            "sha256":  "74811b0fac503140091a9c66b057f18d5f4ffa9728e1840d018c01d0383898d3"
+                                            "sha256":  "f42bcdafe0b054cd3d0c99e6eb56bcb132a182c39ed8a6976a7a7b88bb71ffa4"
                                         },
                   "NesFire_v0.43.bin":  {
                                             "bytes":  190464,
-                                            "sha256":  "313f44d8c1e19efabba9836e356f8ca89fa742470825cd3b22cb4b77cb5f6b09"
+                                            "sha256":  "469b9b662daab5b0d4ec08b4524efdd5d38cef67a3d1fc4a358acf580bf1a39c"
                                         },
                   "NesFire_v0.43.axf":  {
-                                            "bytes":  878848,
-                                            "sha256":  "e6a819c6c70733ae55c81a9567363edbc5ef544c19a5e7bdafa87067f2fed2fe"
+                                            "bytes":  879412,
+                                            "sha256":  "d4522db66e96515390afe1cf538a32da781f7a4b2b90fc0f2cacaab2dac57d62"
                                         },
                   "NesFire_v0.43.map":  {
                                             "bytes":  925022,
-                                            "sha256":  "886a67cfff9f73c9bc7c5463d7af7d1e60fc791aac18f0b0181716d63158e900"
+                                            "sha256":  "b2b3a74265fc75e419c3b83b3961307b14cd9f33d44d8248574a0f3593d13d0a"
                                         }
               },
     "linker_bytes":  {
-                         "code":  131376,
+                         "code":  131608,
                          "read_only":  57636,
                          "read_write":  296,
                          "zero_initialized":  166680
