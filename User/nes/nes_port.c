@@ -119,9 +119,42 @@ static uint32_t notice_until;
 static uint8_t disk_combo_latched;
 static unsigned disk_shown=~0u;
 
-#define SW_PRESSED (HAL_GPIO_ReadPin(JOYSTICK_SW_PORT,JOYSTICK_SW_PIN)==GPIO_PIN_RESET)
-#define KEY2_PRESSED (HAL_GPIO_ReadPin(KEY2_GPIO_PORT,KEY2_PIN)==GPIO_PIN_SET)
-#define KEY1_PRESSED (HAL_GPIO_ReadPin(KEY1_GPIO_PORT,KEY1_PIN)==GPIO_PIN_SET)
+/* Joystick shield buttons: PC0..PC6 wired as A,B,C,D,E,F,KEY. Active low
+ * against the internal pull-ups, so a pressed button reads 0 in IDR. */
+#define PAD_A   0x01u
+#define PAD_B   0x02u
+#define PAD_C   0x04u
+#define PAD_D   0x08u
+#define PAD_E   0x10u
+#define PAD_F   0x20u
+#define PAD_KEY 0x40u
+#define PAD_ALL 0x7fu
+static uint8_t pad_src,pad_stable;
+static uint32_t pad_changed;
+static void pad_init(void)
+{
+    static uint8_t done;
+    GPIO_InitTypeDef io={0};
+    if(done)return;done=1;
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    io.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6;
+    io.Mode=GPIO_MODE_INPUT;io.Pull=GPIO_PULLUP;io.Speed=GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIOC,&io);
+    pad_src=PAD_ALL;
+}
+static uint8_t pad_poll(uint32_t now)
+{
+    uint8_t raw;
+    pad_init();
+    raw=(uint8_t)(~(GPIOC->IDR>>0)&PAD_ALL);
+    if(raw!=pad_src){pad_src=raw;pad_changed=now;}
+    if((uint32_t)(now-pad_changed)>=20)pad_stable=raw;
+    return pad_stable;
+}
+#define SHIELD pad_stable
+#define SW_PRESSED (HAL_GPIO_ReadPin(JOYSTICK_SW_PORT,JOYSTICK_SW_PIN)==GPIO_PIN_RESET||(SHIELD&PAD_KEY))
+#define KEY2_PRESSED (HAL_GPIO_ReadPin(KEY2_GPIO_PORT,KEY2_PIN)==GPIO_PIN_SET||(SHIELD&PAD_KEY))
+#define KEY1_PRESSED (HAL_GPIO_ReadPin(KEY1_GPIO_PORT,KEY1_PIN)==GPIO_PIN_SET||(SHIELD&PAD_F))
 
 static const char *const view_hints[]={
     "SEARCH RESULTS - HOLD KEY1 FOR LIBRARY", "LOADABLE HEADERS - HOLD KEY1 FOR LIBRARY",
@@ -193,6 +226,7 @@ void NesPort_Input(void)
 {
     uint32_t now=HAL_GetTick();uint8_t pad=0,aa,bb,ss;
     const JoystickState *j;
+    pad_stable=pad_poll(now);
     Joystick_Poll(now);j=Joystick_Get();
     Touchpad_Poll(now);
     if(Touchpad_Get()->pressed)pad|=4;
@@ -203,6 +237,14 @@ void NesPort_Input(void)
     if(aa)pad|=1;
     if(bb)pad|=2;
     if(ss)pad|=8;
+    /* Shield face buttons: A/B direct, E is Select, KEY is Start, C/D fire
+     * at roughly 6 Hz so the turbo buttons stay usable on rapid-fire games. */
+    if(SHIELD&PAD_A)pad|=1;
+    if(SHIELD&PAD_B)pad|=2;
+    if(SHIELD&PAD_E)pad|=4;
+    if(SHIELD&PAD_KEY)pad|=8;
+    if((SHIELD&PAD_C)&&((now/80u)&1u))pad|=1;
+    if((SHIELD&PAD_D)&&((now/80u)&1u))pad|=2;
     if(j->healthy&&j->calibrated) {
         if(j->x>0.35f)pad|=128;if(j->x< -0.35f)pad|=64;
         if(j->y>0.35f)pad|=32;if(j->y< -0.35f)pad|=16;
