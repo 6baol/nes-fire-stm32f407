@@ -83,7 +83,7 @@ def main():
     changed=dict(files);changed['a-bad-mapper.nes']=bytes(bad_mapper)
     changed['z-bad-header.nes']=bytes(bad_header);changed['z-short.nes']=short
     d=SdArm(changed);assert d.boot()==0 and d.call('NesLibrary_Count')==game_count+3
-    for name,fragment in (('a-bad-mapper.nes','MAPPER'),('z-bad-header.nes','HEADER'),('z-short.nes','LAYOUT')):
+    for name,fragment in (('a-bad-mapper.nes','MAPPER'),('z-bad-header.nes','HEADER'),('z-short.nes','SIZE MISMATCH')):
         assert d.call('NesLibrary_Load',d.game_index(name))==10,name
         msg=text(d,d.call('NesLibrary_Error'))
         assert fragment in msg,(name,msg)

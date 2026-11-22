@@ -9,8 +9,9 @@ Usage:
 The generated table is User/nes/nes_roms.c. It keeps nes_rom/nes_rom_size as
 aliases of the first game so single-ROM tooling and tests keep working.
 """
-import argparse, hashlib, json, re, sys
+import argparse, hashlib, json, re, sys, zlib
 from pathlib import Path
+from typing import NamedTuple
 
 root = Path(__file__).resolve().parents[1]
 roms_dir = root / 'Roms'
@@ -18,91 +19,184 @@ manifest_path = roms_dir / 'roms.json'
 out_c = root / 'User/nes/nes_roms.c'
 out_h = root / 'User/nes/nes_roms.h'
 
-SUPPORTED = (0, 1, 2, 3, 4, 5, 7, 11, 20, 33, 40, 66, 71, 74, 117)
+SUPPORTED = (0, 1, 2, 3, 4, 5, 7, 11, 16, 20, 33, 40, 66, 71, 74, 117)
 LABEL_MAX = 46  # Two 23-character menu lines; preserve complete game names.
 
 
-def normalize(d):
-    """Lossless payload conversion for plain NES2.0 cartridges.
-    NESdev NES_2.0: byte12=0/2 is NTSC, byte15=1 is standard pads, submapper 0.
-    Only the 16-byte header is rewritten; PRG/CHR bytes are untouched and the
-    user's original file is never modified.
+# These values are persisted in the on-card compatibility map and mirror nes_import.h.
+NES_IMPORT_OK = 0
+NES_IMPORT_BAD_HEADER = -1
+NES_IMPORT_BAD_MAPPER = -2
+NES_IMPORT_BAD_LAYOUT = -3
+NES_IMPORT_TOO_LARGE = -4
+NES_IMPORT_BAD_REGION = -5
+NES_IMPORT_TRAINER = -6
+NES_IMPORT_FOUR_SCREEN = -7
+NES_IMPORT_BAD_CONSOLE = -8
+NES_IMPORT_NES2_LAYOUT = -9
+NES_IMPORT_BAD_VECTOR = -11
+NES_IMPORT_BAD_BOARD = -12
+NES_IMPORT_SIZE_MISMATCH = -13
+NES_IMPORT_UNKNOWN_MAPPER = 0xFFFF
+
+
+class RomHeaderInfo(NamedTuple):
+    status: int
+    mapper: int = NES_IMPORT_UNKNOWN_MAPPER
+    submapper: int = 0
+    fds: bool = False
+    header: bytes = b''
+    vector_offset: int = 0
+
+
+def mapper16_submapper(payload_crc):
+    # NESdev Bandai FCG board table. The legacy iNES flag cannot identify
+    # EEPROM boards, so resolve only documented PRG+CHR CRCs.
+    if payload_crc in (0x2C4421B2, 0x33B899C9, 0x6E68E31A, 0xBFC7A2E9,
+                       0xD343C66A, 0x7B5206AF, 0xA851CAE9, 0x9C04C8D5):
+        return 4
+    return 5 if payload_crc == 0xDB05106E else 0
+
+
+def classify_header(header, size):
+    """Classify a 16-byte header against the firmware's SD load rules.
+
+    In addition to the header, the full loader checks the NES reset vector,
+    Mapper 16 board identity when unspecified, or the FDS block structure.
     """
-    if len(d) >= 16 and d[:4] == b'NES\x1a' and d[7] & 12 == 8:
-        mapper=(d[6]>>4)|(d[7]&0xf0)
-        ram_ok=d[10]==0 or (mapper==5 and d[10] in (7,0x70))
-        if not (d[7] & 3 == 0 and d[8] == 0 and d[9] == 0 and ram_ok
-                and d[11] == 0 and d[12] in (0, 2) and d[13] == 0 and d[14] == 0
-                and d[15] in (0, 1) and not (d[6] & 12)):
-            raise ValueError('NES2 conversion supports plain NTSC cartridges only '
-                             '(submapper 0, no extra RAM/devices/trainer/battery/four-screen)')
-        header = bytearray(d[:16]); header[7] &= 0xf3; header[8:16] = bytes(8)
-        if mapper==5 and d[10]:header[8]=1
-        return bytes(header) + d[16:]
-    return d
+    header = header[:16]
+    if header[:4] == b'FDS\x1a' or header[:15] == b'\x01*NINTENDO-HVC*':
+        fds = RomHeaderInfo(NES_IMPORT_OK, mapper=20, fds=True)
+        offset = 16 if header[:4] == b'FDS\x1a' else 0
+        if offset and (len(header) < 16 or size < 16):
+            return fds._replace(status=NES_IMPORT_SIZE_MISMATCH)
+        sides = header[4] if offset else size // 65500
+        if not 1 <= sides <= 8:
+            return fds._replace(status=NES_IMPORT_BAD_LAYOUT)
+        if size != offset + sides * 65500:
+            return fds._replace(status=NES_IMPORT_SIZE_MISMATCH)
+        return fds
+    if len(header) < 16 or size < 16 or header[:4] != b'NES\x1a':
+        return RomHeaderInfo(NES_IMPORT_BAD_HEADER)
+    h = bytearray(header)
+    nes2 = h[7] & 12 == 8
+    mapper = (h[6] >> 4) | (h[7] & 240)
+    submapper = 0
+    if nes2:
+        mapper |= (h[8] & 15) << 8
+        submapper = h[8] >> 4
+
+    def result(status):
+        return RomHeaderInfo(status, mapper, submapper)
+
+    if h[6] & 4:
+        return result(NES_IMPORT_TRAINER)
+    if h[6] & 8:
+        return result(NES_IMPORT_FOUR_SCREEN)
+    if h[7] & 3:
+        return result(NES_IMPORT_BAD_CONSOLE)
+    if (nes2 and h[12] not in (0, 2)) or (not nes2 and h[9] & 1):
+        return result(NES_IMPORT_BAD_REGION)
+    if not nes2 and h[7] & 12:
+        return result(NES_IMPORT_BAD_HEADER)
+    if mapper not in SUPPORTED or mapper == 20:
+        return result(NES_IMPORT_BAD_MAPPER)
+    if mapper == 16 and (h[6] & 2 or
+                         (h[10] or submapper not in (0, 4, 5) if nes2 else h[8])):
+        return result(NES_IMPORT_BAD_BOARD)
+    if nes2:
+        ram_ok = h[10] == 0 or (mapper == 5 and h[10] in (7, 0x70))
+        if ((submapper and mapper != 16) or h[9] or not ram_ok or h[11]
+                or h[13] or h[14] or h[15] not in (0, 1)):
+            return result(NES_IMPORT_NES2_LAYOUT)
+        h[7] &= 0xf3
+        h[8:16] = bytes(8)
+        if mapper == 5 and header[10]:
+            h[8] = 1
+
+    prg, chr = h[4], h[5]
+    if not prg or prg & (prg - 1):
+        return result(NES_IMPORT_BAD_LAYOUT)
+    chr_power = chr and not chr & (chr - 1)
+    if mapper == 2 and (prg > 32 or chr):
+        return result(NES_IMPORT_BAD_LAYOUT)
+    if mapper == 5 and (prg > 32 or not chr_power or chr > 32 or h[8] > 1):
+        return result(NES_IMPORT_BAD_LAYOUT)
+    if mapper == 1 and (prg > 16 or h[8] > 1 or (chr and (not chr_power or chr > 16))):
+        return result(NES_IMPORT_BAD_LAYOUT)
+    if mapper in (7, 71) and (not 2 <= prg <= 16 or chr or h[8] or h[6] & 2):
+        return result(NES_IMPORT_BAD_LAYOUT)
+    if mapper in (11, 66) and (not 2 <= prg <= 8 or not chr_power
+                               or chr > (16 if mapper == 11 else 4) or h[8] or h[6] & 2):
+        return result(NES_IMPORT_BAD_LAYOUT)
+    if mapper in (0, 3) and prg > 2:
+        return result(NES_IMPORT_BAD_LAYOUT)
+    if mapper == 0 and chr > 1:
+        return result(NES_IMPORT_BAD_LAYOUT)
+    if mapper == 3 and (not chr_power or chr > 16):
+        return result(NES_IMPORT_BAD_LAYOUT)
+    if mapper == 4 and (not 2 <= prg <= 32 or chr > 32 or (chr and not chr_power)):
+        return result(NES_IMPORT_BAD_LAYOUT)
+    if mapper == 40 and (prg > 4 or not chr_power or chr > 8):
+        return result(NES_IMPORT_BAD_LAYOUT)
+    if mapper in (33, 74, 117) and (not 2 <= prg <= 32 or not chr_power or chr > 32 or h[8]):
+        return result(NES_IMPORT_BAD_LAYOUT)
+    if mapper == 16 and (not 2 <= prg <= 16 or not chr_power or chr > 32):
+        return result(NES_IMPORT_BAD_LAYOUT)
+    if size != 16 + prg * 16384 + chr * 8192:
+        return result(NES_IMPORT_SIZE_MISMATCH)
+    cap = 896 if mapper == 5 else (888 if chr > 16 else 640)
+    if size > cap * 1024:
+        return result(NES_IMPORT_TOO_LARGE)
+    boot_bytes = 32768 if mapper in (7, 11, 66) else prg * 16384
+    return RomHeaderInfo(NES_IMPORT_OK, mapper, submapper, header=bytes(h),
+                         vector_offset=16 + boot_bytes - 4)
+
+
+def host_reason(info):
+    if info.status == NES_IMPORT_BAD_MAPPER:
+        return f'Unsupported mapper {info.mapper}'
+    if info.status == NES_IMPORT_BAD_BOARD and info.mapper == 16:
+        return 'Mapper 16 requires a recognized board without EEPROM or PRG RAM'
+    return {
+        NES_IMPORT_BAD_HEADER: 'Invalid NES or FDS header',
+        NES_IMPORT_BAD_LAYOUT: 'Invalid ROM layout for its mapper',
+        NES_IMPORT_TOO_LARGE: 'Single ROM exceeds its SD preload arena',
+        NES_IMPORT_BAD_REGION: 'Unsupported region (standard NTSC only)',
+        NES_IMPORT_TRAINER: 'Trainer not supported',
+        NES_IMPORT_FOUR_SCREEN: 'Four-screen mirroring not supported',
+        NES_IMPORT_BAD_CONSOLE: 'Unsupported console type',
+        NES_IMPORT_NES2_LAYOUT: 'Unsupported NES 2.0 configuration',
+        NES_IMPORT_BAD_VECTOR: 'Cartridge reset vector is outside ROM',
+        NES_IMPORT_SIZE_MISMATCH: 'File size does not match the ROM header',
+    }.get(info.status, 'ROM rejected')
+
+
+def normalize(d):
+    """Normalize the supported NES 2.0 subset without changing the payload."""
+    if len(d) < 16 or d[:4] != b'NES\x1a' or d[7] & 12 != 8:
+        return d
+    info = classify_header(d[:16], len(d))
+    if info.status:
+        raise ValueError(host_reason(info))
+    # Mapper 16's subtype selects distinct hardware. Keep the input header
+    # so the firmware can apply the right register and IRQ behavior.
+    return d if info.mapper == 16 else info.header + d[16:]
 
 
 def validate(d):
-    if d[:4] == b'FDS\x1a' or d[:15] == b'\x01*NINTENDO-HVC*':
+    info = classify_header(d[:16], len(d))
+    if info.status:
+        raise ValueError(host_reason(info))
+    if info.fds:
         validate_fds(d)
-        return 20
-    if len(d) < 16 or d[:4] != b'NES\x1a':
-        raise ValueError('Not an iNES ROM')
-    if d[7] & 15 or d[6] & 12 or d[9] & 1:
-        raise ValueError('Only NTSC iNES, no trainer/four-screen/NES2/VS')
-    mapper = (d[6] >> 4) | (d[7] & 0xf0); prg, chr = d[4], d[5]
-    if mapper not in SUPPORTED or mapper == 20:
-        raise ValueError(f'Unsupported mapper {mapper}; supported: {", ".join(map(str, SUPPORTED))}')
-    if not prg or prg & (prg - 1):
-        raise ValueError('PRG count must be power of two')
-    if mapper == 2 and (prg > 32 or chr):
-        raise ValueError('UxROM requires CHR RAM, PRG <=512 KiB')
-    if mapper == 5 and (prg>32 or not chr or chr&(chr-1) or chr>32 or d[8]>1):
-        raise ValueError('MMC5 preview: PRG <=512 KiB, power-of-two CHR ROM <=256 KiB, WRAM <=8 KiB')
-    if mapper == 1 and (prg > 16 or d[8] > 1 or (chr and (chr & (chr-1) or chr > 16))):
-        raise ValueError('Basic MMC1B: PRG <=256 KiB, CHR power-of-two <=128 KiB, WRAM <=8 KiB')
-    if mapper == 7 and (not 2 <= prg <= 16 or chr or d[8] or d[6]&2):
-        raise ValueError('AxROM requires 32-256 KiB PRG, 8 KiB CHR RAM, no WRAM/battery')
-    if mapper in (11,66) and (not 2 <= prg <= 8 or not chr or chr & (chr-1)
-                             or chr > (16 if mapper==11 else 4) or d[8] or d[6]&2):
-        raise ValueError(f'Mapper {mapper}: PRG 32-128 KiB, power-of-two CHR ROM '
-                         f'8-{128 if mapper==11 else 32} KiB, no WRAM/battery')
-    if mapper == 71 and (not 2 <= prg <= 16 or chr or d[8] or d[6]&2):
-        raise ValueError('Camerica requires 32-256 KiB PRG, 8 KiB CHR RAM, no WRAM/battery')
-    if mapper in (0, 3) and prg > 2:
-        raise ValueError('NROM/CNROM PRG <=32 KiB')
-    if mapper == 0 and chr > 1:
-        raise ValueError('NROM CHR <=8 KiB')
-    if mapper == 3 and (not chr or chr & (chr - 1) or chr > 16):
-        raise ValueError('CNROM CHR must be power of two <=128 KiB')
-    if mapper == 4 and (not 2 <= prg <= 32 or chr > 32 or (chr and chr & (chr - 1))):
-        raise ValueError('MMC3 requires 32-512 KiB PRG and power-of-two CHR <=256 KiB')
-    if mapper == 40 and (prg > 4 or not chr or chr & (chr - 1) or chr > 8):
-        raise ValueError('MMC PRG <=64 KiB, CHR power of two <=64 KiB')
-    if mapper in (74, 117) and (not 2 <= prg <= 32 or not chr or chr & (chr - 1)
-                                or chr > 32 or d[8]):
-        raise ValueError('Mapper 74/117 requires 32-512 KiB PRG, power-of-two '
-                         'CHR 8-256 KiB and no WRAM')
-    if mapper == 33 and (not 2 <= prg <= 32 or not chr or chr & (chr - 1)
-                         or chr > 32 or d[8]):
-        raise ValueError('TC0190 requires 32-512 KiB PRG, power-of-two '
-                         'CHR 8-256 KiB and no WRAM')
-    if mapper == 16 and (not 2 <= prg <= 16 or not chr or chr & (chr - 1)
-                         or chr > 32 or d[8] > 1):
-        raise ValueError('Bandai FCG requires 32-256 KiB PRG, power-of-two '
-                         'CHR 8-256 KiB and no EEPROM/WRAM image')
-    size = 16 + prg * 16384 + chr * 8192
-    if len(d) != size:
-        raise ValueError(f'Expected {size} bytes, received {len(d)}')
-    boot_bytes=32768 if mapper in (7,11,66) else prg*16384
-    reset=int.from_bytes(d[16+boot_bytes-4:16+boot_bytes-2],'little')
-    if reset<0x8000:
-        raise ValueError('Cartridge reset vector is outside ROM; use a complete .fds image for FDS games')
-    cap = 896 if mapper == 5 else (888 if chr > 16 else 640)
-    if size > cap * 1024:
-        raise ValueError('Single ROM exceeds its SD preload arena (MMC5 896 KiB, '
-                         'large CHR 888 KiB, others 640 KiB)')
-    return mapper
+    else:
+        if int.from_bytes(d[info.vector_offset:info.vector_offset+2], 'little') < 0x8000:
+            raise ValueError(host_reason(info._replace(status=NES_IMPORT_BAD_VECTOR)))
+        if (info.mapper == 16 and not info.submapper and
+                not mapper16_submapper(zlib.crc32(memoryview(d)[16:]))):
+            raise ValueError(host_reason(info._replace(status=NES_IMPORT_BAD_BOARD)))
+    return info.mapper
 
 
 def validate_fds(data):
@@ -111,8 +205,6 @@ def validate_fds(data):
     sides = data[4] if offset and len(data) >= 16 else len(data)//65500
     if not 1 <= sides <= 8 or len(data) != offset+sides*65500:
         raise ValueError('Invalid FDS side count or file size')
-    if sides!=1:
-        raise ValueError('Only single-side FDS is currently playable; automatic disk-side switching is not implemented')
     for side in range(sides):
         start = offset+side*65500
         end = start+65500

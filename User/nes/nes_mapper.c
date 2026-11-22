@@ -189,9 +189,13 @@ uint8 asm_Mapper_ReadLow( uint16 wAddr) //添加的
 {	
 	return NES_Mapper->ReadLow( wAddr);
 } 
-void asm_Mapper_WriteLow( uint8 byData ,uint16 wAddr) 
+int asm_Mapper_WriteLow(uint8 byData,uint16 wAddr)
 {	
 	NES_Mapper->WriteLow(wAddr, byData );
+    /* A low-register write can page out the currently executing code. */
+    return (MapperNo==5 && (wAddr==0x5100 || (wAddr>=0x5113 && wAddr<=0x5117))) ||
+           (MapperNo==16 && nes_mapper16_submapper==4 && wAddr>=0x6000 &&
+            wAddr<0x8000 && (wAddr&15)==8);
 }
 volatile u32 nes_rmw_value;
 /* The legacy core emits only the final RMW write. For MMC1 reconstruct the

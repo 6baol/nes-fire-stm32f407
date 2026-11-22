@@ -1,24 +1,27 @@
 #include "nes_mapper.h"
 
-/* Mapper 16 (Bandai FCG-1/2, LZ93D50 without EEPROM). Responds at $6000-$7FFF
- * (FCG) and $8000-$FFFF (LZ93D50). The IRQ is a 16-bit M2 counter; here it is
- * clocked once per scanline with the equivalent cycle count. */
+/* NESdev Bandai FCG: 16.4 uses the low window and direct counter writes,
+ * 16.5 uses the high window and an IRQ latch. Neither supported board has
+ * PRG RAM or EEPROM. IRQ assertion is checked at CPU slice boundaries. */
 static uint8 reg016[16];
 static uint16 latch016,counter016;
 static uint8 irq016_enabled,irq016_pending;
+static uint32 irq016_time;
+extern u32 clocks;
 
-void MAP16_IRQLevel(void)
+static void map016_irq_level(void)
 {
     cpuirq=(irq016_enabled&&irq016_pending)?1:0;
 }
-void MAP16_HSync(int scanline)
+void MAP16_UpdateIRQ(void)
 {
-    (void)scanline;
-    if(!irq016_enabled)return;
-    if(counter016>114) counter016-=(uint16)114;
-    else counter016=0;
-    if(counter016==0) irq016_pending=1;
-    MAP16_IRQLevel();
+    uint32 elapsed=clocks-irq016_time;
+    irq016_time=clocks;
+    if(irq016_enabled) {
+        if(elapsed>counter016)irq016_pending=1;
+        counter016=(uint16)(counter016-elapsed);
+    }
+    map016_irq_level();
 }
 static void map016_chr(void)
 {
@@ -36,21 +39,17 @@ void MAP16_Reset(void)
     memset(reg016,0,sizeof(reg016));
     for(i=0;i<8;i++)reg016[i]=(uint8)i;
     latch016=counter016=0;irq016_enabled=irq016_pending=0;
-    set_mirroring(0,0,1,1);
-    MAP16_IRQLevel();
+    irq016_time=0;
+    map016_irq_level();
     map016_chr();
     map016_prg();
 }
 void MAP16_Write(uint16 addr,uint8 data)
 {
-    uint16 masked;
     unsigned reg;
-    /* FCG-1/2 decodes only $6000-$600F, LZ93D50 only $8000-$800F. Anything
-     * else is cartridge RAM or ROM and must not touch the registers. */
-    if(addr<=0x600F) masked=addr;
-    else if(addr>=0x8000&&addr<=0x800F) masked=addr;
-    else return;
-    reg=masked&0x0F;
+    uint16 *counter_register;
+    if(nes_mapper16_submapper==4 ? (addr<0x6000||addr>=0x8000) : addr<0x8000)return;
+    reg=addr&0x0F;
     if(reg<8){
         reg016[reg]=data;
         map016_chr();
@@ -59,20 +58,23 @@ void MAP16_Write(uint16 addr,uint8 data)
         map016_prg();
     } else if(reg==9){
         switch(data&3){
-            case 0: set_mirroring(0,0,1,1);break;
-            case 1: set_mirroring(0,1,0,1);break;
+            case 0: set_mirroring(0,1,0,1);break;
+            case 1: set_mirroring(0,0,1,1);break;
             case 2: set_mirroring(0,0,0,0);break;
             default:set_mirroring(1,1,1,1);break;
         }
-    } else if(reg==0x0A){
-        irq016_enabled=(uint8)(data&1);
-        counter016=latch016;
-        irq016_pending=0;
-        MAP16_IRQLevel();
-    } else if(reg==0x0B){
-        latch016=(uint16)((latch016&0xFF00u)|data);
-    } else if(reg==0x0C){
-        latch016=(uint16)((latch016&0x00FFu)|((uint16)data<<8));
+    } else if(reg<=0x0C){
+        MAP16_UpdateIRQ();
+        if(reg==0x0A){
+            irq016_enabled=(uint8)(data&1);
+            if(nes_mapper16_submapper==5)counter016=latch016;
+            irq016_pending=0;
+            map016_irq_level();
+        } else {
+            counter_register=nes_mapper16_submapper==4?&counter016:&latch016;
+            if(reg==0x0B)*counter_register=(uint16)((*counter_register&0xFF00u)|data);
+            else *counter_register=(uint16)((*counter_register&0x00FFu)|((uint16)data<<8));
+        }
     }
 }
 void MAP16_Init(void)
@@ -80,5 +82,4 @@ void MAP16_Init(void)
     NES_Mapper->Reset=MAP16_Reset;
     NES_Mapper->Write=MAP16_Write;
     NES_Mapper->WriteLow=MAP16_Write;
-    NES_Mapper->HSync=MAP16_HSync;
 }

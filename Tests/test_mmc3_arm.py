@@ -30,14 +30,14 @@ def make_mmc3_rom(prg_banks=8, chr_banks=16):
 
 
 class NesArm:
-    def __init__(self):
+    def __init__(self, axf=None):
         self.u = Uc(UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS)
         for base, size in [(0x08000000, 0x100000), (0x20000000, 0x20000),
                            (0x10000000, 0x10000), (0x6C000000, 0x100000),
                            (0xE0000000, 0x100000)]:
             self.u.mem_map(base, size)
         self.u.mem_write(0xE000ED88, struct.pack('<I', 0x00F00000))
-        with (ROOT / 'Project/Output/Fire_F407ZG.axf').open('rb') as stream:
+        with (axf or ROOT / 'Project/Output/Fire_F407ZG.axf').open('rb') as stream:
             elf = ELFFile(stream)
             for section in elf.iter_sections():
                 if (section['sh_flags'] & 2 and section['sh_type'] != 'SHT_NOBITS'

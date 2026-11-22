@@ -11,11 +11,6 @@ import struct
 import sys
 from pathlib import Path
 
-try:
-    from pypinyin import lazy_pinyin
-except ImportError:
-    sys.exit('pip install pypinyin first')
-
 MAGIC = b'NESCAT5'
 HEADER = 32
 RECORD = 312
@@ -25,24 +20,32 @@ PINYIN_OFF, PINYIN_LEN = 270, 40
 
 
 def pinyin_for(label):
+    from pypinyin import lazy_pinyin
+
+    short_title = label[1:].partition(']')[0] if label.startswith('[') else label
+    if any(ord(c) > 0x7F for c in short_title):
+        label = short_title
     chars = [c for c in label if ord(c) > 0x7F or c.isalnum()]
     syl = lazy_pinyin(''.join(chars))
     # Punctuation can pass through lazy_pinyin; keep the field ASCII only.
     full = ''.join(c for c in ''.join(syl).lower() if 32 <= ord(c) < 127)
     initials = ''.join(p[0] for p in syl if p and 32 <= ord(p[0]) < 127).lower()
-    text = full if full == initials else f'{full} {initials}'
-    return text[:PINYIN_LEN - 1]
+    if not initials or full == initials:
+        return full[:PINYIN_LEN - 1]
+    # Keep both aliases usable even when the full title cannot fit.
+    initials = initials[:(PINYIN_LEN - 2) // 2]
+    return f'{full[:PINYIN_LEN - 2 - len(initials)]} {initials}'
 
 
-def main(path):
-    data = bytearray(Path(path).read_bytes())
-    if data[:7] != MAGIC:
-        sys.exit('not a v0.28+ catalog')
+def fill_catalog(data):
+    data = bytearray(data)
+    if len(data) < HEADER or data[:7] != MAGIC:
+        raise ValueError('not a v0.28+ catalog')
     count = struct.unpack_from('<I', data, 8)[0]
     if struct.unpack_from('<I', data, 16)[0] != RECORD:
-        sys.exit('unexpected record size')
-    if len(data) < HEADER + count * RECORD:
-        sys.exit('truncated catalog')
+        raise ValueError('unexpected record size')
+    if len(data) != HEADER + count * RECORD:
+        raise ValueError('invalid catalog length')
     filled = 0
     for i in range(count):
         base = HEADER + i * RECORD
@@ -53,7 +56,19 @@ def main(path):
             continue
         data[base + PINYIN_OFF:base + PINYIN_OFF + PINYIN_LEN] = field.ljust(PINYIN_LEN, b'\0')
         filled += 1
-    Path(path).write_bytes(bytes(data))
+    return data, filled
+
+
+def main(path):
+    from prepare_library import write_atomic
+
+    path = Path(path)
+    try:
+        data, filled = fill_catalog(path.read_bytes())
+    except ImportError:
+        sys.exit('pip install pypinyin first')
+    write_atomic(path, data)
+    count = struct.unpack_from('<I', data, 8)[0]
     print(f'filled pinyin for {filled}/{count} entries')
 
 

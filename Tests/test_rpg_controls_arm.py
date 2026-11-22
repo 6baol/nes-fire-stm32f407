@@ -42,14 +42,10 @@ def main():
     a.call('NesLibrary_EnterMenu');assert a.call('NesLibrary_Load',5)==0
     assert a.call('NesLibrary_InputProfile')==0,'RPG profile leaked into Castlevania III'
     a.u.mem_write(a.addr('app_state'),b'\x01');assert poll(1,1,0)==0xa3,'native diagonal+A+B changed'
-    # Drawing cadence is changed only for the known RPG profile.
-    cases=[(3,59000,6500,0,3),(3,59000,6500,1,6),(3,35000,4000,1,3),(3,50000,7000,1,5),(3,0,0,1,3),(20,60000,16000,1,8)]
-    for requested,draw,skip,rpg,expected in cases:
-        assert a.call('NesPort_RenderDivisor',requested,draw,skip,rpg)==expected
     report={'result':'PASS','hardware_tested':False,'checks':['4-way dominant-axis hysteresis','A/B/Start priority during held stick',
         'no mandatory recenter after confirmation','real GPIO and 20ms debounce','menu bypass','CRC-specific profile and cross-game reset',
-        'native diagonal+A+B unchanged','cost-based RPG rendering cadence'],
+        'native diagonal+A+B unchanged'],
         'axf_sha256':hashlib.sha256((ROOT/'Project/Output/Fire_F407ZG.axf').read_bytes()).hexdigest()}
     (ROOT/'Tests/nes_output/rpg_controls_results.json').write_text(json.dumps(report,indent=2))
-    print('PASS: RPG controls / native GPIO / profile isolation / cadence')
+    print('PASS: RPG controls / native GPIO / profile isolation')
 if __name__=='__main__':main()

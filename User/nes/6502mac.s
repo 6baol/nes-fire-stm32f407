@@ -17,6 +17,11 @@ N EQU 0x80
 ;//	ldr r0,[r2,r1,lsr#11]	   ;//改过，加2行 
 	lsr r0,r1,#11				;//>>11位	  r1/2048
 	ldr r0,[r2,r0]				;//读取r2地址+r1偏移的数据到r0
+	cmp m6502_pc,#0x2000
+	bhs %F0
+	and r1,m6502_pc,#0x1800
+	sub r0,r0,r1
+0
 	
 	str r0,lastbank				;//保存6502PC从 ROM的最后偏移量 
 	add m6502_pc,m6502_pc,r0	;//m6502_pc+r0

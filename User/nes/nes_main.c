@@ -7,6 +7,7 @@
 #include "nes_fds_bios.h"
 #include "nes_mmc5.h"
 #include "nes_mmc5_audio.h"
+#include "nes_import.h"
 /* Static storage, no allocator. CHR ROM is copied to external SRAM so old
  * core code cannot modify Flash. Decoded tiles have a separate buffer. */
 static _Alignas(1024) u8 cpu_ram[2048];
@@ -22,64 +23,66 @@ Mapper1Res *MAP1; MapperCommRes *MAPx;
 u8 *VROM_banks,*VROM_tiles,*romfile;
 u8 PADdata,PADdata1;
 int MapperNo,NES_scanline,VROM_1K_SIZE,VROM_8K_SIZE;
+u8 nes_mapper16_submapper;
+static const u8 *active_image;
+static u32 active_image_size;
 volatile u32 nes_faults;
 static apu_t apu_state;
 apu_t *apu=&apu_state;
 extern u32 clocks;
 extern volatile u32 nes_apu_queue_drops;
 extern u32 cpu_data[];
-static int power2(unsigned n) {return n && !(n&(n-1));}
 extern void cpu_reset_now(void);
 extern void MAP4_IRQLevel(void);
 static void fds_restore_dispatch(void);
+
+int Nes_CaptureRangeAvailable(uintptr_t base, size_t bytes)
+{
+    uintptr_t image=(uintptr_t)active_image;
+    if(!active_image_size||!bytes)return 1;
+    if(base<image)return bytes<=image-base;
+    return base-image>=active_image_size;
+}
+
+static uint32_t payload_crc32(const u8 *data,u32 size)
+{
+    uint32_t crc=0xffffffffu;
+    while(size--) {
+        unsigned bit;
+        crc^=*data++;
+        for(bit=0;bit<8;bit++)crc=(crc>>1)^((0u-(crc&1u))&0xedb88320u);
+    }
+    return crc^0xffffffffu;
+}
+
 int Nes_Load(const u8 *data,u32 size)
 {
-    u32 prg,chr,needed;
-    if(data && size>=4 && (!memcmp(data,"FDS\x1a",4) ||
-       (size>=15 && data[0]==1 && !memcmp(data+1,"*NINTENDO-HVC*",14)))) {
+    NesImportInfo info;
+    int validation=NesImport_Header(data,size,&info);
+    u32 prg,chr;
+    if(info.fds) {
         return Nes_LoadDisk(data,size,nes_fds_bios,nes_fds_bios_size);
     }
-    if(!data || size<16 || memcmp(data,"NES\x1a",4)) return 1;
-    if((data[7]&0x0c) || (data[6]&0x0c)) return 2; /* NES2, trainer, 4-screen (battery is harmless) */
-    if((data[9]&1) || (data[7]&3)) return 2; /* NTSC standard console only */
-    prg=(u32)data[4]*16384;chr=(u32)data[5]*8192;
-    needed=16+prg+chr;
-    if(!power2(data[4]) || size!=needed) return 3;
-    MapperNo=(data[6]>>4)|(data[7]&0xf0);
-    if(MapperNo!=0 && MapperNo!=1 && MapperNo!=2 && MapperNo!=3 && MapperNo!=4 && MapperNo!=5 && MapperNo!=7 && MapperNo!=11 && MapperNo!=40 && MapperNo!=66 && MapperNo!=71 && MapperNo!=74 && MapperNo!=117 && MapperNo!=33) return 4;
-    if(chr>((MapperNo==5||MapperNo==4||MapperNo==74||MapperNo==117||MapperNo==33||MapperNo==16)?262144u:131072u))return 3;
-    if(MapperNo==5 && (data[4]>32 || !power2(data[5]) || data[8]>1 || size>896u*1024u))return 3;
-    if(MapperNo==2 && (data[4]>32 || chr)) return 3;
-    if((MapperNo==0 || MapperNo==3) && data[4]>2) return 3;
-    if(MapperNo==1 && (data[4]>16 || data[8]>1 ||
-       (data[5] && (!power2(data[5]) || data[5]>16)))) return 3;
-    if(MapperNo==7 && (data[4]<2 || data[4]>16 || chr || data[8] || (data[6]&2)))return 3;
-    if((MapperNo==11 || MapperNo==66) && (data[4]<2 || data[4]>8 ||
-       !power2(data[5]) || data[5]>(MapperNo==11?16:4) || data[8] || (data[6]&2)))return 3;
-    if(MapperNo==71 && (data[4]<2 || data[4]>16 || chr || data[8] || (data[6]&2)))return 3;
-    if(MapperNo==4 && (data[4]<2 || data[4]>32 ||
-       (data[5] && (!power2(data[5]) || data[5]>32)))) return 3;
-    if(MapperNo==0 && data[5]>1) return 3;
-    if(MapperNo==3 && (!power2(data[5]) || data[5]>16)) return 3;
-    if(MapperNo==40 && (data[4]>4 || !data[5] || !power2(data[5]) || data[5]>8)) return 3;
-    if((MapperNo==74 || MapperNo==117) && (data[4]<2 || data[4]>32 || !data[5] ||
-       !power2(data[5]) || data[5]>32 || data[8])) return 3;
-    if(MapperNo==16 && (data[4]<2 || data[4]>16 || !data[5] ||
-       !power2(data[5]) || data[5]>32 || data[8]>1)) return 3;
-    if(MapperNo==33 && (data[4]<2 || data[4]>32 || !data[5] ||
-       !power2(data[5]) || data[5]>32 || data[8])) return 3;
-    /* Every mapper we support maps PRG at $8000-$FFFF, so the reset vector has
-     * to point into that window. Raw FDS dumps wrapped in an iNES header leave
-     * $FFFC pointing at $6000-$7FFF (the FDS RAM window), which would just run
-     * zeros and show a black screen - reject them instead. */
-    {
-        const u8 *vec=data+16+((MapperNo==7 || MapperNo==11 || MapperNo==66)?32768:prg)-4;
-        u32 reset=(u32)vec[0]|((u32)vec[1]<<8);
-        if(reset<0x8000) return 5;
+    switch(validation) {
+    case NES_IMPORT_OK: break;
+    case NES_IMPORT_BAD_HEADER: return 1;
+    case NES_IMPORT_BAD_MAPPER: return 4;
+    case NES_IMPORT_BAD_BOARD: return 11;
+    case NES_IMPORT_BAD_LAYOUT: case NES_IMPORT_TOO_LARGE: case NES_IMPORT_SIZE_MISMATCH: return 3;
+    default: return 2;
     }
+    if(!NesImport_VectorOk(data+NesImport_VectorOffset(info.header)))return 5;
+    if(info.mapper==16 && !info.submapper) {
+        info.submapper=(u8)NesImport_Mapper16Submapper(payload_crc32(data+16,size-16));
+        if(!info.submapper)return 11;
+    }
+    MapperNo=info.mapper;
+    nes_mapper16_submapper=info.submapper;
+    prg=(u32)data[4]*16384;chr=(u32)data[5]*8192;
     fds_restore_dispatch();
     FdsDrive_Unmount();
-    memcpy(&header,data,16);romfile=(u8*)data;
+    memcpy(&header,info.header,16);romfile=(u8*)data;
+    active_image=data;active_image_size=size;
     /* Mapper 40 games are FDS conversions: the 8 KiB "CHR ROM" is really CHR
      * RAM that the game fills at run time through $2007, so keep the image as
      * the power-on contents but leave it writable. */
@@ -167,6 +170,7 @@ int Nes_LoadFds(const u8 *data,u32 size,const u8 *bios,u32 bios_size)
     header.num_16k_rom_banks=2;     /* rombase/rommask are overridden by the map */
     header.num_8k_vrom_banks=0;     /* the 8 KiB CHR is CHR RAM, writable at run time */
     romfile=(u8*)data; /* bootstrap CPU with a valid iNES header before remapping */
+    active_image=0;active_image_size=0;
     memset(cpu_ram,0,sizeof(cpu_ram));memset(save_ram,0,sizeof(save_ram));
     memset(oam,0xff,sizeof(oam));memset(ppu,0,sizeof(*ppu));memset(&mapper,0,sizeof(mapper));
     VROM_banks=(u8*)0x6c000000;VROM_tiles=(u8*)0x6c020000;chr_large=0;
@@ -219,6 +223,7 @@ int Nes_LoadDisk(const u8 *data,u32 size,const u8 *bios,u32 bios_size)
     VROM_1K_SIZE=8;VROM_8K_SIZE=1;
     PPU_reset();Mapper_Init();cpu6502_init();fds_install_map(fds_prgram,bios);
     if(FdsDrive_Mount(&disk,0))return 8;
+    active_image=data;active_image_size=size;
     cpu_reset_now();
     clocks=0;nes_apu_queue_drops=0;apu_init();
     PADdata=PADdata1=0;nes_faults=0;
@@ -233,10 +238,14 @@ static void nes_run_cycles(u32 cycles)
             u32 step=cycles>16?16:cycles;
             FdsIo_Tick(step);run6502(step*256);cycles-=step;
         }
+    } else if(MapperNo==16) {
+        while(cycles) {
+            u32 step=cycles>16?16:cycles;
+            MAP16_UpdateIRQ();run6502(step*256);cycles-=step;
+        }
     } else {
         if(MapperNo==4||MapperNo==74) MAP4_IRQLevel();
         if(MapperNo==117) MAP117_IRQLevel();
-        if(MapperNo==16) MAP16_IRQLevel();
         if(MapperNo==5){Mmc5Audio_Tick(cycles);MAP5_IRQLevel();}
         run6502(cycles*256);
     }
@@ -250,7 +259,7 @@ void Nes_Frame(int draw)
         if(draw) scanline_draw(NES_scanline); else do_scanline_and_dont_draw(NES_scanline);
         /* Scanline-core approximation: one MMC3 clock per rendered visible line,
          * independent of LCD submission, plus the pre-render line below. */
-        if((MapperNo==4 && (bg_enabled() || spr_enabled())) || MapperNo==74 || MapperNo==117 || MapperNo==16)
+        if((MapperNo==4 && (bg_enabled() || spr_enabled())) || MapperNo==74 || MapperNo==117)
             NES_Mapper->HSync(NES_scanline);
         if((NES_scanline&7)==0) NesPort_Input();
     }
@@ -259,7 +268,7 @@ void Nes_Frame(int draw)
     for(NES_scanline=241;NES_scanline<262;NES_scanline++) {
         nes_run_cycles(NES_scanline%3==2?113u:114u);
         if(NES_scanline==261 && ((MapperNo==4 && (bg_enabled() || spr_enabled())) ||
-           MapperNo==74 || MapperNo==117 || MapperNo==16))
+           MapperNo==74 || MapperNo==117))
             NES_Mapper->HSync(261);
         if((NES_scanline&7)==0) NesPort_Input();
     }
@@ -271,7 +280,7 @@ u8 Nes_ApuReadDmc(u16 addr)
 {
     if(addr<0x2000)return NES_RAM[addr&0x7ff];
     if(addr>=0x6000&&addr<0x8000 && MapperNo!=20) {
-        if(MapperNo==7 || MapperNo==11 || MapperNo==66 || MapperNo==71)return 0;
+    if(MapperNo==7 || MapperNo==11 || MapperNo==16 || MapperNo==66 || MapperNo==71)return 0;
         return NES_SRAM[addr-0x6000];
     }
     if(addr>=0x8000 || (MapperNo==20 && addr>=0x6000)) {

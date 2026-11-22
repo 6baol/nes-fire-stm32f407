@@ -59,11 +59,13 @@ def main():
     # A filtered entry still loads through the view index.
     assert a.call('NesLibrary_Load', 0) == 0
 
-    # Compact index: the firmware prefers SEARCH.IDX when its count matches.
+    # The legacy sidecar can match one title while dropping other valid hits.
+    # A correct search produces the same results with or without that file.
     order = sorted(n for n in files if n.lower().endswith(('.nes', '.fds')))
     blob = bytearray(b'NESIDX1\0' + len(order).to_bytes(4, 'little'))
     for i, name in enumerate(order):
-        blob += i.to_bytes(2, 'little') + name.lower().encode('ascii', 'replace')[:24].ljust(24, b'\0')
+        key = b'mario' if 'Mario' in name and 'World' in name else b'zzz'
+        blob += i.to_bytes(2, 'little') + key.ljust(24, b'\0')
     write_file(a, '0:/NES/SEARCH.IDX', bytes(blob))
     assert a.call('NesLibrary_Search', put(a, 'mario')) == 3
     assert a.call('NesLibrary_Count') == 3
@@ -97,6 +99,9 @@ def main():
     rec = 32 + ((idx - 12) // 312) * 312
     catalog[rec + 270:rec + 310] = b'bianfuxia bfx'.ljust(40, b'\0')
     write_file(c, '0:/NES/CATALOG.IDX', bytes(catalog))
+    write_file(c, '0:/NES/SEARCH.IDX', b'NESIDX1\0\x02\0\0\0' +
+               b'\0\0' + b'english label'.ljust(24, b'\0') +
+               b'\x01\0' + b'mario'.ljust(24, b'\0'))
     assert c.boot() == 0
     assert c.call('NesLibrary_Search', put(c, 'bian')) == 1, c.names()
     assert '蝙蝠侠' in c.names()[0]
@@ -106,6 +111,7 @@ def main():
 
     # No match restores the full list instead of an empty menu.
     assert a.call('NesLibrary_Search', put(a, 'zzzz')) == 0
+    assert a.call('NesLibrary_SearchFailed') == 0
     assert a.call('NesLibrary_ViewActive') == 0
     assert a.call('NesLibrary_Count') == total
 
@@ -113,6 +119,12 @@ def main():
     assert a.call('NesLibrary_Search', put(a, 'mario')) == 3
     assert a.call('NesLibrary_Search', put(a, '')) == 0
     assert a.call('NesLibrary_Count') == total
+    a.io_error = True
+    assert a.call('NesLibrary_Search', put(a, 'mario')) == 0
+    assert a.call('NesLibrary_SearchFailed') == 1
+    a.io_error = False
+    assert a.call('NesLibrary_Search', put(a, 'mario')) == 3
+    assert a.call('NesLibrary_SearchFailed') == 0
 
     report = {'result': 'PASS', 'hardware_tested': False, 'entries': total,
               'checks': ['case-insensitive ASCII search', 'UTF-8 substring search',

@@ -80,11 +80,11 @@ void Mapper_Init(void);
 int MAP74_PpuWrite(uint16 addr, uint8 data);
 /* Mapper 117 scanline IRQ level, called before each CPU slice. */
 void MAP117_IRQLevel(void);
-/* Mapper 16 IRQ level. */
-void MAP16_IRQLevel(void);
+/* Update Mapper 16's CPU-cycle IRQ counter before dispatching each slice. */
+void MAP16_UpdateIRQ(void);
 void asm_Mapper_Write(uint8 byData,uint16 wAddr);
 uint8 asm_Mapper_ReadLow( uint16 wAddr);
-void asm_Mapper_WriteLow( uint8 byData ,uint16 wAddr);
+int asm_Mapper_WriteLow( uint8 byData ,uint16 wAddr);
 
 void map67_(signed char page);  //6502.s
 void map89_(signed char page);  

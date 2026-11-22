@@ -1,5 +1,6 @@
 """Battery SRAM persistence through actual ARM FatFs on an isolated FAT32 disk."""
 import json,hashlib,zlib,struct
+from unicorn.arm_const import UC_ARM_REG_R2, UC_ARM_REG_R3
 from sd_arm_harness import SdArm,ROOT,pack_files
 from test_mmc1_axrom_arm import rom as make_rom
 
@@ -52,6 +53,35 @@ assert slots[0][28:]==pattern_a and slots[1][28:]==pattern_b
 damaged=bytearray(slots[1]);damaged[128]^=255;file_io(b,paths[1],damaged)
 c=loaded(b.disk,pattern_a)
 msg=c.r32(c.addr('status'));assert b'BACKUP' in bytes(c.u.mem_read(msg,40))
+
+class InterruptedSlot(SdArm):
+    """Fail reads at the first sector of selected generations only."""
+    def __init__(self, disk, generations):
+        self.generations = generations
+        super().__init__(files)
+        self.disk = bytearray(disk)
+
+    def _read(self, uc, addr, size, data):
+        start = uc.reg_read(UC_ARM_REG_R2)
+        count = uc.reg_read(UC_ARM_REG_R3)
+        for sector in range(start, start + count):
+            offset = sector * 512
+            if self.disk[offset:offset + 4] == b'NSV1':
+                generation = struct.unpack_from('<I', self.disk, offset + 16)[0]
+                if generation in self.generations:
+                    self._result(uc, 1)
+                    return
+        super()._read(uc, addr, size, data)
+
+for unreadable, expected in ((1, pattern_b), (2, pattern_a)):
+    fallback = InterruptedSlot(a.disk, {unreadable})
+    assert fallback.boot() == 0 and fallback.call('NesLibrary_Load', save_index) == 0
+    assert bytes(fallback.u.mem_read(fallback.r32(fallback.addr('NES_SRAM')), 8192)) == expected
+    assert fallback.blocks_written == 0
+unreadable = InterruptedSlot(a.disk, {1, 2})
+assert unreadable.boot() == 0 and unreadable.call('NesLibrary_Load', save_index) == 10
+assert unreadable.blocks_written == 0
+
 # Failed writes preserve the previous valid slot. A new ROM is blocked while
 # unsaved SRAM is pending, then the same request can be retried successfully.
 d=loaded(a.disk,pattern_b);other=d.game_index('Super Mario Bros. (World).nes')
@@ -93,6 +123,7 @@ h.u.mem_write(h.r32(h.addr('NES_SRAM')),pattern_a);assert h.call('NesLibrary_Sav
 report={'result':'PASS','hardware_tested':False,'filesystem':'actual ARM FatFs on private FAT32 block image',
         'checks':['battery SRAM cold restore','two alternating CRC-checked slots','no writes for unchanged SRAM',
                   'bad newest slot restores backup','read-only restore','failed write preserves progress and blocks game switch',
+                  'I/O failure in either slot restores the other; two unreadable slots are left alone',
                   'retry recovers','partial inactive write retains active save','two invalid slots rejected without writes',
                   'non-battery games do not save'],
         'sector_boundary_faults':cuts,

@@ -54,8 +54,10 @@ u.mem_write(addr('PADdata'),b'\x00');call('Nes_Frame',0)
 assert r32(addr('nes_faults'))==0
 # Runtime loader rejection paths, including truncated headers and unsupported mappers.
 rom=(root/'Roms/controller_test.nes').read_bytes();scratch=0x6c080000
-for payload in [b'',rom[:15],b'BAD!'+rom[4:],rom[:100],rom[:6]+bytes([0x61])+rom[7:],rom[:7]+bytes([8])+rom[8:]]:
+nes2=rom[:7]+bytes([8])+rom[8:]
+for payload in [b'',rom[:15],b'BAD!'+rom[4:],rom[:100],rom[:6]+bytes([0x61])+rom[7:],nes2[:8]+bytes([0x20])+nes2[9:]]:
  u.mem_write(scratch,payload or b'\x00');assert call('Nes_Load',scratch,len(payload))!=0
+u.mem_write(scratch,nes2);assert call('Nes_Load',scratch,len(nes2))==0
 # CHR-ROM protection via actual PPU register writes.
 assert call('Nes_Load',test_addr,len(rom))==0
 v=r32(addr('VROM_banks'));before=bytes(u.mem_read(v,16))

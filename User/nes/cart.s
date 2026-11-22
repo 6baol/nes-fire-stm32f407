@@ -159,6 +159,11 @@ flush		;update m6502_pc & lastbank
 	adr r2,memmap_tbl		   ;//把存储器映象地址加载到r2
 	lsr r1,r1,#11				;//>>11位	  r1/2048
 	ldr r0,[r2,r1]				;//读取r2地址+r1偏移的数据到r0
+	cmp r9,#0x2000
+	bhs %F0
+	and r1,r9,#0x1800
+	sub r0,r0,r1
+0
 
 	str r0,lastbank				;//保存6502PC从 ROM的最后偏移量 
 	add r9,r9,r0	;//m6502_pc+r0
@@ -203,6 +208,7 @@ Mapper_W
 ;	nop
 ;---------------------------------------------------------------------------------------
 
+	ALIGN
     END
 
 

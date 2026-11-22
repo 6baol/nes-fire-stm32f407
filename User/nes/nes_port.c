@@ -5,6 +5,7 @@
 #include "nes_menu.h"
 #include "nes_roms.h"
 #include "nes_library.h"
+#include "nes_import.h"
 #include "nes_fds_bios.h"
 #include "nes_fds.h"
 #include "bsp_nes_audio.h"
@@ -21,18 +22,17 @@ extern volatile uint32_t nes_faults;
 typedef struct {uint8_t raw,stable;uint32_t changed;} Button;
 static Button a,b,start;
 static uint8_t rpg_direction;
-__attribute__((noinline)) unsigned NesPort_RenderDivisor(unsigned requested,unsigned draw_us,unsigned skip_us,unsigned rpg)
+__attribute__((noinline)) unsigned NesPort_RenderDivisor(unsigned requested,unsigned draw_us,unsigned skip_us)
 {
-    unsigned need;
-    if(requested<2)requested=2;if(requested>8)requested=8;
-    /* Reserve 0.67 ms per logic frame for audio/input and foreground work.
-     * Mean cost = skip + (draw-skip)/divisor. Native games keep their cadence. */
-    if(rpg && draw_us>16000u && skip_us<16000u) {
-        unsigned budget=16000u-skip_us;
-        need=(draw_us-skip_us+budget-1)/budget;
-        if(need>requested)requested=need>8?8:need;
+    unsigned need=1;
+    /* A display interval of N costs one draw and N-1 logic-only frames.
+     * Keep 0.67 ms per frame available for the rest of the foreground loop. */
+    if(draw_us>16000u) {
+        if(skip_us<16000u)need=1u+(draw_us-skip_us-1u)/(16000u-skip_us);
+        else if(draw_us>skip_us)need=8;
     }
-    return requested;
+    if(requested>need)need=requested;
+    return need>8?8:need;
 }
 /* The RPG accepts an action more reliably without a simultaneous held D-pad.
  * Four-way axis hysteresis also avoids adjacent rows from diagonal ADC noise.
@@ -55,23 +55,34 @@ __attribute__((noinline)) uint8_t NesPort_RpgPad(uint8_t buttons,int x,int y)
 }
 static uint32_t next_frame,touch_due,stats_due,logic_frames,draw_frames;
 static uint8_t touch_available,touch_pad,loaded;
-static uint16_t xmap[480];
+/* The F407 has 64 KiB of CPU-only CCM. Link this cache there so it cannot
+ * overlap ROMs, decoded tiles or the diagnostic capture in external SRAM. */
+static uint8_t displayed_pixels[240][256]
+    __attribute__((section(".bss.ARM.__at_0x10000000"),aligned(4)));
+static uint8_t displayed_valid[240];
+static uint16_t displayed_palette[64];
+volatile uint32_t nes_lcd_pixels,nes_lcd_us,nes_lcd_updates_total,nes_lcd_pixels_total;
+static uint32_t lcd_frame_pixels,lcd_frame_cycles;
 /* SWD diagnostics: one requested RGB565 frame at 0x6c040000. No copy otherwise. */
-volatile uint32_t nes_capture_request,nes_capture_ready;
+#define NES_CAPTURE_ADDR 0x6c040000u
+#define NES_CAPTURE_BYTES (256u*240u*sizeof(uint16_t))
+volatile uint32_t nes_capture_request,nes_capture_ready,nes_capture_rejected;
 volatile uint32_t nes_logic_total,nes_draw_total,nes_logic_hz,nes_draw_hz;
 volatile uint8_t nes_test_pad;
 /* SWD-only opt-in for synthetic snapshot experiments, never inferred from a
  * cartridge's reset vector. Normal menu operation keeps this disabled. */
 volatile uint8_t nes_fds_snapshot_test_only;
-volatile uint32_t nes_render_divisor=3,nes_draw_frame_us,nes_skip_frame_us,nes_clock_drops;
-volatile uint32_t nes_effective_render_divisor=3;
+volatile uint32_t nes_render_divisor=1,nes_draw_frame_us,nes_skip_frame_us,nes_clock_drops;
+volatile uint32_t nes_effective_render_divisor=1;
+static uint32_t mean_draw_us,mean_skip_us,undrawn_remaining,faster_samples;
 volatile uint32_t nes_menu_redraw_us,nes_menu_updates;
+volatile uint32_t nes_library_boot_ms,nes_search_ms,nes_load_ms,nes_save_ms;
 static uint8_t capturing;
 static uint32_t cap_status_due,cap_last_count;
 static uint8_t cap_last_pressed=255,cap_last_ready=255;
 extern volatile uint32_t touchpad_press_count;
 
-enum {APP_MENU=0,APP_GAME=1,APP_SETTINGS=2,APP_SEARCH=3};
+enum {APP_MENU=0,APP_GAME=1,APP_SETTINGS=2,APP_SEARCH=3,APP_LIBRARY=4,APP_SAVE_ERROR=5,APP_LIBRARY_CHECK=6};
 static uint32_t settings_due;
 static uint8_t settings_axis_armed,settings_center_seen;
 static uint32_t settings_center_due;
@@ -96,15 +107,27 @@ static uint8_t key1_pending;
 static NesSearchState search;
 static uint8_t search_armed,search_center_seen,search_key_armed,search_ok_armed;
 static uint32_t search_center_due;
+static uint8_t library_cursor,library_axis_armed,library_centered,library_key_armed;
+static uint32_t library_center_due,library_progress_due;
+static unsigned library_check_total;
+static uint8_t save_error_armed;
 static uint8_t stick_shown=255;
 static char shown_status[48];
 static char load_error[48];
+static char notice[48],running_title[57];
+static uint32_t notice_until;
 static uint8_t disk_combo_latched;
 static unsigned disk_shown=~0u;
 
 #define SW_PRESSED (HAL_GPIO_ReadPin(JOYSTICK_SW_PORT,JOYSTICK_SW_PIN)==GPIO_PIN_RESET)
 #define KEY2_PRESSED (HAL_GPIO_ReadPin(KEY2_GPIO_PORT,KEY2_PIN)==GPIO_PIN_SET)
 #define KEY1_PRESSED (HAL_GPIO_ReadPin(KEY1_GPIO_PORT,KEY1_PIN)==GPIO_PIN_SET)
+
+static const char *const view_hints[]={
+    "SEARCH RESULTS - HOLD KEY1 FOR LIBRARY", "LOADABLE HEADERS - HOLD KEY1 FOR LIBRARY",
+    "UNSUPPORTED - HOLD KEY1 FOR LIBRARY", "FAVORITES - HOLD KEY1 FOR LIBRARY",
+    "RECENTLY PLAYED - HOLD KEY1 FOR LIBRARY"
+};
 
 static void text(unsigned x,unsigned y,const char *s) {PixelFont_Text((uint16_t)x,(uint16_t)(y+4),s,WHITE,BLACK,2);}
 /* Redraw the status line only when the message actually changes. */
@@ -115,6 +138,50 @@ static void menu_status(const char *msg)
     strncpy(shown_status,msg,sizeof(shown_status)-1);
     shown_status[sizeof(shown_status)-1]='\0';
     NesMenu_Status(msg);
+}
+
+static void show_notice(const char *msg)
+{
+    snprintf(notice,sizeof(notice),"%s",msg);
+    notice_until=HAL_GetTick()+3500;
+    menu_status(notice);
+}
+
+static void menu_info(int probe)
+{
+    char info[56],reason[44];
+    NesImportInfo import_info={0};
+    unsigned mapper=0xffffu,index=(unsigned)menu.index;
+    int result,favorite;
+    if(!menu.count){NesMenu_Info("");return;}
+    result=NesLibrary_Compatibility(index,probe,&mapper);
+    favorite=NesLibrary_IsFavorite(index);
+    import_info.mapper=(uint16_t)mapper;
+    if(result==NES_LIBRARY_COMPAT_HEADER_OK) {
+        if(mapper==20)snprintf(reason,sizeof(reason),"FDS - HEADER OK");
+        else snprintf(reason,sizeof(reason),"MAPPER %u - HEADER OK",mapper);
+    } else if(result==NES_LIBRARY_COMPAT_UNKNOWN)snprintf(reason,sizeof(reason),"HEADER NOT CHECKED");
+    else if(result==NES_LIBRARY_COMPAT_READ_ERROR)snprintf(reason,sizeof(reason),"ROM READ ERROR");
+    else NesImport_FormatReason(result,&import_info,reason,sizeof(reason));
+    snprintf(info,sizeof(info),"%s%s",favorite?"FAVORITE  ":"",reason);
+    NesMenu_Info(info);
+}
+
+static void draw_library(void)
+{
+    NesMenu_Draw(&menu);
+    shown_status[0]='\0';
+    menu_info(1);
+}
+
+static void update_menu_count(int keep_selection)
+{
+    menu.count=(uint16_t)NesLibrary_Count();
+    if(!keep_selection||!menu.count){menu.index=0;menu.first=0;}
+    else if((unsigned)menu.index>=menu.count) {
+        menu.index=(int16_t)(menu.count-1);
+        if(menu.first>(unsigned)menu.index)menu.first=(uint16_t)menu.index;
+    }
 }
 static uint8_t held(Button *b,uint8_t raw,uint32_t now)
 {
@@ -169,38 +236,81 @@ void NesPort_Input(void)
         } else if(!(combo&0xc0))disk_combo_latched=0;
     } else disk_combo_latched=0;
 }
+void NesPort_InvalidateDisplay(void)
+{
+    memset(displayed_valid,0,sizeof(displayed_valid));
+}
+
+/* Every eight NES pixels span exactly fifteen columns of the 480px LCD.
+ * The first seven colors each occupy two columns and the eighth occupies one. */
+static void submit_changed_span(unsigned line,unsigned first,unsigned end,
+                                const uint8_t *pixels,const uint16_t *palette)
+{
+    static uint16_t row[480];
+    unsigned group,src,out=0,x,y;
+    unsigned y0=line*450/240,y1=(line+1)*450/240;
+    for(group=first;group<end;group++) {
+        src=group*8;
+        for(x=0;x<7;x++) {
+            uint16_t color=palette[pixels[src+x]&63];
+            row[out++]=color;
+            row[out++]=color;
+        }
+        row[out++]=palette[pixels[src+7]&63];
+    }
+    lcd_open_window((uint16_t)(first*15),(uint16_t)(112+y0),(uint16_t)out,(uint16_t)(y1-y0));
+    for(y=y0;y<y1;y++)
+        for(x=0;x<out;x++)LCD_WRITE_DATA(row[x]);
+    lcd_frame_pixels+=out*(y1-y0);
+}
+
 void NesPort_Line(int line,const uint8_t *pixels,const uint16_t *palette)
 {
-    unsigned x,y,y0=(unsigned)line*450/240,y1=(unsigned)(line+1)*450/240;
-    /* 256x240 -> 480x450, preserves aspect ratio and includes all pixels. */
-    /* MMC5 borrows the diagnostic framebuffer for its larger ROM arena. */
-    if(MapperNo==5){capturing=0;nes_capture_request=0;}
-    if(line==0 && nes_capture_request) {capturing=1;nes_capture_request=0;}
+    uint32_t started=DWT->CYCCNT;
+    uint8_t *previous=displayed_pixels[line];
+    unsigned x,first=0,end=32;
+    if(line==0) {
+        lcd_frame_pixels=0;
+        lcd_frame_cycles=0;
+    }
+    if(line==0 && nes_capture_request) {
+        nes_capture_request=0;
+        capturing=(uint8_t)(MapperNo!=5&&Nes_CaptureRangeAvailable(NES_CAPTURE_ADDR,NES_CAPTURE_BYTES));
+        if(!capturing)++nes_capture_rejected;
+    }
     if(capturing) {
-        volatile uint16_t *dest=(volatile uint16_t*)0x6c040000+line*256;
+        volatile uint16_t *dest=(volatile uint16_t*)NES_CAPTURE_ADDR+line*256;
         for(x=0;x<256;x++)dest[x]=palette[pixels[x]&63];
         if(line==239){capturing=0;++nes_capture_ready;}
     }
-    lcd_open_window(0,(uint16_t)(112+y0),480,(uint16_t)(y1-y0));
-    /* 240 source lines cover 450 LCD rows, so convert the row once and repeat
-     * the store instead of redoing 480 palette lookups for every output row. */
-    {
-        static uint16_t row[480];
-        unsigned i;
-        for(i=0;i<480;i++)row[i]=palette[pixels[xmap[i]]&63];
-        for(y=y0;y<y1;y++){
-            const uint16_t *src=row;
-            for(x=0;x<480;x++)LCD_WRITE_DATA(*src++);
-        }
+    if(memcmp(displayed_palette,palette,sizeof(displayed_palette))!=0) {
+        memcpy(displayed_palette,palette,sizeof(displayed_palette));
+        NesPort_InvalidateDisplay();
+    }
+    if(displayed_valid[line]) {
+        while(first<end && !memcmp(previous+first*8,pixels+first*8,8))++first;
+        while(end>first && !memcmp(previous+(end-1)*8,pixels+(end-1)*8,8))--end;
+    }
+    if(first<end) {
+        submit_changed_span((unsigned)line,first,end,pixels,palette);
+        memcpy(previous+first*8,pixels+first*8,(end-first)*8);
+        displayed_valid[line]=1;
+    }
+    lcd_frame_cycles+=DWT->CYCCNT-started;
+    if(line==239) {
+        nes_lcd_pixels=lcd_frame_pixels;
+        nes_lcd_pixels_total+=lcd_frame_pixels;
+        if(lcd_frame_pixels)++nes_lcd_updates_total;
+        nes_lcd_us=lcd_frame_cycles/(HAL_RCC_GetHCLKFreq()/1000000u);
     }
 }
 
 static void game_chrome(void)
 {
+    NesPort_InvalidateDisplay();
     text(16,16,"NES FIRE EMULATOR");
-    if(strlen(NesLibrary_Game((unsigned)menu.index)->label)>28)
-        PixelFont_Text(16,58,NesLibrary_Game((unsigned)menu.index)->label,WHITE,BLACK,1);
-    else text(16,54,NesLibrary_Game((unsigned)menu.index)->label);
+    if(strlen(running_title)>28)PixelFont_Text(16,58,running_title,WHITE,BLACK,1);
+    else text(16,54,running_title);
     text(16,590,"STICK: D-PAD  SW: START");
     text(16,630,"KEY1: B       KEY2: A");
     text(16,670,"CAP KEY: SELECT");
@@ -212,67 +322,141 @@ static void game_chrome(void)
     stick_shown=255;
 }
 
-static void enter_menu(void)
+static void return_to_library(void)
 {
     rpg_direction=0;
-    NesAudio_Mute(1);
-    if(NesLibrary_SavePending()) {
-        lcd_fill_color(16,732,448,36,BLACK);
-        text(16,734,"SAVING...");
-    }
-    (void)NesLibrary_Save();
+    if(loaded||app_state==APP_SETTINGS)NesAudio_Mute(1);
     loaded=0;
+    capturing=0;nes_capture_request=0;
     NesLibrary_EnterMenu();
     app_state=APP_MENU;
     sw_hold_active=0;
     menu_axis_armed=0;menu_page_armed=0;menu_center_seen=0;menu_page_seen=0;menu_armed=0;key1_pending=0;
-    shown_status[0]='\0';
-    load_error[0]='\0';
-    NesMenu_Draw(&menu);
+    cover_pending=0;load_error[0]='\0';notice[0]='\0';
+    draw_library();
+}
+
+static void save_and_exit(void)
+{
+    if(NesLibrary_SavePending()) {
+        uint32_t started;
+        int result;
+        NesAudio_Mute(1);
+        lcd_fill_color(16,732,448,36,BLACK);
+        text(16,734,"SAVING...");
+        started=HAL_GetTick();
+        result=NesLibrary_Save();
+        nes_save_ms=HAL_GetTick()-started;
+        if(result) {
+            app_state=APP_SAVE_ERROR;
+            save_error_armed=0;
+            NesMenu_SaveError(NesLibrary_Error());
+            return;
+        }
+        return_to_library();
+        show_notice("SAVE OK");
+    } else return_to_library();
+}
+
+static void restart_frame_clock(void)
+{
+    logic_frames=draw_frames=0;
+    nes_draw_frame_us=nes_skip_frame_us=0;
+    mean_draw_us=mean_skip_us=undrawn_remaining=faster_samples=0;
+    nes_effective_render_divisor=NesPort_RenderDivisor(nes_render_divisor,0,0);
+    next_frame=DWT->CYCCNT;
+    stats_due=HAL_GetTick()+1000;
+}
+
+static void record_frame_time(int drew,uint32_t frame_us)
+{
+    uint32_t *mean=drew?&mean_draw_us:&mean_skip_us;
+    /* Smooth scene-to-scene variation. Measure skipped frames independently,
+     * since their CPU/PPU work still consumes part of every interval. */
+    *mean=*mean?(*mean*3u+frame_us+2u)/4u:frame_us;
+    if(drew) {
+        unsigned need=NesPort_RenderDivisor(nes_render_divisor,mean_draw_us,mean_skip_us);
+        nes_draw_frame_us=frame_us;
+        if(need>=nes_effective_render_divisor || ++faster_samples>=3) {
+            nes_effective_render_divisor=need;
+            faster_samples=0;
+        }
+        undrawn_remaining=nes_effective_render_divisor-1;
+    } else {
+        nes_skip_frame_us=frame_us;
+        --undrawn_remaining;
+    }
+}
+
+static void save_error_poll(void)
+{
+    int retry=KEY2_PRESSED||SW_PRESSED||(nes_test_pad&1);
+    int resume=KEY1_PRESSED||(nes_test_pad&2);
+    if(!retry&&!resume){save_error_armed=1;return;}
+    if(!save_error_armed)return;
+    save_error_armed=0;
+    if(retry){save_and_exit();return;}
+    lcd_fill_color(0,0,480,800,BLACK);
+    game_chrome();
+    sw_hold_active=0;
+    restart_frame_clock();
+    app_state=APP_GAME;
+    NesAudio_Mute(0);
 }
 
 static void start_selected(void)
 {
-    const NesRomImage *g;
+    const NesRomImage *game;
+    const uint8_t *data;
+    char file[NES_IMPORT_PATH_MAX+1];
+    uint32_t started,bytes;
     int result;
     if(menu.count==0) return;
-    g=NesLibrary_Game((unsigned)menu.index);
+    game=NesLibrary_Game((unsigned)menu.index);
+    if(!game){menu_status("ENTRY UNAVAILABLE");return;}
+    data=game->data;bytes=game->size;
+    snprintf(file,sizeof(file),"%s",game->file);
+    snprintf(running_title,sizeof(running_title),"%.56s",game->label);
     load_error[0]='\0';
     lcd_fill_color(0,0,480,800,BLACK);
     text(16,380,"LOADING ...");
+    started=HAL_GetTick();
     result=NesLibrary_Load((unsigned)menu.index);
     /* A reset below $8000 does not establish that this is a bootable FDS
      * snapshot. The experimental snapshot loader has no disk drive; keep
      * malformed cartridges out of that path until a real FDS image is loaded. */
     if(nes_fds_snapshot_test_only && result==5)
-        result=Nes_LoadFds(g->data,g->size,nes_fds_bios,nes_fds_bios_size);
-    printf("NES load=%d file=%s bytes=%lu mapper=%d\r\n",result,g->file,
-        (unsigned long)g->size,MapperNo);
+        result=Nes_LoadFds(data,bytes,nes_fds_bios,nes_fds_bios_size);
+    printf("NES load=%d file=%s bytes=%lu mapper=%d\r\n",result,file,
+        (unsigned long)bytes,MapperNo);
     if(result) {
-        NesLibrary_EnterMenu();
-        NesMenu_Draw(&menu);
-        shown_status[0]='\0';
+        nes_load_ms=HAL_GetTick()-started;
         if(result==10) snprintf(load_error,sizeof(load_error),"%s",NesLibrary_Error());
         else if(result==5) snprintf(load_error,sizeof(load_error),"BOOT ERROR - NEED .FDS");
         else if(result==7) snprintf(load_error,sizeof(load_error),"FDS VALID - DRIVE NOT READY");
         else if(result==8) snprintf(load_error,sizeof(load_error),"INVALID FDS DISK IMAGE");
         else if(result==9) snprintf(load_error,sizeof(load_error),"BAD FDS BIOS - NEED DISKSYS.ROM");
         else snprintf(load_error,sizeof(load_error),"ROM REJECTED rc=%d - SEE UART",result);
+        NesLibrary_EnterMenu();
+        draw_library();
         menu_status(load_error);
         return;
     }
+    if(NesLibrary_RecordPlayed((unsigned)menu.index)<0)
+        printf("NES library: recent history write failed\r\n");
+    nes_load_ms=HAL_GetTick()-started;
     NesAudio_Mute(0);
     loaded=1;app_state=APP_GAME;
     rpg_direction=0;
     game_chrome();
-    logic_frames=draw_frames=0;
-    next_frame=DWT->CYCCNT;stats_due=HAL_GetTick()+1000;
+    restart_frame_clock();
 }
 
 static void menu_redraw_selection(void)
 {
     uint32_t started=DWT->CYCCNT;
     NesMenu_DrawRows(&menu);
+    menu_info(0);
     cover_pending=1;cover_due=HAL_GetTick()+60;
     nes_menu_redraw_us=(DWT->CYCCNT-started)/(HAL_RCC_GetHCLKFreq()/1000000u);
     ++nes_menu_updates;
@@ -286,6 +470,98 @@ static void open_search(void)
     sw_hold_active=0;cover_pending=0;
     app_state=APP_SEARCH;
     NesSearch_Draw(&search);
+}
+
+static void draw_library_options(void)
+{
+    int favorite=menu.count&&NesLibrary_IsFavorite((unsigned)menu.index);
+    NesMenu_LibraryOptions(library_cursor,NesLibrary_Filter()+1u,favorite,menu.count!=0);
+}
+
+static void open_library_options(void)
+{
+    library_cursor=(uint8_t)(NesLibrary_Filter()+1u);
+    library_axis_armed=0;library_centered=0;library_key_armed=0;
+    sw_hold_active=0;cover_pending=0;
+    app_state=APP_LIBRARY;
+    draw_library_options();
+}
+
+static void library_check_poll(uint32_t now)
+{
+    unsigned pending;
+    int back=KEY1_PRESSED||(nes_test_pad&2);
+    if(!back)library_key_armed=1;
+    else if(library_key_armed) {
+        (void)NesLibrary_SetFilter(NES_LIBRARY_FILTER_ALL);
+        update_menu_count(0);
+        return_to_library();
+        show_notice("HEADER CHECK CANCELED");
+        return;
+    }
+    NesLibrary_AdvanceFilter();
+    pending=NesLibrary_FilterPending();
+    if(!pending) {
+        update_menu_count(0);
+        return_to_library();
+        if(NesLibrary_SearchFailed())show_notice("SOME ROM HEADERS COULD NOT BE READ");
+        return;
+    }
+    if((int32_t)(now-library_progress_due)>=0) {
+        char progress[29];
+        snprintf(progress,sizeof(progress),"%u/%u CHECKED",library_check_total-pending,library_check_total);
+        lcd_fill_color(16,418,448,22,BLACK);
+        text(16,418,progress);
+        library_progress_due=now+150;
+    }
+}
+
+static void library_options_poll(uint32_t now)
+{
+    const JoystickState *j=Joystick_Get();
+    int dir=0,centered=0;
+    int back=KEY1_PRESSED||(nes_test_pad&2);
+    int select=KEY2_PRESSED||SW_PRESSED||(nes_test_pad&1);
+    if(j->healthy&&j->calibrated) {
+        dir=j->y>0.65f?1:(j->y< -0.65f?-1:0);
+        centered=j->y<0.25f&&j->y> -0.25f;
+    }
+    if(nes_test_pad&0x30){dir=(nes_test_pad&0x10)?-1:1;centered=0;}
+    if(centered) {
+        if(!library_centered){library_centered=1;library_center_due=now+60;}
+        if((int32_t)(now-library_center_due)>=0)library_axis_armed=1;
+    } else library_centered=0;
+    if(dir&&library_axis_armed) {
+        library_axis_armed=0;
+        library_cursor=(uint8_t)((library_cursor+NES_LIBRARY_OPTIONS+dir)%NES_LIBRARY_OPTIONS);
+        draw_library_options();
+    }
+    if(!select&&!back){library_key_armed=1;return;}
+    if(!library_key_armed)return;
+    library_key_armed=0;
+    if(!back&&library_cursor==0){open_search();return;}
+    if(back){return_to_library();return;}
+    if(library_cursor==NES_LIBRARY_OPTIONS-1) {
+        int result=menu.count?NesLibrary_ToggleFavorite((unsigned)menu.index):-1;
+        update_menu_count(1);
+        return_to_library();
+        show_notice(result==1?"ADDED TO FAVORITES":result==0?"REMOVED FROM FAVORITES":
+                    result==-2?"FAVORITES LIST FULL":menu.count?"FAVORITE WRITE FAILED - CHECK SD":"NO GAME SELECTED");
+        return;
+    }
+    NesLibrary_ClearView();
+    (void)NesLibrary_SetFilter(library_cursor-1u);
+    library_check_total=NesLibrary_FilterPending();
+    if(library_check_total) {
+        lcd_fill_color(0,0,480,800,BLACK);
+        text(16,380,"CHECKING ROM HEADERS...");
+        text(16,458,"KEY1 CANCEL");
+        library_progress_due=now;
+        app_state=APP_LIBRARY_CHECK;
+        return;
+    }
+    update_menu_count(0);
+    return_to_library();
 }
 static void search_poll(uint32_t now)
 {
@@ -308,19 +584,22 @@ static void search_poll(uint32_t now)
         NesSearch_Draw(&search);
     }
     if(KEY1_PRESSED||(nes_test_pad&2)) {
-        if(search_key_armed){search_key_armed=0;app_state=APP_MENU;NesMenu_Draw(&menu);return;}
+        if(search_key_armed){search_key_armed=0;return_to_library();return;}
     } else search_key_armed=1;
     if(KEY2_PRESSED||SW_PRESSED||(nes_test_pad&1)) {
         if(search_ok_armed) {
             search_ok_armed=0;
             if(NesSearch_Select(&search)==1) {
-                unsigned n=NesLibrary_Search(search.query);
-                menu.count=(uint16_t)n;
-                menu.index=0;menu.first=0;
-                app_state=APP_MENU;
-                NesMenu_Draw(&menu);
-                if(n){char msg[24];snprintf(msg,sizeof(msg),"%u MATCHES",n);menu_status(msg);}
-                else menu_status("NO MATCH - FULL LIST");
+                unsigned n;
+                uint32_t started=HAL_GetTick();
+                n=NesLibrary_Search(search.query);
+                nes_search_ms=HAL_GetTick()-started;
+                update_menu_count(0);
+                return_to_library();
+                if(n){char msg[24];snprintf(msg,sizeof(msg),"%u MATCHES",n);show_notice(msg);}
+                else if(NesLibrary_SearchFailed())show_notice("SD CATALOG READ ERROR");
+                else if(search.query[0])show_notice("NO MATCH - VIEW RESTORED");
+                else show_notice("SEARCH CLEARED");
             }
         }
     } else search_ok_armed=1;
@@ -330,7 +609,7 @@ static void menu_poll(uint32_t now)
     const JoystickState *j=Joystick_Get();
     int dir=0,page=0,cy=0,cx=0;
     /* The cover is read from the card only after the stick has settled. */
-    if(cover_pending&&(int32_t)(now-cover_due)>=0){cover_pending=0;NesMenu_DrawCover(&menu);}
+    if(cover_pending&&(int32_t)(now-cover_due)>=0){cover_pending=0;NesMenu_DrawCover(&menu);menu_info(1);}
     {
         /* Capacitive key is free in the menu and opens search directly. */
         const TouchpadState *cap=Touchpad_Get();
@@ -369,10 +648,10 @@ static void menu_poll(uint32_t now)
     if(KEY1_PRESSED||KEY2_PRESSED||SW_PRESSED||(nes_test_pad&3)) {
         int k1=KEY1_PRESSED||(nes_test_pad&2);
         if(k1) {
-            /* Short press opens Settings; holding for one second opens Search. */
+            /* Short press opens Settings; holding opens the library actions. */
             if(!key1_pending){key1_pending=1;key1_down=now;}
             else if((uint32_t)(now-key1_down)>=1000){
-                key1_pending=0;menu_armed=0;open_search();return;
+                key1_pending=0;menu_armed=0;open_library_options();return;
             }
         } else if(menu_armed) {
             menu_armed=0;
@@ -393,8 +672,14 @@ static void menu_poll(uint32_t now)
         }
     }
     if(load_error[0])menu_status(load_error);
-    else if(NesLibrary_ViewActive())menu_status("FILTERED - HOLD KEY1 TO SEARCH");
+    else if(notice[0]&&(int32_t)(now-notice_until)<0)menu_status(notice);
     else if(!strncmp(NesLibrary_Status(),"SD SAVE",7))menu_status(NesLibrary_Status());
+    else if(NesLibrary_OverflowCount()) {
+        char limit[40];
+        snprintf(limit,sizeof(limit),"LIBRARY FULL - %u FILES OUTSIDE LIMIT",NesLibrary_OverflowCount());
+        menu_status(limit);
+    }
+    else if(NesLibrary_ViewActive())menu_status(view_hints[NesLibrary_Filter()]);
     else if(!j->healthy||!j->calibrated) menu_status("CENTER STICK TO CALIBRATE");
     else if(j->errors) menu_status("STICK ERROR - CHECK WIRING");
     else menu_status(load_error[0]?load_error:NesLibrary_Status());
@@ -402,10 +687,11 @@ static void menu_poll(uint32_t now)
 
 void NesApp_Init(uint8_t touch_ok)
 {
-    unsigned x;int result;
+    int result,library_result;
+    uint32_t started;
     touch_available=touch_ok;
     Touchpad_Init();
-    for(x=0;x<480;x++)xmap[x]=(uint16_t)(x*256/480);
+    __HAL_RCC_CCMDATARAMEN_CLK_ENABLE();
     lcd_fill_color(0,0,480,800,BLACK);
     text(16,16,"NES FIRE EMULATOR");
     text(16,54,"AUDIO: INITIALIZING");
@@ -413,29 +699,37 @@ void NesApp_Init(uint8_t touch_ok)
     printf("Audio init=%d (WM8978 selectable output, 11025Hz)\r\n",result);
     NesAudio_Mute(1);
     text(16,94,"SD: LOADING LIBRARY");
-    printf("SD library=%d\r\n",NesLibrary_Boot());
+    started=HAL_GetTick();
+    library_result=NesLibrary_Boot();
+    nes_library_boot_ms=HAL_GetTick()-started;
+    printf("SD library=%d\r\n",library_result);
     NesMenu_Init(&menu,(uint16_t)NesLibrary_Count(),result==0,touch_ok);
     printf("Games=%u\r\n",NesLibrary_Count());
     app_state=APP_MENU;
     loaded=0;
     menu_axis_armed=0;menu_page_armed=0;menu_center_seen=0;menu_page_seen=0;menu_armed=0;key1_pending=0;
-    shown_status[0]='\0';
-    NesMenu_Draw(&menu);
+    draw_library();
     if(result) menu_status("AUDIO OFF - CHECK CODEC");
     else menu_status(NesLibrary_Status());
 }
 void NesApp_Poll(void)
 {
     uint32_t now=HAL_GetTick(),cycles=DWT->CYCCNT,period=HAL_RCC_GetHCLKFreq()/60;
-    static uint32_t total;
     const TouchpadState *cap=Touchpad_Get();
     NesPort_Input();
     if(app_state==APP_MENU) {menu_poll(now);return;}
     if(app_state==APP_SEARCH) {search_poll(now);return;}
+    if(app_state==APP_LIBRARY) {library_options_poll(now);return;}
+    if(app_state==APP_LIBRARY_CHECK) {library_check_poll(now);return;}
+    if(app_state==APP_SAVE_ERROR) {save_error_poll();return;}
     /* Long press of SW leaves the game and returns to the menu. */
     if(SW_PRESSED) {
         if(!sw_hold_active) {sw_hold_active=1;sw_hold_start=now;}
-        else if((uint32_t)(now-sw_hold_start)>=1500) {enter_menu();return;}
+        else if((uint32_t)(now-sw_hold_start)>=1500) {
+            if(app_state==APP_GAME)save_and_exit();
+            else return_to_library();
+            return;
+        }
     } else sw_hold_active=0;
     if(app_state==APP_SETTINGS) {
         const JoystickState *j=Joystick_Get();
@@ -498,18 +792,17 @@ void NesApp_Poll(void)
         }
     }
     if((int32_t)(cycles-next_frame)>=0) {
-        uint32_t divisor=nes_render_divisor,start_cycles=DWT->CYCCNT,frame_us;
-        int draw;
-        divisor=NesPort_RenderDivisor(divisor,nes_draw_frame_us,nes_skip_frame_us,NesLibrary_InputProfile());
-        nes_effective_render_divisor=divisor;
-        draw=(total++%divisor)==0;
+        uint32_t start_cycles=DWT->CYCCNT,frame_us;
+        int draw=undrawn_remaining==0;
         Nes_Frame(draw);frame_us=(DWT->CYCCNT-start_cycles)/(HAL_RCC_GetHCLKFreq()/1000000u);
-        if(draw)nes_draw_frame_us=frame_us;else nes_skip_frame_us=frame_us;
+        record_frame_time(draw,frame_us);
         logic_frames++;nes_logic_total++;if(draw){draw_frames++;nes_draw_total++;}
         next_frame+=period;
-        /* Carry the debt from an expensive LCD frame into subsequent cheap
-         * logic frames instead of discarding virtual NES time every draw. */
-        if((int32_t)(DWT->CYCCNT-next_frame)>(int32_t)(period*4)) {
+        /* A costly draw can legitimately borrow its own display interval.
+         * Cap longer stalls so resuming after a pause cannot trigger a burst. */
+        uint32_t recovery=nes_effective_render_divisor;
+        if(recovery<4)recovery=4;
+        if((int32_t)(DWT->CYCCNT-next_frame)>(int32_t)(period*recovery)) {
             next_frame=DWT->CYCCNT;++nes_clock_drops;
         }
     }

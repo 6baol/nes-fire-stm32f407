@@ -3,8 +3,7 @@
 #include "nes_roms.h"
 #include "nes_posters.h"
 
-/* The listing lives on the card (NES/CATALOG.IDX); RAM only keeps a window.
- * NES_CATALOG_MAX is a count limit, not a memory cost. */
+/* The listing lives on the card (NES/CATALOG.IDX); RAM keeps a record window. */
 #define NES_CATALOG_MAX 2048u
 #define NES_ROM_ARENA_ADDR 0x6c060000u
 #define NES_ROM_ARENA_BYTES 0x000a0000u
@@ -21,12 +20,38 @@ unsigned NesLibrary_Count(void);
 /* Fills a static scratch entry and returns it. The pointer stays valid until
  * the next NesLibrary_Game/NesLibrary_Load call, so use it immediately. */
 const NesRomImage *NesLibrary_Game(unsigned index);
-/* Search builds a filtered view over the catalog; Count/Game/Load then only see
- * matching entries. ASCII matching is case-insensitive; UTF-8 bytes compare
- * exactly. Returns the number of matches (0 restores the full list). */
+enum {
+    NES_LIBRARY_FILTER_ALL,
+    NES_LIBRARY_FILTER_COMPATIBLE,
+    NES_LIBRARY_FILTER_UNSUPPORTED,
+    NES_LIBRARY_FILTER_FAVORITES,
+    NES_LIBRARY_FILTER_RECENT
+};
+enum {
+    NES_LIBRARY_COMPAT_UNKNOWN = 0,
+    NES_LIBRARY_COMPAT_HEADER_OK = 1,
+    NES_LIBRARY_COMPAT_READ_ERROR = -10
+};
+/* Search includes the current view. An empty query or no hits clears the query
+ * and restores that view. ASCII folds case; UTF-8 compares exactly. */
 unsigned NesLibrary_Search(const char *needle);
+int NesLibrary_SearchFailed(void);
 void NesLibrary_ClearView(void);
 unsigned NesLibrary_ViewActive(void);
+unsigned NesLibrary_Filter(void);
+unsigned NesLibrary_SetFilter(unsigned filter);
+/* Compatibility filters can scan missing metadata in bounded calls. */
+unsigned NesLibrary_FilterPending(void);
+void NesLibrary_AdvanceFilter(void);
+/* Returns a compatibility state or NES_IMPORT_* rejection for a view entry.
+ * Without probe, an unclassified entry never causes a ROM read. */
+int NesLibrary_Compatibility(unsigned index, int probe, unsigned *mapper);
+unsigned NesLibrary_OverflowCount(void);
+int NesLibrary_IsFavorite(unsigned index);
+/* 1 added, 0 removed, -1 unavailable/write error, -2 full. */
+int NesLibrary_ToggleFavorite(unsigned index);
+/* Call only after a successful load. Returns 0 if recorded, -1 on failure. */
+int NesLibrary_RecordPlayed(unsigned index);
 /* The arena is shared with cover loading only while no game is executing. */
 void NesLibrary_EnterMenu(void);
 const NesPoster *NesLibrary_Poster(const NesRomImage *game);

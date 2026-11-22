@@ -26,8 +26,13 @@ void NesMenu_DrawSelection(const NesMenuState *m);
 /* Rows and name only; the cover can follow once the stick settles. */
 void NesMenu_DrawRows(const NesMenuState *m);
 void NesMenu_DrawCover(const NesMenuState *m);
-/* One-line message above the hints (ROM rejected, stick calibration, ...). */
+/* Selected game's compatibility and favorite status. */
+void NesMenu_Info(const char *msg);
+/* One-line message below the hints (ROM rejected, stick calibration, ...). */
 void NesMenu_Status(const char *msg);
+#define NES_LIBRARY_OPTIONS 7u
+void NesMenu_LibraryOptions(unsigned cursor, unsigned current_view, int favorite, int has_game);
+void NesMenu_SaveError(const char *reason);
 /* Native diagnostics: no cartridge is loaded or run. */
 void NesSettings_Draw(uint8_t audio_ok);
 void NesSettings_Audio(uint8_t output,uint8_t audio_ok,uint8_t failed);

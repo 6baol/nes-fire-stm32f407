@@ -141,9 +141,7 @@ _10;   BPL *
 ;----------------------------------------------------------------------------
 	tst m6502_nz,#0x80000000
 	ldrsb r0,[m6502_pc],#1
-	addeq m6502_pc,m6502_pc,r0
-;	subeq cycles,cycles,#3*CYCLE
-	subeq cycles,cycles,#256
+	beq.W branch_taken
 	fetch 2
 ;----------------------------------------------------------------------------
 _11;   ORA ($nn),Y
@@ -265,9 +263,7 @@ _30;   BMI *
 ;----------------------------------------------------------------------------
 	tst m6502_nz,#0x80000000
 	ldrsb r0,[m6502_pc],#1
-	addne m6502_pc,m6502_pc,r0
-;	subne cycles,cycles,#3*CYCLE
-	subne cycles,cycles,#256
+	bne.W branch_taken
 	fetch 2
 ;----------------------------------------------------------------------------
 _31;   AND ($nn),Y
@@ -380,9 +376,7 @@ _50;   BVC *
 ;----------------------------------------------------------------------------
 	tst cycles,#CYC_V
 	ldrsb r0,[m6502_pc],#1
-	addeq m6502_pc,m6502_pc,r0
-;	subeq cycles,cycles,#3*CYCLE
-	subeq cycles,cycles,#256
+	beq.W branch_taken
 	fetch 2
 ;----------------------------------------------------------------------------
 _51;   EOR ($nn),Y
@@ -474,19 +468,21 @@ _6A;   ROR
 ;----------------------------------------------------------------------------
 _6C;   JMP ($nnnn)	JMP ($data16) 间接寻址 *********************************
 ;----------------------------------------------------------------------------		
-	doABS       
-	adr r1,memmap_tbl			   
-	and r2,addy,#0xE000	;		  
-;	ldr r1,[r1,r2,lsr#11]  		  ;>>11 addr&0x7FF
-	lsr r0,r2,#11			  
-	ldr r1,[r1,r0]		   ;在数据传送之前,将偏移量加到Rn 中,其结果作为传送数据的存储地址
-							   
-	ldrb m6502_pc,[r1,addy]     ;//若使用后缀"!",则结果写回到Rn中
-	add r1,r1,addy	    
-
-	ldrb r0,[r1,#1]	    
-	orr m6502_pc,m6502_pc,r0,lsl#8	 ;m6502_pc=r9使用ORR 指令将近R9的高8 位数据移入到R0低8位
-	encodePC	
+	doABS
+	; The NMOS 6502 wraps the high-byte read within the pointer page.
+	add r1,addy,#1
+	uxtb r1,r1
+	and r2,addy,#0xff00
+	orr r1,r1,r2
+	str r1,[sp,#-8]!
+	readmemabs
+	ldr addy,[sp]
+	str r0,[sp,#4]
+	readmemabs
+	ldr r1,[sp,#4]
+	add sp,sp,#8
+	orr m6502_pc,r1,r0,lsl#8
+	encodePC
 	fetch 5
 ;----------------------------------------------------------------------------
 _6D;   ADC $nnnn
@@ -505,9 +501,7 @@ _70;   BVS *
 ;----------------------------------------------------------------------------
 	tst cycles,#CYC_V
 	ldrsb r0,[m6502_pc],#1
-	addne m6502_pc,m6502_pc,r0
-;	subne cycles,cycles,#3*CYCLE
-	subne cycles,cycles,#256
+	bne.W branch_taken
 	fetch 2
 ;----------------------------------------------------------------------------
 _71;   ADC ($nn),Y
@@ -609,9 +603,7 @@ _90;   BCC *
 ;----------------------------------------------------------------------------
 	tst cycles,#CYC_C			;Test Carry
 	ldrsb r0,[m6502_pc],#1
-	addeq m6502_pc,m6502_pc,r0
-;	subeq cycles,cycles,#3*CYCLE
-	subeq cycles,cycles,#256
+	beq.W branch_taken
 	fetch 2
 ;----------------------------------------------------------------------------
 _91;   STA ($nn),Y
@@ -738,9 +730,7 @@ _B0;   BCS *
 ;----------------------------------------------------------------------------
 	tst cycles,#CYC_C			;Test Carry
 	ldrsb r0,[m6502_pc],#1
-	addne m6502_pc,m6502_pc,r0
-;	subne cycles,cycles,#3*CYCLE
-	subne cycles,cycles,#256
+	bne.W branch_taken
 	fetch 2
 ;----------------------------------------------------------------------------
 _B1;   LDA ($nn),Y
@@ -873,9 +863,7 @@ _D0;   BNE *
 ;----------------------------------------------------------------------------
 	tst m6502_nz,#0xff
 	ldrsb r0,[m6502_pc],#1
-	addne m6502_pc,m6502_pc,r0
-;	subne cycles,cycles,#3*CYCLE
-	subne cycles,cycles,#256
+	bne.W branch_taken
 	fetch 2
 ;----------------------------------------------------------------------------
 _D1;   CMP ($nn),Y
@@ -987,9 +975,7 @@ _F0;   BEQ *
 ;----------------------------------------------------------------------------
 	tst m6502_nz,#0xff
 	ldrsb r0,[m6502_pc],#1
-	addeq m6502_pc,m6502_pc,r0
-;	subeq cycles,cycles,#3*CYCLE
-	subeq cycles,cycles,#256
+	beq.W branch_taken
 	fetch 2
 ;----------------------------------------------------------------------------
 _F1;   SBC ($nn),Y
@@ -1083,6 +1069,31 @@ _xx;	???					;invalid opcode	无效的操作码
 	fetch 2
 
 ;*****************************************************************************************************
+
+branch_taken
+	ldr r1,lastbank
+	sub r12,m6502_pc,r1
+	; Keep the low byte and a possible bit-16 wrap of the incremented PC.
+	; An unsigned sum in [0,255] can keep using the current host mapping.
+	bic r2,r12,#0xff00
+	add r2,r2,r0
+	cmp r2,#255
+	bhi branch_remap
+	add m6502_pc,m6502_pc,r0
+	fetch 3
+
+branch_remap
+	add m6502_pc,r12,r0
+	uxth m6502_pc,m6502_pc
+	eor r12,r12,m6502_pc
+	tst r12,#0xff00
+	bne branch_cross_page
+	encodePC
+	fetch 3
+
+branch_cross_page
+	encodePC
+	fetch 4
 
 	AREA cpu_run, CODE, READONLY
 run6502	PROC;r0=要运行的cpu周期*256
@@ -1267,6 +1278,8 @@ sram_R	;sram read ($6000-$7FFF) 黄金版风格: mapper类型检查 + SRAM保护
 	beq ret_zero_r
 	cmp r2,#0x42	;VRC7(66): 禁止
 	beq ret_zero_r
+	cmp r2,#16	;Bandai FCG has no PRG RAM
+	beq ret_zero_r
 	cmp r2,#0x47	;VRC4(71): 禁止
 	beq ret_zero_r
 	; Mapper 4(MMC3): 检查 SRAM 启用 bit7
@@ -1298,6 +1311,8 @@ sram_W	;sram write ($6000-$7FFF) 黄金版风格: mapper类型检查 + SRAM写�
 	beq ret_zero_w
 	cmp r1,#0x42	;VRC7(66): 禁止
 	beq ret_zero_w
+	cmp r1,#16	;Bandai FCG low writes reach the mapper
+	beq.W mapper16_low_w
 	cmp r1,#0x47	;VRC4(71): 禁止
 	beq ret_zero_w
 	; Mapper 4(MMC3): 检查 SRAM 启用 bit7 + 写保护 bit6
@@ -1438,7 +1453,11 @@ Read_Low  PROC;$5000-$6000  mapper->MemoryReadLow(addr);
 	bx lr
 	ENDP
 ;-------------------------------------------------------------------------------
+mapper16_low_w
+	add addy,addy,#0x6000
+	b Write_Low
     IMPORT asm_Mapper_WriteLow
+    IMPORT flush
 Write_Low  PROC;$5000-$6000  mapper->MemoryWriteLow( data, addr);	
 ;------------------------------------------------------------------------------
     stmfd sp!,{r3,lr}	;LR 寄存器放栈 
@@ -1446,6 +1465,8 @@ Write_Low  PROC;$5000-$6000  mapper->MemoryWriteLow( data, addr);
 	bl asm_Mapper_WriteLow
 
 	ldmfd sp!,{r3,lr}
+	cmp r0,#0
+	bne.W flush
 	orr lr,#0x01		;lr最低位置1防止进入arm状态
 	bx lr
 	ENDP
@@ -1577,7 +1598,8 @@ K6502_Read	PROC;apu  Rendering DPCM channel #5		r0=APU->ApuC5Address不确定正
 	ENDP
 	nop
 ;------------------------------------------------------------------------
-	 AREA CPU_GPU, CODE, READONLY
+	ALIGN
+	AREA CPU_GPU, CODE, READONLY
 	  
     IMPORT PPU_WriteToPort    ;PPU.c
 	IMPORT PPU_ReadFromPort	  ;PPU.c
@@ -1601,6 +1623,7 @@ PPU_R
 ;-----------------------------------------------------------------------------------------
 	AREA cpu_code, DATA, READONLY 
 ;-----------------------------------------------------------------------------------------		
+	ALIGN
 op_table	   ;DCD 用于分配一段字内存单元 op_table内存块起始地址标号
 	DCD _00,_01,_xx,_03,_xx,_05,_06,_07,_08,_09,_0A,_xx,_xx,_0D,_0E,_xx
 	DCD _10,_11,_xx,_xx,_14,_15,_16,_xx,_18,_19,_xx,_xx,_xx,_1D,_1E,_xx

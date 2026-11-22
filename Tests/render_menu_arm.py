@@ -187,11 +187,57 @@ if sd_mode:
  call('NesApp_Poll')
  assert bytes(u.mem_read(sy['app_state'],1))==b'\x01' and bytes(u.mem_read(sy['loaded'],1))==b'\x01'
  assert bytes(u.mem_read(sy['nes_audio_suspended'],1))==b'\0'
+ # A failed save pins the active game and SRAM until the player retries or resumes.
+ def save_pending(uc,a,size,data):
+  uc.reg_write(UC_ARM_REG_R0,1);skip(uc,a,size,data)
+ save_attempts=[0]
+ def fail_first_two_saves(uc,a,size,data):
+  save_attempts[0]+=1
+  failed=save_attempts[0]<=2
+  if failed:w32(sy['error'],error_text)
+  uc.reg_write(UC_ARM_REG_R0,int(failed));skip(uc,a,size,data)
+ save_hooks=[u.hook_add(UC_HOOK_CODE,hook,begin=sy[name]&~1,end=sy[name]&~1)
+             for name,hook in [('NesLibrary_SavePending',save_pending),('NesLibrary_Save',fail_first_two_saves)]]
  w32(0x40020810,0);w32(0x40020410,0);w32(sy['uwTick'],3200);call('NesApp_Poll')
  w32(sy['uwTick'],4700);call('NesApp_Poll')
+ assert bytes(u.mem_read(sy['app_state'],1))==b'\x05' and bytes(u.mem_read(sy['loaded'],1))==b'\x01'
+ save('menu_save_error.png')
+ w32(sy['uwTick'],4800);call('NesApp_Poll')
+ assert save_attempts==[1],'held SW retried an operation without a new press'
+ w32(0x40020410,128);call('NesApp_Poll')
+ w32(0x40020010,1);call('NesApp_Poll')
+ assert bytes(u.mem_read(sy['app_state'],1))==b'\x01' and bytes(u.mem_read(sy['loaded'],1))==b'\x01'
+ assert bytes(u.mem_read(sy['nes_audio_suspended'],1))==b'\0'
+ w32(0x40020010,0);w32(0x40020410,0);w32(sy['uwTick'],4900);call('NesApp_Poll')
+ w32(sy['uwTick'],6400);call('NesApp_Poll')
+ assert save_attempts==[2] and bytes(u.mem_read(sy['app_state'],1))==b'\x05'
+ w32(0x40020410,128);call('NesApp_Poll')
+ w32(0x40020810,1<<13);call('NesApp_Poll')
+ assert save_attempts==[3]
+ for handle in save_hooks:u.hook_del(handle)
  assert bytes(u.mem_read(sy['app_state'],1))==b'\0' and bytes(u.mem_read(sy['loaded'],1))==b'\0'
  assert bytes(u.mem_read(sy['nes_audio_suspended'],1))==b'\x01'
  assert struct.unpack('<h',u.mem_read(app_menu,2))[0]==1
+ w32(0x40020810,0);call('NesApp_Poll')
+
+ # Hold KEY1 from the library, then cancel after releasing the opening press.
+ w32(0x40020010,1);w32(sy['uwTick'],6700);call('NesApp_Poll')
+ w32(sy['uwTick'],7800);call('NesApp_Poll')
+ assert bytes(u.mem_read(sy['app_state'],1))==b'\x04'
+ save('library_options.png')
+ w32(0x40020010,0);call('NesApp_Poll')
+ w32(0x40020010,1);call('NesApp_Poll')
+ assert bytes(u.mem_read(sy['app_state'],1))==b'\0'
+ w32(0x40020010,0);call('NesApp_Poll')
+
+ # Set the on-screen search grid to its submit key and enter via KEY2.
+ u.mem_write(sy['app_state'],b'\x03')
+ u.mem_write(sy['search'],b'zznohits\0'.ljust(13,b'\0')+bytes((8,39)))
+ u.mem_write(sy['search_ok_armed'],b'\x01')
+ w32(0x40020810,1<<13);call('NesApp_Poll')
+ assert bytes(u.mem_read(sy['app_state'],1))==b'\0'
+ assert struct.unpack('<HHH',u.mem_read(app_menu,6))==(0,count,0),'zero hits made the library empty'
+ w32(0x40020810,0)
 call('NesMenu_Init',state,8,1,1)
 for _ in range(7):call('NesMenu_Move',state,1)
 assert struct.unpack('<hhh',u.mem_read(state,6))==(7,8,5)

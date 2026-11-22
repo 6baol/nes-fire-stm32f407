@@ -48,6 +48,15 @@ void PixelFont_Text(uint16_t x,uint16_t y,const char *s,uint16_t fg,uint16_t bg,
     LCD_DispString_EN(x,y,(char*)s,fg,bg,scale==1?&Font8x16:scale==2?&Font16x24:&Font24x32);
 }
 
+/* These fixtures contain ASCII only; glyph rasterization has its own ARM test. */
+unsigned CjkFont_Cell(void) { return 16; }
+unsigned Utf8_Length(const char *text) { return (unsigned)strlen(text); }
+unsigned Utf8_Draw(uint16_t x,uint16_t y,const char *text,uint16_t fg,uint16_t bg)
+{
+    PixelFont_Text(x,y,text,fg,bg,2);
+    return Utf8_Length(text)*CjkFont_Cell();
+}
+
 static void stub_open(uint16_t x, uint16_t y, uint16_t w, uint16_t h) { (void)x; (void)y; (void)w; (void)h; }
 static void stub_fill(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c)
 {
@@ -127,6 +136,20 @@ int main(void)
     NesMenu_Status("ROM REJECTED rc=4 - SEE UART");
     assert(fills == 1);
     assert(painted_has("ROM REJECTED rc=4 - SEE UART"));
+
+    reset_paint();
+    NesMenu_LibraryOptions(6,4,1,1);
+    assert(full_clear == 1);
+    assert(painted_has("LOADABLE HEADERS"));
+    assert(painted_has("RECENTLY PLAYED"));
+    assert(painted_has("REMOVE FAVORITE"));
+
+    reset_paint();
+    NesMenu_SaveError("SD SAVE FAILED - CHECK CARD");
+    assert(full_clear == 1);
+    assert(painted_has("SD SAVE FAILED - CHECK CARD"));
+    assert(painted_has("KEY2/SW RETRY SAVE"));
+    assert(painted_has("KEY1 RESUME GAME"));
 
     puts("PASS: menu wrap-around, scrolling window, full repaint coverage,");
     puts("      selection-only repaint, audio/touch status and status line clearing.");

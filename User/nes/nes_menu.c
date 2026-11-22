@@ -133,12 +133,16 @@ static void detail_header(const NesMenuState *m)
     snprintf(count,sizeof(count),"%u/%u",m->count?(unsigned)m->index+1:0,(unsigned)m->count);
     small((uint16_t)(468u-8u*(unsigned)strlen(count)),36,count,MUTED,BG);
     if(!m->count){full_name(0,484,480u/CjkFont_Cell(),"NO GAMES",BG,1);return;}
-    full_name(0,484,480u/CjkFont_Cell(),NesLibrary_Game((unsigned)m->index)->label,BG,1);
+    {
+        const NesRomImage *game=NesLibrary_Game((unsigned)m->index);
+        if(game)full_name(0,484,480u/CjkFont_Cell(),game->label,BG,1);
+    }
 }
 static void detail_cover(const NesMenuState *m)
 {
-    if(!m->count){fallback_cover(0);return;}
-    cover_draw(NesLibrary_Game((unsigned)m->index));
+    const NesRomImage *game=m->count?NesLibrary_Game((unsigned)m->index):0;
+    if(game)cover_draw(game);
+    else fallback_cover(0);
 }
 static void detail_draw(const NesMenuState *m)
 {
@@ -154,7 +158,8 @@ static void row_draw(const NesMenuState *m,unsigned row)
     if(slot>=m->count)return;
     if(slot==(unsigned)m->index){color=ACTIVE;fill(12,y,456,48,color);medium(40,y+(48u-16u)/2,">",ACCENT,color);}
     {
-        const char *label=NesLibrary_Game(slot)->label;
+        const NesRomImage *game=NesLibrary_Game(slot);
+        const char *label=game?game->label:"ENTRY UNAVAILABLE";
         unsigned lines=Utf8_Length(label)>columns?2u:1u;
         unsigned top=y+(48u-lines*cell)/2u;
         full_name(76,top,columns,label,color,0);
@@ -165,6 +170,8 @@ void NesMenu_DrawSelection(const NesMenuState *m)
 void NesMenu_DrawRows(const NesMenuState *m)
 {unsigned i;detail_header(m);for(i=0;i<NES_MENU_ROWS;i++)row_draw(m,i);}
 void NesMenu_DrawCover(const NesMenuState *m){detail_cover(m);}
+void NesMenu_Info(const char *msg)
+{fill(12,530,456,16,BG);if(msg&&msg[0])small(12,530,msg,MUTED,BG);}
 void NesMenu_Status(const char *msg)
 {fill(12,STATUS_Y,456,14,BG);if(msg && msg[0])small(12,STATUS_Y,msg,ACCENT,BG);}
 void NesMenu_Draw(const NesMenuState *m)
@@ -173,11 +180,41 @@ void NesMenu_Draw(const NesMenuState *m)
     text(12,28,"NES FIRE",INK,BG,3);fill(12,80,456,1,LINE);
     NesMenu_DrawSelection(m);
     fill(12,726,456,1,LINE);
-    small(24,742,"UP/DN SELECT  L/R PAGE  CAP/HOLD KEY1 SEARCH",MUTED,BG);
-    small(24,758,"KEY2/SW START   KEY1 SETTINGS",MUTED,BG);
+    small(24,742,"UP/DN SELECT  L/R PAGE  CAP SEARCH",MUTED,BG);
+    small(24,758,"KEY2/SW START  KEY1 SETTINGS  HOLD KEY1 LIBRARY",MUTED,BG);
     if(!m->audio_ok)small(12,732,"AUDIO OFF",ACCENT,BG);
     if(!m->touch_ok)small(396,732,"TOUCH OFF",MUTED,BG);
     NesMenu_Status("");
+}
+
+void NesMenu_LibraryOptions(unsigned cursor,unsigned current_view,int favorite,int has_game)
+{
+    static const char *const labels[]={"SEARCH", "ALL GAMES", "LOADABLE HEADERS",
+        "UNSUPPORTED", "FAVORITES", "RECENTLY PLAYED"};
+    unsigned i;
+    fill(0,0,480,800,BG);
+    text(24,28,"LIBRARY",INK,BG,3);
+    fill(24,80,432,1,LINE);
+    for(i=0;i<NES_LIBRARY_OPTIONS;i++) {
+        unsigned y=126+i*72;
+        uint16_t bg=i==cursor?ACTIVE:PANEL;
+        const char *label=i<6?labels[i]:favorite?"REMOVE FAVORITE":"ADD FAVORITE";
+        fill(24,y,432,52,bg);
+        if(i==current_view)medium(40,y+12,">",ACCENT,bg);
+        medium(70,y+12,label,i==6&&!has_game?MUTED:INK,bg);
+    }
+    small(24,742,"UP/DN MOVE   KEY2/SW SELECT   KEY1 BACK",MUTED,BG);
+}
+
+void NesMenu_SaveError(const char *reason)
+{
+    fill(0,0,480,800,BG);
+    text(24,28,"SAVE FAILED",ACCENT,BG,3);
+    fill(24,80,432,1,LINE);
+    small(24,155,reason,MUTED,BG);
+    medium(24,244,"KEY2/SW RETRY SAVE",INK,BG);
+    medium(24,294,"KEY1 RESUME GAME",INK,BG);
+    small(24,368,"KEEP POWER ON TO RETAIN THIS PROGRESS",MUTED,BG);
 }
 
 static void input_key(unsigned x,unsigned y,unsigned w,const char *label,int on)

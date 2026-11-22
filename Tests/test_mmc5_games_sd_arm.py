@@ -10,7 +10,8 @@ for index,name in enumerate(names):
  if len(sys.argv)>1 and index!=int(sys.argv[1]):continue
  a=SdArm(files);assert a.boot()==0 and a.call('NesLibrary_Load',a.game_index(f'MMC5{index}.NES'))==0
  slug='cv3' if index==0 else 'justbreed';frames=0;pcm=bytearray();snapshots=[]
- initial_reads=a.blocks_read;raw=files[f'MMC5{index}.NES'];assert bytes(a.u.mem_read(0x6c020000,len(raw)))==raw
+ initial_reads=a.blocks_read;initial_writes=a.blocks_written
+ raw=files[f'MMC5{index}.NES'];assert bytes(a.u.mem_read(0x6c020000,len(raw)))==raw
  def run(n,pad=0,label=None):
   global frames
   a.u.mem_write(a.addr('PADdata'),bytes([pad]))
@@ -19,7 +20,7 @@ for index,name in enumerate(names):
    samples=(frames+1)*11025//60-frames*11025//60;frames+=1
    a.call('apu_process',0x6c010000,samples);pcm.extend(a.u.mem_read(0x6c010000,samples))
   assert a.r32(a.addr('nes_faults'))==0 and a.r32(a.addr('nes_apu_queue_drops'))==0
-  assert a.blocks_read==initial_reads and a.blocks_written==0
+  assert a.blocks_read==initial_reads and a.blocks_written==initial_writes
   if label:
    a.save_frame('mmc5_'+slug+'_'+label);snapshots.append(label)
    print(slug,label,frames,'colors',len(set(a.frame)),flush=True)
@@ -49,7 +50,7 @@ for index,name in enumerate(names):
  assert bytes(a.u.mem_read(0x6c020000,len(raw)))==raw
  if index==1:
   sram=a.r32(a.addr('NES_SRAM'));saved=bytes(a.u.mem_read(sram,8192))
-  assert a.call('NesLibrary_Save')==0 and a.blocks_written>0
+  assert a.call('NesLibrary_Save')==0 and a.blocks_written>initial_writes
   assert a.boot()==0 and a.call('NesLibrary_Load',a.game_index(f'MMC5{index}.NES'))==0
   assert bytes(a.u.mem_read(sram,8192))==saved and a.r32(a.addr('nes_sd_save_restores'))>=1
  expansion_writes=sum(0x5000<=ad<=0x5015 for _,ad,v in a.apu_log)

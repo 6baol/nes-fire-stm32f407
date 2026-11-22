@@ -715,18 +715,42 @@ void  PPU_WriteToPort(uint8 data,uint16 addr )
   solid++; \
   p++; \
 //***************************************************************************************
-#define NEW_BG_PIXEL() \
-	if (col) {\
-		col |= attrib_bits; \
-		*solid = BG_WRITTEN_FLAG; \
-	} else { \
-		col = 0; \
-		*solid = 0; \
-	} \
-    *p = ppu->bg_pal[col]; \
-	solid++; \
-	p++; \
+#if NES_RAM_SPEED == 0
+/* A compiled CHR nibble represents two palette indices, high pixel first.
+ * Byte arrays preserve that order even when fine scroll unaligns the row. */
+static uint8 bg_pairs[4][16][2], cached_bg_pal[16];
+static uint8 bg_coverage[256][4];
+static uint8 coverage_ready;
 
+static void prepare_bg_pairs(const uint8 *palette)
+{
+    unsigned group, pair, pixel;
+    if (!coverage_ready) {
+        for (group = 0; group < 256; ++group)
+            for (pixel = 0; pixel < 4; ++pixel)
+                bg_coverage[group][pixel] =
+                    ((group >> (6 - 2 * pixel)) & 3) ? BG_WRITTEN_FLAG : 0;
+        coverage_ready = 1;
+    }
+    if (!memcmp(cached_bg_pal, palette, sizeof(cached_bg_pal))) return;
+    memcpy(cached_bg_pal, palette, sizeof(cached_bg_pal));
+    for (group = 0; group < 4; ++group) {
+        for (pair = 0; pair < 16; ++pair) {
+            unsigned left = pair >> 2, right = pair & 3;
+            bg_pairs[group][pair][0] = palette[left ? group * 4 + left : 0];
+            bg_pairs[group][pair][1] = palette[right ? group * 4 + right : 0];
+        }
+    }
+}
+
+static inline void draw_bg_group(uint8 *dest, uint8 *solid, uint8 packed,
+                                 const uint8 pairs[16][2])
+{
+    memcpy(dest, pairs[packed >> 4], 2);
+    memcpy(dest + 2, pairs[packed & 15], 2);
+    memcpy(solid, bg_coverage[packed], 4);
+}
+#endif
 
 void render_bg(uint8* buf)
 {
@@ -734,8 +758,6 @@ void render_bg(uint8* buf)
   uint32 i;
   uint8 *solid;
   uint8 *data;
-  uint32 col;
-
   uint32 tile_x; // pixel coords within nametable像素坐标内nametable
   uint32 tile_y;
   uint32 name_addr;
@@ -749,8 +771,9 @@ void render_bg(uint8* buf)
 		uint8 pattern_lo;
 	    uint8 pattern_hi;
 	    uint8 pattern_mask;
+        uint32 col;
 #else                     
-		int col2;
+		prepare_bg_pairs(ppu->bg_pal);
 #endif		
 
   tile_x = (ppu->loopy_v & 0x001F);
@@ -812,25 +835,13 @@ void render_bg(uint8* buf)
             data=MAP5_Tile(pattern_addr,1,name_addr,33-i,&attrib_bits,&row)+TILE_OFFSET(row);
         } else data = TILE(pattern_addr) + TILE_OFFSET(line);
 
-		col2 = *data++;
-		col = col2 >> 6; 
-		NEW_BG_PIXEL();
-		col = (col2 >> 4) & 0x03;
-		NEW_BG_PIXEL();
-		col = (col2 >> 2) & 0x03;
-		NEW_BG_PIXEL();
-		col = col2 & 0x03;
-		NEW_BG_PIXEL();
-		
-		col2 = *data++;
-		col = col2 >> 6; 
-		NEW_BG_PIXEL();
-		col = (col2 >> 4) & 0x03;
-		NEW_BG_PIXEL();
-		col = (col2 >> 2) & 0x03;
-		NEW_BG_PIXEL();
-		col = col2 & 0x03;
-		NEW_BG_PIXEL();                    
+		{
+            const uint8 (*pairs)[2] = bg_pairs[attrib_bits >> 2];
+            draw_bg_group(p, solid, data[0], pairs);
+            draw_bg_group(p + 4, solid + 4, data[1], pairs);
+            p += 8;
+            solid += 8;
+        }
 #endif	
 
     tile_x++;
