@@ -1,0 +1,8 @@
+{
+  "version": "0.26-famicom",
+  "programmer": "pyOCD CMSIS-DAP / SWD 1000000Hz",
+  "bytes_verified": 169984,
+  "sha256": "09fdde62d3d022e3aa95851c89e3d25fb5ab0365993094c695822dc5765dd0ec",
+  "full_readback_match": true,
+  "verify_only": false
+}

@@ -1,0 +1,114 @@
+{
+  "version": "0.17.4-audio-preview",
+  "build": "0 errors, 0 warnings (full rebuild)",
+  "flashed": false,
+  "hardware_tested": false,
+  "scope": "local ARM tests; I2C transport mocked; user flashes and confirms speaker/headphone sound",
+  "settings": [
+    "HEADPHONES",
+    "SPEAKER",
+    "MUTE"
+  ],
+  "default": "HEADPHONES",
+  "persistence": "RAM until reset",
+  "files": {
+    "NesFire_v0.17.4-audio-preview.hex": {
+      "bytes": 391765,
+      "sha256": "98744ff0a6fc3b71b5e776f8ebba99f750a05481be1a8e4ae574d7d50e40c851"
+    },
+    "NesFire_v0.17.4-audio-preview.bin": {
+      "bytes": 139264,
+      "sha256": "61dcd421c7bb99e1f137db1e130b7442c44c512ad9cc01a5e80cea26f92123d7"
+    }
+  },
+  "axf_sha256": "2427838a739e6de480fa3c8dc02b1e371a49b48b839a568acf628ad2f5886660",
+  "routing": {
+    "result": "PASS",
+    "hardware_tested": false,
+    "scope": "real ARM route logic, mocked I2C writes",
+    "checks": [
+      "exclusive headphones/speaker/off paths",
+      "BTL inversion and equal paired volume",
+      "mute before route change",
+      "menu/loading mute preserved",
+      "silent gameplay drains APU",
+      "invalid/uninitialised selection rejected",
+      "failed I2C change mutes both outputs",
+      "retry recovers"
+    ],
+    "axf_sha256": "2427838a739e6de480fa3c8dc02b1e371a49b48b839a568acf628ad2f5886660"
+  },
+  "menu": {
+    "result": "PASS",
+    "scope": "actual Keil menu/LCD glyph code under Unicorn, not board LCD capture",
+    "checks": [
+      "all LCD rectangles bounded",
+      "all pixel streams bounded",
+      "three games without controller ROM",
+      "full game names",
+      "selection redraw avoids full clear",
+      "wrap/scroll",
+      "zero games",
+      "unknown cover and long title",
+      "8x8 font scaling",
+      "native settings button highlight/release",
+      "KEY1 opens settings without loading ROM",
+      "SW hold returns to same game",
+      "one selection per deflection; no hold/noise/rebound repeat",
+      "60ms stable centre rearm",
+      "all three covers match native source pixel for pixel after one scaling pass",
+      "Settings output selector, no hold-repeat, choice retained on return",
+      "actual KEY2 -> SD/FDS start and long SW return with audio pause/resume"
+    ],
+    "axf_sha256": "2427838a739e6de480fa3c8dc02b1e371a49b48b839a568acf628ad2f5886660",
+    "storage": "ARM FatFs / synthetic FAT32"
+  },
+  "audio": {
+    "result": "PASS",
+    "tone_hz": 438.739013671875,
+    "stereo_identical": true,
+    "pcm_range": [
+      56,
+      209
+    ],
+    "mario_frames": 260,
+    "apu_queue_drops": 0,
+    "cpu_faults": 0,
+    "scope": "actual ARM APU and CPU under Unicorn; codec audibility needs board test",
+    "bin_sha256": "61dcd421c7bb99e1f137db1e130b7442c44c512ad9cc01a5e80cea26f92123d7"
+  },
+  "sd_library": {
+    "result": "PASS",
+    "checks": [
+      "real ARM FatFs reads FAT32 library",
+      "five ROMs loaded and verified in SRAM",
+      "five decoded COVs match originals",
+      "menu cover cache",
+      "live ROM protected from cover reads",
+      "no SD reads during game frames",
+      "arena upper boundary",
+      "no card and invalid FAT fallback",
+      "missing/empty/truncated/NUL/oversized/unsafe/unsupported/duplicate catalog rejected",
+      "missing/short/corrupt/unreadable ROM rejected",
+      "cover truncation and CRC rejected",
+      "64 entries accepted, 65 rejected",
+      "odd-sized 4-bit / 8-bit / portrait COV decoded exactly",
+      "CRC-valid wrong mapper header rejected",
+      "FAT32 with MBR partition and unpartitioned FAT32 both mount"
+    ],
+    "hardware_tested": false,
+    "filesystem": "actual compiled FatFs R0.16 on synthetic FAT32 blocks",
+    "axf_sha256": "2427838a739e6de480fa3c8dc02b1e371a49b48b839a568acf628ad2f5886660"
+  },
+  "wizards_visual": {
+    "result": "PASS",
+    "hardware_tested": false,
+    "scope": "real ARM CPU/PPU, consecutive Wizards HUD/scroll check",
+    "full_draw_frames": 120,
+    "skipped_frames": 120,
+    "one_in_three_logic_frames": 360,
+    "hud_frames_checked": 240,
+    "draw_skip_cpu_ram_pc_match": true,
+    "axf_sha256": "2427838a739e6de480fa3c8dc02b1e371a49b48b839a568acf628ad2f5886660"
+  }
+}

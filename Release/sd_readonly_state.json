@@ -1,0 +1,93 @@
+{
+  "reset": false,
+  "halt_requested": false,
+  "flash_written": false,
+  "state": "State.RUNNING",
+  "flash_vectors_match": true,
+  "sdio": {
+    "POWER": "0x3",
+    "CLKCR": "0x92e",
+    "ARG": "0x217f0000",
+    "CMD": "0x44d",
+    "RESPCMD": "0xd",
+    "RESP1": "0x900",
+    "DCTRL": "0x93",
+    "STA": "0x0"
+  },
+  "cpu_faults": {
+    "ICSR": "0x0",
+    "CFSR": "0x0",
+    "HFSR": "0x0",
+    "MMFAR": "0x8006e70",
+    "BFAR": "0x2000047c",
+    "PCSR": "0x8006d7c"
+  },
+  "rcc": {
+    "CR": "0xf037583",
+    "PLLCFGR": "0x7405419",
+    "CFGR": "0x940a",
+    "APB2ENR": "0x910"
+  },
+  "gpioc": {
+    "MODER": "0x2aa2000",
+    "PUPDR": "0x0",
+    "IDR": "0xdf42",
+    "AFRH": "0xccccc"
+  },
+  "gpiod": {
+    "MODER": "0xaaaa5a6a",
+    "PUPDR": "0x1000",
+    "IDR": "0x2fd",
+    "AFRL": "0xcc0ccc"
+  },
+  "g_sd_handle": "002c014000000000000000000000000000000000000000002e000000000000000000000000000000000000000000000001000000010000000000000000000000000000000100000001000000b50500007f21000000c8ed010002000000c8ed010002000032000e400000595b807f717b860040064134121144535050008012007ea30100",
+  "g_sd_card_info": "0100000001000000b50500007f21000000c8ed010002000000c8ed0100020000",
+  "sd_initialised": "01",
+  "sd_active": "01",
+  "sd_count": "05000000",
+  "app_state": "00",
+  "nes_sd_file_reads": "09000000",
+  "status": "2c120208",
+  "uwTick": "aef90000",
+  "nes_audio_blocks": "8d0a0000",
+  "status_text": "",
+  "ticks": [
+    63939,
+    64144
+  ],
+  "sd_handle_words": [
+    "0x40012c00",
+    "0x0",
+    "0x0",
+    "0x0",
+    "0x0",
+    "0x0",
+    "0x2e",
+    "0x0",
+    "0x0",
+    "0x0",
+    "0x0",
+    "0x0",
+    "0x1",
+    "0x1",
+    "0x0",
+    "0x0",
+    "0x0",
+    "0x1",
+    "0x1",
+    "0x5b5",
+    "0x217f",
+    "0x1edc800",
+    "0x200",
+    "0x1edc800",
+    "0x200",
+    "0x400e0032",
+    "0x5b590000",
+    "0x7b717f80",
+    "0x6400086",
+    "0x11123441",
+    "0x50505344",
+    "0x128000",
+    "0x1a37e"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "version": "0.5",
+  "bin_sha256": "51469f4cd354160d086e3180258c6b1012b0c1cdfe71159aad7b822ee177019a",
+  "user_confirmed_light_touch": true,
+  "hardware_errors_start": 0,
+  "hardware_errors_end": 0,
+  "presses_start": 9,
+  "presses_end": 30,
+  "select_bit_observed": true,
+  "pressed_observed": true,
+  "live_trace_seconds": 59.64,
+  "accepted_changes": [
+    "first-edge IRQ latch",
+    "press threshold baseline+50",
+    "first valid sample triggers press",
+    "release threshold baseline+25 with two samples",
+    "immediate CAP indicator on state change"
+  ]
+}

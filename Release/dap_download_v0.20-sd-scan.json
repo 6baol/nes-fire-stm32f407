@@ -1,0 +1,8 @@
+{
+  "version": "0.20-sd-scan",
+  "programmer": "pyOCD CMSIS-DAP / SWD 1000000Hz",
+  "bytes_verified": 164864,
+  "sha256": "a45da1fd1f7e6ee56e171df236e9cdfd953c3263f5e43de2003ad1959496c849",
+  "full_readback_match": true,
+  "verify_only": false
+}

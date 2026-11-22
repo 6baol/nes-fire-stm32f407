@@ -1,0 +1,43 @@
+{
+  "version": "0.19-mmc5-preview",
+  "recorded_at": "2026-11-19T10:40:36.868525+08:00",
+  "result": "PASS",
+  "hardware_tested": true,
+  "scope": "Basic user-observed MMC5 gameplay/display/audio acceptance for the two supplied games; not a complete MMC5 or long-term acceptance",
+  "user_flashed": true,
+  "flashed_by_agent": false,
+  "agent_reset_requested": false,
+  "agent_halt_requested": false,
+  "agent_keys_injected": false,
+  "games": [
+    {
+      "file": "Castlevania III - Dracula's Curse (USA).nes",
+      "feedback": "画面、操作和声音都正常",
+      "scope": "User followed stage 1-01 direction / KEY2 jump / KEY1 attack / speaker music and tempo check",
+      "result": "PASS"
+    },
+    {
+      "file": "Just Breed (Japan).nes",
+      "feedback": "文字、画面和音乐正常",
+      "scope": "User checked new-game/name entry, opening text, town characters, music and tempo",
+      "result": "PASS"
+    }
+  ],
+  "flash_bytes_verified": 155648,
+  "bin_sha256": "90b05e69aec7d7f870d585ae530d36861f5de2d8f37cf052efadf9eb7acb23d9",
+  "readonly_sampling": {
+    "report": "board_menu_readonly_acceptance_v0.19.json",
+    "sampled_state": "menu",
+    "library_count": 7,
+    "speaker_route_configured": true,
+    "faults_zero": true,
+    "game_frame_rate_measured": false
+  },
+  "not_tested": [
+    "Instantaneous/measured in-game board FPS",
+    "Long-term play and later chapters",
+    "MMC5 vertical split in a commercial game",
+    "On-board persistent save cold restore",
+    "Other MMC5 games and board profiles"
+  ]
+}

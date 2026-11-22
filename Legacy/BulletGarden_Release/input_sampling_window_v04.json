@@ -1,0 +1,7 @@
+{
+  "window_ms": 3007,
+  "pairs": 1509,
+  "pair_rate_hz": 501.8,
+  "max_pair_gap_ms": 3,
+  "previous_lifetime_max_including_debug_ms": 69049
+}

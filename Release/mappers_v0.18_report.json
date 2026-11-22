@@ -1,0 +1,225 @@
+{
+  "version": "0.18-mappers-preview",
+  "result": "PASS",
+  "created": "2026-11-19T00:26:57.744233+08:00",
+  "build": "0 errors, 0 warnings (full rebuild)",
+  "hardware_tested": false,
+  "flashed": false,
+  "physical_sd_written": false,
+  "added_mappers": [
+    11,
+    66,
+    71
+  ],
+  "commercial_roms_for_new_mappers_tested": false,
+  "scope": "Offline actual Keil ARM code; synthetic mapper cartridges and FAT32 blocks; existing-game regression only",
+  "memory_bytes": {
+    "code": 92816,
+    "ro": 56344,
+    "rw": 276,
+    "zi": 79084,
+    "bin": 150528,
+    "bin_growth_from_v0_17_7": 1024
+  },
+  "axf_sha256": "beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5",
+  "firmware": {
+    "NesFire_v0.18-mappers-preview.hex": {
+      "bytes": 423445,
+      "sha256": "42ea431f82f00d4a47ff8bba6ab9643b3f85ebaedcb9030dea48228c61ecaf02"
+    },
+    "NesFire_v0.18-mappers-preview.bin": {
+      "bytes": 150528,
+      "sha256": "e4d696951170d0180e292892c70175eef68ecc5096d735260945cd5e0a781a33"
+    }
+  },
+  "import_tests": {
+    "result": "PASS",
+    "count": 14,
+    "log": "Tests/nes_output/mapper_import_v0.18.log"
+  },
+  "existing_games_readonly_preflight": [
+    {
+      "file": "smb.nes",
+      "mapper": 0,
+      "source_sha256": "0b3d9e1f01ed1668205bab34d6c82b0e281456e137352e4f36a9b2cfa3b66dea",
+      "sha256": "f61548fdf1670cffefcc4f0b7bdcdd9eaba0c226e3b74f8666071496988248de"
+    },
+    {
+      "file": "Super Mario Bros. 2 (Japan) (En).fds",
+      "mapper": 20,
+      "source_sha256": "ff8afb9ae6b705b4e51dbcb193dcebadf4c049800a71003d3a45052648e52eda",
+      "sha256": "ff8afb9ae6b705b4e51dbcb193dcebadf4c049800a71003d3a45052648e52eda"
+    },
+    {
+      "file": "SMB3.nes",
+      "mapper": 4,
+      "source_sha256": "6ea0777ca520ba7ad7b0ea0f6452140d59aa0b1dffe5045cb1e8020dde10c267",
+      "sha256": "6ea0777ca520ba7ad7b0ea0f6452140d59aa0b1dffe5045cb1e8020dde10c267"
+    },
+    {
+      "file": "Metroid (USA).nes",
+      "mapper": 1,
+      "source_sha256": "e6e6b7014685adae447ebb3833242815747bc1e5df83ade79f693fb67cf565b6",
+      "sha256": "e6e6b7014685adae447ebb3833242815747bc1e5df83ade79f693fb67cf565b6"
+    },
+    {
+      "file": "Wizards & Warriors (U).nes",
+      "mapper": 7,
+      "source_sha256": "463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc",
+      "sha256": "463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc"
+    }
+  ],
+  "reports": {
+    "discrete_mappers_results": {
+      "result": "PASS",
+      "mappers": [
+        11,
+        66,
+        71
+      ],
+      "tests": [
+        "test_registers_and_wrap",
+        "test_conflicts_and_aliases",
+        "test_live_6502_and_reset_vector",
+        "test_gxrom_rmw",
+        "test_camerica_mirroring_and_chr",
+        "test_absent_sram_and_switching",
+        "test_header_validation"
+      ],
+      "scope": "synthetic cartridges on actual ARM AXF; no commercial-game or hardware acceptance",
+      "hardware_tested": false,
+      "axf_sha256": "beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5"
+    },
+    "discrete_mappers_sd_results": {
+      "result": "PASS",
+      "mappers": [
+        11,
+        66,
+        71
+      ],
+      "hardware_tested": false,
+      "scope": "actual ARM FatFs/index/preload/emulator; in-memory synthetic FAT32 and cartridges",
+      "checks": [
+        "three mapper IDs accepted in index",
+        "CRC checked and preload bytes verified",
+        "6502 frames without faults",
+        "bank/CHR mapping after SD load",
+        "no SD access during game frames",
+        "no SD writes"
+      ],
+      "axf_sha256": "beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5"
+    },
+    "mapper_regression_core": {
+      "result": "PASS",
+      "hardware_tested": false,
+      "tests": [
+        {
+          "test": "test_mmc1_axrom_arm.py",
+          "exit_code": 0,
+          "seconds": 2.52,
+          "output_tail": "PASS: test_serial_and_mapping\nPASS: test_nametables\nPASS: test_sram\nPASS: test_rmw_and_live_code\nPASS: test_chr_ram_and_snrom_gate\nPASS: test_axrom\nPASS: test_validation\nPASS: test_switching\n"
+        },
+        {
+          "test": "test_mmc3_arm.py",
+          "exit_code": 0,
+          "seconds": 1.2,
+          "output_tail": "PASS: MMC3 mapping, SRAM, IRQ registers and frame integration\n"
+        },
+        {
+          "test": "test_mmc3_switch_arm.py",
+          "exit_code": 0,
+          "seconds": 1.03,
+          "output_tail": "{\n  \"result\": \"PASS\",\n  \"sequence\": [\n    \"SMB3\",\n    \"SMB1\",\n    \"SMB2 FDS\",\n    \"SMB3\"\n  ],\n  \"checks\": [\n    \"SMB3 IRQ pending and SRAM disabled\",\n    \"SMB1 normal cartridge dispatch\",\n    \"SMB2 FDS PRG RAM dispatch\",\n    \"SMB3 restored with cleared IRQ and writable SRAM\"\n  ],\n  \"cpu_faults\": 0,\n  \"scope\": \"actual Keil ARM instructions under Unicorn; not a board test\",\n  \"hardware_tested\": false\n}\n"
+        },
+        {
+          "test": "test_nmi_entry_arm.py",
+          "exit_code": 0,
+          "seconds": 0.78,
+          "output_tail": "PASS: pending NMI pre-empts slice, costs 7 cycles, handler/RTI resume mainline\n"
+        },
+        {
+          "test": "test_sd_library_arm.py",
+          "exit_code": 0,
+          "seconds": 5.91,
+          "output_tail": "SS SD: 3 METROID bytes 131088\nPASS SD: 4 WIZARDS & WARRIORS bytes 131088\n{\n  \"result\": \"PASS\",\n  \"checks\": [\n    \"real ARM FatFs reads FAT32 library\",\n    \"five ROMs loaded and verified in SRAM\",\n    \"five decoded COVs match originals\",\n    \"menu cover cache\",\n    \"live ROM protected from cover reads\",\n    \"no SD reads during game frames\",\n    \"arena upper boundary\",\n    \"no card and invalid FAT fallback\",\n    \"missing/empty/truncated/NUL/oversized/unsafe/unsupported/duplicate catalog rejected\",\n    \"missing/short/corrupt/unreadable ROM rejected\",\n    \"cover truncation and CRC rejected\",\n    \"64 entries accepted, 65 rejected\",\n    \"odd-sized 4-bit / 8-bit / portrait COV decoded exactly\",\n    \"CRC-valid wrong mapper header rejected\",\n    \"FAT32 with MBR partition and unpartitioned FAT32 both mount\"\n  ],\n  \"hardware_tested\": false,\n  \"filesystem\": \"actual compiled FatFs R0.16 on synthetic FAT32 blocks\",\n  \"axf_sha256\": \"beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5\"\n}\n"
+        },
+        {
+          "test": "test_sd_saves_arm.py",
+          "exit_code": 0,
+          "seconds": 17.97,
+          "output_tail": "ered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 15,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 16,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 17,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 18,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 19,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 20,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 21,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 22,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 23,\n      \"save_result\": 0,\n      \"recovered\": \"new\"\n    }\n  ],\n  \"axf_sha256\": \"beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5\"\n}\n"
+        },
+        {
+          "test": "test_audio_output_arm.py",
+          "exit_code": 0,
+          "seconds": 0.88,
+          "output_tail": "{\n  \"result\": \"PASS\",\n  \"hardware_tested\": false,\n  \"scope\": \"real ARM route logic, mocked I2C writes\",\n  \"checks\": [\n    \"cold init selects speaker and disables headphones\",\n    \"reinitialisation restores speaker default\",\n    \"exclusive headphones/speaker/off paths\",\n    \"BTL inversion and equal paired volume\",\n    \"mute before route change\",\n    \"menu/loading mute preserved\",\n    \"silent gameplay drains APU\",\n    \"invalid/uninitialised selection rejected\",\n    \"failed I2C change mutes both outputs\",\n    \"retry recovers\"\n  ],\n  \"axf_sha256\": \"beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5\"\n}\n"
+        },
+        {
+          "test": "test_sd_audio_mute_arm.py",
+          "exit_code": 0,
+          "seconds": 0.68,
+          "output_tail": "PASS: muted DMA outputs zero without processing APU/ROM; unmute resumes APU\n"
+        },
+        {
+          "test": "test_fds_drive_arm.py",
+          "exit_code": 0,
+          "seconds": 4.02,
+          "output_tail": "PASS: sync, gaps, all 18 blocks, 52269 disk bytes via actual ARM registers\nPASS: motor stop, rewind, restart, read-only status and unmount\nPASS: known damaged BIOS rejected without changing CPU state\nNo real BIOS/game/physical-board boot is claimed.\n"
+        },
+        {
+          "test": "test_fds_sides_arm.py",
+          "exit_code": 0,
+          "seconds": 0.85,
+          "output_tail": "{\n  \"result\": \"PASS\",\n  \"hardware_tested\": false,\n  \"checks\": [\n    \"side B stream contents\",\n    \"half-second eject visible to BIOS\",\n    \"no CPU/RAM reset\",\n    \"no source mutation\",\n    \"invalid/pending requests rejected\",\n    \"real Select+left/right chord\",\n    \"held chord does not repeat\",\n    \"chord filtered from game\",\n    \"wrap and unmount cancel\"\n  ],\n  \"axf_sha256\": \"beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5\"\n}\n"
+        },
+        {
+          "test": "test_fds_audio_arm.py",
+          "exit_code": 0,
+          "seconds": 2.17,
+          "output_tail": "{\n  \"result\": \"PASS\",\n  \"hardware_tested\": false,\n  \"scope\": \"real ARM FDS registers/APU mixer; synthetic waveform, not headphone recording\",\n  \"tone_hz\": 439.9815242494226,\n  \"static_modulated_hz\": 549.9769053117783,\n  \"pcm_range\": [\n    112,\n    143\n  ],\n  \"checks\": [\n    \"I/O and wave write gates\",\n    \"wave readback and 6-bit clamp\",\n    \"write-mode output hold and immediate mute\",\n    \"volume/mod envelopes and halt\",\n    \"long interval overflow fallback\",\n    \"odd-position modulation writes preserve paired entries\",\n    \"manual gain saturation\",\n    \"440Hz wavetable\",\n    \"550Hz static modulation\",\n    \"master-volume ratios\",\n    \"programmed modulation table\",\n    \"timestamped writes in APU queue\",\n    \"no APU queue drops\"\n  ],\n  \"axf_sha256\": \"beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5\"\n}\n"
+        }
+      ],
+      "axf_sha256": "beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5"
+    },
+    "mapper_regression_games": {
+      "result": "PASS",
+      "hardware_tested": false,
+      "tests": [
+        {
+          "test": "test_sd_gameplay_arm.py",
+          "args": [],
+          "exit_code": 0,
+          "seconds": 64.77,
+          "output_tail": "ked\": true,\n      \"axf_sha256\": \"beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5\"\n    },\n    {\n      \"file\": \"Wizards & Warriors (U).nes\",\n      \"sha256\": \"463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc\",\n      \"frames\": 1222,\n      \"cpu_faults\": 0,\n      \"apu_queue_drops\": 0,\n      \"pcm_range\": [\n        12,\n        236\n      ],\n      \"hardware_tested\": false,\n      \"player_x_before\": 94.7,\n      \"player_x_right\": 108.2,\n      \"initial_ground_y\": 79,\n      \"jump_y\": [\n        79,\n        57,\n        57,\n        57,\n        72,\n        68,\n        64,\n        60,\n        56,\n        52,\n        48,\n        45\n      ],\n      \"title_and_start_to_game\": true,\n      \"movement_and_jump_checked\": true,\n      \"axf_sha256\": \"beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5\"\n    }\n  ],\n  \"smb2_fds_title_and_1_1\": true,\n  \"no_sd_reads_during_game_frames\": true,\n  \"axf_sha256\": \"beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5\"\n}\n"
+        },
+        {
+          "test": "test_wizards_visual_arm.py",
+          "args": [],
+          "exit_code": 0,
+          "seconds": 24.9,
+          "output_tail": "PASS draw 120 frames\nPASS skip 120 frames\nPASS third 360 frames\n{\n  \"result\": \"PASS\",\n  \"hardware_tested\": false,\n  \"scope\": \"real ARM CPU/PPU, consecutive Wizards HUD/scroll check\",\n  \"full_draw_frames\": 120,\n  \"skipped_frames\": 120,\n  \"one_in_three_logic_frames\": 360,\n  \"hud_frames_checked\": 240,\n  \"draw_skip_cpu_ram_pc_match\": true,\n  \"axf_sha256\": \"beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5\"\n}\n"
+        },
+        {
+          "test": "render_menu_arm.py",
+          "args": [
+            "--sd"
+          ],
+          "exit_code": 0,
+          "seconds": 7.42,
+          "output_tail": "menu_smb2.png LCD pixels 183808\nmenu_smb3.png LCD pixels 183808\nmenu_metroid.png LCD pixels 178176\nmenu_wizards.png LCD pixels 180736\nPASS: LCD bounds, artwork, navigation and fallbacks; rendered to D:\\Project\\BA_Game\\Nes_fire_emulator\\Tests\\nes_output\n"
+        }
+      ],
+      "axf_sha256": "beef368298a7bf47a96bc583c508bf3bff401392aa246c15b21d3ce6760ddfe5"
+    }
+  },
+  "limitations": [
+    "No new commercial game or board acceptance",
+    "Mapper 11 legacy iNES no-conflict policy",
+    "Mapper 66 standard GNROM/MHROM only",
+    "Mapper 71 legacy Fire Hawk compatibility; no mapper 232",
+    "No explicit NES 2.0 submappers",
+    "Absent SRAM reads return zero, not electrical open bus",
+    "MMC5 and other unimplemented mappers remain unsupported"
+  ]
+}

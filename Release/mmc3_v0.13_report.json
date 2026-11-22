@@ -1,0 +1,192 @@
+{
+  "result": "PASS",
+  "version": "0.13-mmc3-preview",
+  "date": "2026-11-17",
+  "scope": "Original SMB3 Mapper 4 implementation, menu import, local Keil build, and execution of the real ARM AXF under Unicorn",
+  "hardware": {
+    "firmware_flashed": false,
+    "dap_swd_connected_or_used": false,
+    "board_reset": false,
+    "board_sampling_or_button_scripts": false,
+    "hardware_tested": false,
+    "real_board_acceptance": false,
+    "headphone_acceptance": false,
+    "note": "No firmware was programmed and no real-board acceptance was performed. Historical v0.10/v0.11 hardware records do not apply to this preview."
+  },
+  "smb3": {
+    "file": "Roms/SMB3.nes",
+    "label": "SUPER MARIO BROS. 3",
+    "menu_index_zero_based": 3,
+    "bytes": 393232,
+    "mapper": 4,
+    "prg_bytes": 262144,
+    "chr_bytes": 131072,
+    "reset_vector": "0xFF40",
+    "sha256": "6ea0777ca520ba7ad7b0ea0f6452140d59aa0b1dffe5045cb1e8020dde10c267",
+    "source_preserved": true,
+    "rom_header_modified": false
+  },
+  "menu": {
+    "entries_in_order": [
+      "SUPER MARIO BROS.",
+      "SUPER MARIO BROS. 2",
+      "CONTROLLER TEST",
+      "SUPER MARIO BROS. 3"
+    ],
+    "rom_payload_bytes": 524300,
+    "rom_payload_budget_bytes": 786432,
+    "fourth_item_full_name_verified": true,
+    "fourth_item_scroll_verified": true,
+    "existing_cover_mechanism_preserved": true,
+    "smb3_cover": "real SMB3 title screen packed as Assets/posters/smb3_title.png; all cover outer border frames removed"
+  },
+  "build": {
+    "compiler": "Arm Compiler 6.24",
+    "errors": 0,
+    "warnings": 0,
+    "code_bytes": 65072,
+    "ro_data_bytes": 672992,
+    "rw_data_bytes": 248,
+    "zi_data_bytes": 62400,
+    "linker_rom_bytes": 738312,
+    "internal_ram_bytes": 62648,
+    "internal_ram_region_bytes": 131072,
+    "internal_ram_free_bytes": 68424,
+    "axf_sha256": "f268c053f849502ccb85ed34e6522d90846092f4698077c3d2047e169847606a",
+    "hex": {
+      "file": "Release/NesFire_v0.13-mmc3-preview.hex",
+      "bytes": 2079598,
+      "sha256": "3aa067acc44e23009d130cbf0f1db8493c091317e82ddee1d3ea9eb5d0c1e5d3"
+    },
+    "bin": {
+      "file": "Release/NesFire_v0.13-mmc3-preview.bin",
+      "bytes": 739328,
+      "sha256": "d541043a43d81c83e93190c34e79740b7f09bcc3858e9c8a6c8f85384840a608"
+    },
+    "cover_layout": "Cover and rows use 12px side margins (456px wide); title screenshot scaled to 360x272; full_art scaled to 456x360",
+    "release_hygiene": "Duplicate four-game outputs accidentally produced under the old v0.12-preview names were removed. Historical v0.10/v0.11 artifacts were not changed."
+  },
+  "mmc3": {
+    "implemented": [
+      "four 8 KiB PRG windows and both PRG modes",
+      "fixed final PRG bank",
+      "1 KiB and 2 KiB CHR banking, even-pair alignment, and inversion",
+      "raw CHR and decoded tile pointer updates",
+      "mirroring control",
+      "PRG RAM enable and write protection in the real 6502 assembly paths",
+      "IRQ latch, reload, enable, acknowledge, pending level, and CPU reassertion",
+      "8 KiB CHR RAM when the iNES CHR count is zero"
+    ],
+    "irq_model": "Scanline-level A12 approximation: clock on visible scanlines and the pre-render line when background or sprites are enabled, with identical drawing and draw-skipped timing",
+    "limitations": [
+      "not dot-accurate MMC3",
+      "no complete A12 rise qualification",
+      "no revision-specific MMC3 behavior claim",
+      "no claim that every Mapper 4 game or all later SMB3 content is compatible"
+    ]
+  },
+  "verification": {
+    "passed_python_scripts": [
+      "Tests/test_game_import.py",
+      "Tests/test_nes_arm.py",
+      "Tests/test_mmc3_arm.py",
+      "Tests/test_smb3_arm.py",
+      "Tests/test_mmc3_switch_arm.py",
+      "Tests/test_nes_games.py",
+      "Tests/test_fds_foundation_arm.py",
+      "Tests/test_fds_drive_arm.py",
+      "Tests/test_smb2_disk_arm.py",
+      "Tests/test_fds_snapshot_arm.py",
+      "Tests/test_nes_audio.py",
+      "Tests/test_nes_scheduler.py",
+      "Tests/test_nes_input.py",
+      "Tests/test_touchpad_arm.py"
+    ],
+    "additional_passed_checks": [
+      "Tests/render_menu_arm.py",
+      "Tests/run_host_tests.sh: ASan/UBSan legacy game and joystick tests plus menu state tests"
+    ],
+    "smb3_real_axf": {
+      "total_logical_frames": 1335,
+      "title_menu_reached": true,
+      "world_map_reached": true,
+      "level_1_1_reached": true,
+      "position_before": [24, 128],
+      "position_after_right": [27, 128],
+      "position_after_b_right": [89, 128],
+      "b_a_jump_y": [128, 124, 121, 117, 114, 111, 108, 105],
+      "pcm_range": [0, 255],
+      "apu_writes": 5711,
+      "cpu_faults": 0,
+      "apu_queue_drops": 0,
+      "draw_skip_cpu_ram_match": true,
+      "draw_skip_mmc3_state_match": true,
+      "draw_skip_pc_match": true,
+      "switch_sequence": "SMB3 -> SMB1 -> SMB2 FDS -> SMB3 without mapper, IRQ, SRAM, or dispatch residue"
+    },
+    "scheduler": {
+      "simulated_seconds": 2,
+      "logic_frames": 120,
+      "draw_frames": 40,
+      "clock_drops": 0
+    },
+    "known_unsupported_probe": {
+      "script": "Tests/test_nes_fds.py",
+      "result": "FAIL",
+      "observed": "legacy FDS-conversion PRG-RAM snapshot: four CPU faults and one colour",
+      "reason": "This is the explicitly unsupported snapshot path, not the real BIOS/disk-drive path. It was not bypassed or used for SMB2 acceptance; Tests/test_smb2_disk_arm.py passes the supported real-disk boot and gameplay flow."
+    }
+  },
+  "screenshots": [
+    "Tests/nes_output/smb3_title_menu.png",
+    "Tests/nes_output/smb3_world_map.png",
+    "Tests/nes_output/smb3_level1_ready.png",
+    "Tests/nes_output/smb3_run_right.png",
+    "Tests/nes_output/menu_smb3.png"
+  ],
+  "modified_files": [
+    "User/nes/mapper/004.cpp",
+    "User/nes/nes_mapper.c",
+    "User/nes/nes_main.c",
+    "User/nes/nes_menu.c",
+    "User/nes/6502.s",
+    "tools/embed_roms.py",
+    "tools/add_game.py",
+    "build.ps1",
+    "Assets/posters/posters.json",
+    "Assets/posters/smb3_title.png",
+    "Tests/test_mmc3_arm.py",
+    "Tests/test_smb3_arm.py",
+    "Tests/test_mmc3_switch_arm.py",
+    "Tests/test_game_import.py",
+    "Tests/test_nes_arm.py",
+    "Tests/test_nes_games.py",
+    "Tests/render_menu_arm.py",
+    "Tests/test_nes_scheduler.py",
+    "Roms/roms.json",
+    "README.md",
+    "Doc/adding_games.md"
+  ],
+  "generated_outputs": [
+    "Roms/current.json",
+    "User/nes/nes_roms.c",
+    "User/nes/nes_roms.h",
+    "User/nes/nes_posters.c",
+    "User/nes/nes_posters.h",
+    "Assets/posters/manifest.json",
+    "Project/Output/Fire_F407ZG.axf",
+    "Release/NesFire_v0.13-mmc3-preview.hex",
+    "Release/NesFire_v0.13-mmc3-preview.bin",
+    "Release/manifest.json",
+    "Release/mmc3_v0.13_report.json",
+    "Tests/nes_output/smb3_boot_results.json",
+    "Tests/nes_output/mmc3_switch_results.json",
+    "Tests/nes_output/menu_visual_results.json"
+  ],
+  "remaining_real_board_validation": [
+    "fourth-item menu selection, scrolling, title-screen cover, and return-to-menu behavior on the LCD",
+    "SMB3 title, map, level scrolling/status area, controls, and later gameplay on hardware",
+    "headphone music/effects, timing, and long-run stability",
+    "physical touch Select coordinates and simultaneous-input feel"
+  ]
+}

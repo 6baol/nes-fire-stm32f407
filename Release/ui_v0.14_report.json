@@ -1,0 +1,30 @@
+{
+  "version": "0.14-ui-preview",
+  "hardware_tested": false,
+  "flashed": false,
+  "games": [
+    {
+      "file": "smb.nes",
+      "label": "SUPER MARIO BROS."
+    },
+    {
+      "file": "Super Mario Bros. 2 (Japan) (En).fds",
+      "label": "SUPER MARIO BROS. 2"
+    },
+    {
+      "file": "SMB3.nes",
+      "label": "SUPER MARIO BROS. 3"
+    }
+  ],
+  "rom_payload_bytes": 499708,
+  "build": "0 errors, 0 warnings",
+  "checks": [
+    "ARM LCD bounds and native settings enter/exit",
+    "simultaneous input highlight and release",
+    "menu ASan/UBSan",
+    "A+B input debounce",
+    "all embedded games boot",
+    "SMB3 gameplay and HUD regression"
+  ],
+  "axf_sha256": "7402619368e33a2309b130b273f14f60256904ee686adaadb584d88b1b399b6a"
+}

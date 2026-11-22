@@ -1,0 +1,72 @@
+{
+  "version": "0.17.7-speaker-preview",
+  "result": "PASS local checks",
+  "default_output": "SPEAKER",
+  "reset_default": "SPEAKER",
+  "speaker_volume": 36,
+  "headphones_default_enabled": false,
+  "flashed": true,
+  "hardware_tested": true,
+  "files": {
+    "NesFire_v0.17.7-speaker-preview.hex": {
+      "bytes": 420565,
+      "sha256": "05d7808e23f5abaf25580f85e17b984561fc0fec1c656fda730e0695585edc24"
+    },
+    "NesFire_v0.17.7-speaker-preview.bin": {
+      "bytes": 149504,
+      "sha256": "490a9cd1fd194f64c6d56c91dd6a6cc3a6985d65af3b1ca38d1955421cb9bf77"
+    }
+  },
+  "axf_sha256": "21969eff77c8cd47c67af072114bd60f416cc8a1de580d927d4a91e44cf4e8cb",
+  "checks": {
+    "audio_output_results": {
+      "result": "PASS",
+      "hardware_tested": false,
+      "scope": "real ARM route logic, mocked I2C writes",
+      "checks": [
+        "cold init selects speaker and disables headphones",
+        "reinitialisation restores speaker default",
+        "exclusive headphones/speaker/off paths",
+        "BTL inversion and equal paired volume",
+        "mute before route change",
+        "menu/loading mute preserved",
+        "silent gameplay drains APU",
+        "invalid/uninitialised selection rejected",
+        "failed I2C change mutes both outputs",
+        "retry recovers"
+      ],
+      "axf_sha256": "21969eff77c8cd47c67af072114bd60f416cc8a1de580d927d4a91e44cf4e8cb"
+    },
+    "menu_visual_results": {
+      "result": "PASS",
+      "scope": "actual Keil menu/LCD glyph code under Unicorn, not board LCD capture",
+      "checks": [
+        "all LCD rectangles bounded",
+        "all pixel streams bounded",
+        "three games without controller ROM",
+        "full game names",
+        "selection redraw avoids full clear",
+        "wrap/scroll",
+        "zero games",
+        "unknown cover and long title",
+        "8x8 font scaling",
+        "native settings button highlight/release",
+        "KEY1 opens settings without loading ROM",
+        "SW hold returns to same game",
+        "one selection per deflection; no hold/noise/rebound repeat",
+        "60ms stable centre rearm",
+        "all three covers match native source pixel for pixel after one scaling pass",
+        "Settings output selector, no hold-repeat, choice retained on return",
+        "save failure remains visible over stick calibration hint",
+        "actual KEY2 -> SD/FDS start and long SW return with audio pause/resume"
+      ],
+      "axf_sha256": "21969eff77c8cd47c67af072114bd60f416cc8a1de580d927d4a91e44cf4e8cb",
+      "storage": "ARM FatFs / synthetic FAT32"
+    }
+  },
+  "additional_check": "DMA menu/loading mute regression passed",
+  "scope": "local build and ARM execution; mocked I2C/PLL readiness; no board access",
+  "flashed_by": "user",
+  "hardware_scope": "speaker default and reset default, codec I2C mirror, live audio DMA/synthesis, listener confirmation; not SD-save or FDS-side hardware acceptance",
+  "hardware_acceptance": "board_speaker_acceptance_v0.17.7.json"
+}

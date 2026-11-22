@@ -1,0 +1,64 @@
+{
+  "hardware_tested": true,
+  "method": "live SWD globals and requested PPU RGB565 capture (not LCD photo)",
+  "reports": [
+    {
+      "scene": "title",
+      "capture": 1,
+      "pc": "0x80067fa",
+      "xpsr": "0x1000000",
+      "faults": 0,
+      "logic_hz": 50,
+      "draw_hz": 25,
+      "logic_total": 124,
+      "draw_total": 62,
+      "lcd_id": null,
+      "cfsr": "0x0",
+      "hfsr": "0x0",
+      "ram_0_32": "004fd00100282000057600000000080000000000000000000000000000000000",
+      "video_sha256": "a6ab8f5440e16005e8a8599fb1e20f6e3e4a724a4238c9c1718c6f01e0d5e554"
+    },
+    {
+      "scene": "start",
+      "capture": 2,
+      "pc": "0x800690a",
+      "xpsr": "0x21000000",
+      "faults": 0,
+      "logic_hz": 54,
+      "draw_hz": 27,
+      "logic_total": 330,
+      "draw_total": 165,
+      "lcd_id": null,
+      "cfsr": "0x0",
+      "hfsr": "0x0",
+      "ram_0_32": "ff4fd0010028200005c800000000080000000000000000000000000000000000",
+      "video_sha256": "08abbeb6d6aa1fd0feef912f289883cb697af06cb4efdc10180007161a9333d3"
+    },
+    {
+      "scene": "move_jump",
+      "capture": 3,
+      "pc": "0x800482e",
+      "xpsr": "0x81000000",
+      "faults": 0,
+      "logic_hz": 52,
+      "draw_hz": 26,
+      "logic_total": 458,
+      "draw_total": 229,
+      "lcd_id": null,
+      "cfsr": "0x0",
+      "hfsr": "0x0",
+      "ram_0_32": "0069b0010eb4204f054800000000080100000000000006000000000000020000",
+      "video_sha256": "91b9a317f16ca42702c5d1978d82cb475688a6c570c2fadbcf9d05a97e776c8b"
+    }
+  ],
+  "date": "2026-11-16",
+  "bin_sha256": "3221a2de5851c2086e750c25fd657b300ba85af6ba4566bc1b9715699f6bc6b6",
+  "confirmed": [
+    "title",
+    "Start enters World 1-1",
+    "Right changes player and scene position",
+    "zero CPU faults and zero CFSR/HFSR in recorded scenes"
+  ],
+  "jump_verified": false,
+  "followup": "Additional jump capture interrupted by CMSIS-DAP HID timeouts. Probe still enumerates but does not reply. Final remote reset could not be confirmed; press board RESET, reconnect probe USB before more debugging."
+}

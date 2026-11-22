@@ -1,0 +1,31 @@
+{
+  "version": "0.3",
+  "lcd_id": "0x9806",
+  "width": 480,
+  "height": 800,
+  "backlight_on": true,
+  "CFSR": 0,
+  "HFSR": 0,
+  "game_mode": 0,
+  "metrics": {
+    "fps": 2,
+    "render_us": 27543,
+    "render_max_us": 192748,
+    "logic_max_us": 0,
+    "overruns": 1,
+    "fill_us": 0,
+    "sram_ok": 1,
+    "touch_ok": 1
+  },
+  "joystick": {
+    "raw_x": 3180,
+    "raw_y": 3280,
+    "center_x": 0,
+    "center_y": 0,
+    "x": 0.0,
+    "y": 0.0,
+    "calibrated": 0,
+    "healthy": 1,
+    "errors": 0
+  }
+}

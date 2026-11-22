@@ -1,0 +1,22 @@
+{
+  "touchpad": {
+    "raw": 304,
+    "baseline": 306,
+    "ready": 1,
+    "pressed": 0,
+    "samples": 912,
+    "errors": 2431
+  },
+  "nes": {
+    "nes_faults": 0,
+    "nes_logic_hz": 48,
+    "nes_draw_hz": 24,
+    "nes_logic_total": 1664
+  },
+  "cfsr": 0,
+  "hfsr": 0,
+  "tim2_psc": 23,
+  "gpioa_moder": "0xa8283700",
+  "hardware_scope": "live calibration/idle state; physical touch press not controlled",
+  "bin_sha256": "f8f9cae77fedd5f9eb0d546577f3b63b61aaac483acea2c3b022836d9e8adf63"
+}

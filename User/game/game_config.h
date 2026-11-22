@@ -1,0 +1,22 @@
+#ifndef GAME_CONFIG_H
+#define GAME_CONFIG_H
+
+/* Wiring: VRx=PA4, VRy=PA6, SW=PB7; CN3 pins 25,21,23. Camera disconnected. */
+#define GAME_WIDTH 480
+#define GAME_HEIGHT 800
+#define GAME_TOP 64
+#define GAME_BOTTOM 784
+#define GAME_ENEMY_BULLETS 256
+#define GAME_PLAYER_BULLETS 64
+#define GAME_ENEMIES 12
+#define GAME_TICK_HZ 60u
+#define GAME_RENDER_HZ 60u
+#define GAME_JOY_INVERT_X 0
+#define GAME_JOY_INVERT_Y 0
+#define GAME_JOY_DEADZONE 0.06f
+#define GAME_TILE_SIZE 16
+#define GAME_RENDER_BATCH 1u
+#define GAME_RENDER_BUDGET_US 500u
+#define GAME_BOOT_SRAM_TEST 1
+
+#endif

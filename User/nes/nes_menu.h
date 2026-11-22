@@ -1,0 +1,49 @@
+#ifndef NES_MENU_H
+#define NES_MENU_H
+#include <stdint.h>
+#include "nes_roms.h"
+
+/* Visible rows on the 480x800 panel; the list scrolls when there are more. */
+#define NES_MENU_ROWS 3
+
+typedef struct {
+    int16_t index;      /* selected game */
+    uint16_t count;     /* games in the table */
+    uint16_t first;     /* first visible row */
+    uint8_t audio_ok;   /* WM8978 codec came up */
+    uint8_t touch_ok;   /* touch panel responded */
+} NesMenuState;
+
+void NesMenu_Init(NesMenuState *m, uint16_t count, uint8_t audio_ok, uint8_t touch_ok);
+/* Move the selection by dir (+1 next, -1 previous). Returns 1 if it changed. */
+int  NesMenu_Move(NesMenuState *m, int dir);
+/* Jump by step entries without wrapping. Returns 1 if it changed. */
+int  NesMenu_Page(NesMenuState *m, int dir, unsigned step);
+/* Full repaint: chrome, every visible row, info line, hints. */
+void NesMenu_Draw(const NesMenuState *m);
+/* Repaint only the selection-dependent parts after a move. */
+void NesMenu_DrawSelection(const NesMenuState *m);
+/* Rows and name only; the cover can follow once the stick settles. */
+void NesMenu_DrawRows(const NesMenuState *m);
+void NesMenu_DrawCover(const NesMenuState *m);
+/* One-line message above the hints (ROM rejected, stick calibration, ...). */
+void NesMenu_Status(const char *msg);
+/* Native diagnostics: no cartridge is loaded or run. */
+void NesSettings_Draw(uint8_t audio_ok);
+void NesSettings_Audio(uint8_t output,uint8_t audio_ok,uint8_t failed);
+void NesSettings_Update(uint8_t pad,uint16_t raw_x,uint16_t raw_y,
+                        uint8_t stick_ready,uint8_t cap_ready,uint16_t cap_raw);
+
+/* On-screen search: 8x5 character grid, joystick moves, KEY2 selects. */
+#define NES_SEARCH_QUERY 12
+typedef struct {
+    char query[NES_SEARCH_QUERY + 1];
+    uint8_t length;
+    uint8_t cursor;     /* 0..39 grid cell */
+} NesSearchState;
+void NesSearch_Init(NesSearchState *s);
+void NesSearch_Draw(const NesSearchState *s);
+int  NesSearch_Move(NesSearchState *s, int dx, int dy);
+/* 0 = editing, 1 = run the search, 2 = leave without searching. */
+int  NesSearch_Select(NesSearchState *s);
+#endif

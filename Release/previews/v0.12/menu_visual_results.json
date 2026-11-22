@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "scope": "actual Keil menu/LCD glyph code under Unicorn, not board LCD capture",
+  "checks": [
+    "all LCD rectangles bounded",
+    "all pixel streams bounded",
+    "three visible rows",
+    "selection redraw avoids full clear",
+    "wrap/scroll",
+    "zero games",
+    "unknown cover and long title",
+    "8x8 pixel font: uppercase and exact 1x/2x/3x scaling",
+    "font clipping guard"
+  ],
+  "axf_sha256": "cdba136344dd73ef6b84ce76f3ef0638327d7d1803ad0d80d9cca75b6f7a4189"
+}

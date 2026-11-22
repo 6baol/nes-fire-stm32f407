@@ -1,0 +1,380 @@
+{
+  "version": "0.17.6-offline-preview",
+  "date": "2026-11-18",
+  "result": "PASS local tests",
+  "build": "0 errors, 0 warnings (full rebuild)",
+  "hardware_tested": false,
+  "flashed": false,
+  "physical_card_accessed": false,
+  "axf_sha256": "fae0580b9f08107af2cd04213c63c6796224b3ccecc8655bccc0f17a31145b0f",
+  "files": {
+    "NesFire_v0.17.6-offline-preview.hex": {
+      "bytes": 420565,
+      "sha256": "4ad25aa3de4df214ce6f3ab770334234c83238ae4b9eb820e995e599fcf6ac87"
+    },
+    "NesFire_v0.17.6-offline-preview.bin": {
+      "bytes": 149504,
+      "sha256": "8fbbdd45043057191373fb5bb82b9d635b5422c86d84b68fb598c3ea19ad0cee"
+    }
+  },
+  "benchmark_before": {
+    "version": "0.17.5-storage-preview",
+    "hardware_tested": false,
+    "scope": "Unicorn ARM instruction count for 256 FDS samples with both envelopes and modulation active; excludes DMA/LCD",
+    "samples": 256,
+    "arm_instructions": 752052,
+    "instructions_per_sample": 2937.703125,
+    "output_sha256": "5ccff66d0b04aea3bbc2d211fa32bf8e4e6c9368695f8cc5f07a8c54bf978dc1",
+    "axf_sha256": "868a804cecf2f07000b82a918d1a8f69111787b268a4b8455d6adc950ec32f14"
+  },
+  "benchmark_after": {
+    "version": "0.17.6-offline-preview",
+    "hardware_tested": false,
+    "scope": "Unicorn ARM instruction count for 256 FDS samples with both envelopes and modulation active; excludes DMA/LCD",
+    "samples": 256,
+    "arm_instructions": 71901,
+    "instructions_per_sample": 280.86328125,
+    "output_sha256": "5ccff66d0b04aea3bbc2d211fa32bf8e4e6c9368695f8cc5f07a8c54bf978dc1",
+    "axf_sha256": "fae0580b9f08107af2cd04213c63c6796224b3ccecc8655bccc0f17a31145b0f"
+  },
+  "arm_instruction_reduction_percent": 90.43935791673981,
+  "benchmark_output_identical": true,
+  "checks": {
+    "sd_saves_results": {
+      "result": "PASS",
+      "hardware_tested": false,
+      "filesystem": "actual ARM FatFs on private FAT32 block image",
+      "checks": [
+        "battery SRAM cold restore",
+        "two alternating CRC-checked slots",
+        "no writes for unchanged SRAM",
+        "bad newest slot restores backup",
+        "read-only restore",
+        "failed write preserves progress and blocks game switch",
+        "retry recovers",
+        "partial inactive write retains active save",
+        "two invalid slots rejected without writes",
+        "non-battery games do not save"
+      ],
+      "sector_boundary_faults": [
+        {
+          "sectors_before_cut": 0,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 1,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 2,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 3,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 4,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 5,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 6,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 7,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 8,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 9,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 10,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 11,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 12,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 13,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 14,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 15,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 16,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 17,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 18,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 19,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 20,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 21,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 22,
+          "save_result": 1,
+          "recovered": "previous"
+        },
+        {
+          "sectors_before_cut": 23,
+          "save_result": 0,
+          "recovered": "new"
+        }
+      ],
+      "axf_sha256": "fae0580b9f08107af2cd04213c63c6796224b3ccecc8655bccc0f17a31145b0f"
+    },
+    "fds_sides_results": {
+      "result": "PASS",
+      "hardware_tested": false,
+      "checks": [
+        "side B stream contents",
+        "half-second eject visible to BIOS",
+        "no CPU/RAM reset",
+        "no source mutation",
+        "invalid/pending requests rejected",
+        "real Select+left/right chord",
+        "held chord does not repeat",
+        "chord filtered from game",
+        "wrap and unmount cancel"
+      ],
+      "axf_sha256": "fae0580b9f08107af2cd04213c63c6796224b3ccecc8655bccc0f17a31145b0f"
+    },
+    "fds_audio_results": {
+      "result": "PASS",
+      "hardware_tested": false,
+      "scope": "real ARM FDS registers/APU mixer; synthetic waveform, not headphone recording",
+      "tone_hz": 439.9815242494226,
+      "static_modulated_hz": 549.9769053117783,
+      "pcm_range": [
+        112,
+        143
+      ],
+      "checks": [
+        "I/O and wave write gates",
+        "wave readback and 6-bit clamp",
+        "write-mode output hold and immediate mute",
+        "volume/mod envelopes and halt",
+        "long interval overflow fallback",
+        "odd-position modulation writes preserve paired entries",
+        "manual gain saturation",
+        "440Hz wavetable",
+        "550Hz static modulation",
+        "master-volume ratios",
+        "programmed modulation table",
+        "timestamped writes in APU queue",
+        "no APU queue drops"
+      ],
+      "axf_sha256": "fae0580b9f08107af2cd04213c63c6796224b3ccecc8655bccc0f17a31145b0f"
+    },
+    "sd_library_results": {
+      "result": "PASS",
+      "checks": [
+        "real ARM FatFs reads FAT32 library",
+        "five ROMs loaded and verified in SRAM",
+        "five decoded COVs match originals",
+        "menu cover cache",
+        "live ROM protected from cover reads",
+        "no SD reads during game frames",
+        "arena upper boundary",
+        "no card and invalid FAT fallback",
+        "missing/empty/truncated/NUL/oversized/unsafe/unsupported/duplicate catalog rejected",
+        "missing/short/corrupt/unreadable ROM rejected",
+        "cover truncation and CRC rejected",
+        "64 entries accepted, 65 rejected",
+        "odd-sized 4-bit / 8-bit / portrait COV decoded exactly",
+        "CRC-valid wrong mapper header rejected",
+        "FAT32 with MBR partition and unpartitioned FAT32 both mount"
+      ],
+      "hardware_tested": false,
+      "filesystem": "actual compiled FatFs R0.16 on synthetic FAT32 blocks",
+      "axf_sha256": "fae0580b9f08107af2cd04213c63c6796224b3ccecc8655bccc0f17a31145b0f"
+    },
+    "sd_gameplay_results": {
+      "result": "PASS",
+      "scope": "ARM FatFs -> SRAM -> actual game execution on synthetic FAT32 blocks",
+      "hardware_tested": false,
+      "smb3_frames": 1335,
+      "new_games": [
+        {
+          "file": "Metroid (USA).nes",
+          "sha256": "e6e6b7014685adae447ebb3833242815747bc1e5df83ade79f693fb67cf565b6",
+          "frames": 1162,
+          "cpu_faults": 0,
+          "apu_queue_drops": 0,
+          "pcm_range": [
+            55,
+            218
+          ],
+          "hardware_tested": false,
+          "player_x_before": 124.0,
+          "player_x_right": 139.0,
+          "initial_ground_y": 159,
+          "jump_y": [
+            159,
+            159,
+            155,
+            151,
+            147,
+            144,
+            141,
+            137,
+            134,
+            131,
+            128,
+            125
+          ],
+          "title_and_start_to_game": true,
+          "movement_and_jump_checked": true,
+          "axf_sha256": "fae0580b9f08107af2cd04213c63c6796224b3ccecc8655bccc0f17a31145b0f"
+        },
+        {
+          "file": "Wizards & Warriors (U).nes",
+          "sha256": "463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc",
+          "frames": 1222,
+          "cpu_faults": 0,
+          "apu_queue_drops": 0,
+          "pcm_range": [
+            12,
+            236
+          ],
+          "hardware_tested": false,
+          "player_x_before": 94.7,
+          "player_x_right": 108.2,
+          "initial_ground_y": 79,
+          "jump_y": [
+            79,
+            57,
+            57,
+            57,
+            72,
+            68,
+            64,
+            60,
+            56,
+            52,
+            48,
+            45
+          ],
+          "title_and_start_to_game": true,
+          "movement_and_jump_checked": true,
+          "axf_sha256": "fae0580b9f08107af2cd04213c63c6796224b3ccecc8655bccc0f17a31145b0f"
+        }
+      ],
+      "smb2_fds_title_and_1_1": true,
+      "no_sd_reads_during_game_frames": true,
+      "axf_sha256": "fae0580b9f08107af2cd04213c63c6796224b3ccecc8655bccc0f17a31145b0f"
+    },
+    "wizards_visual_results": {
+      "result": "PASS",
+      "hardware_tested": false,
+      "scope": "real ARM CPU/PPU, consecutive Wizards HUD/scroll check",
+      "full_draw_frames": 120,
+      "skipped_frames": 120,
+      "one_in_three_logic_frames": 360,
+      "hud_frames_checked": 240,
+      "draw_skip_cpu_ram_pc_match": true,
+      "axf_sha256": "fae0580b9f08107af2cd04213c63c6796224b3ccecc8655bccc0f17a31145b0f"
+    },
+    "audio_output_results": {
+      "result": "PASS",
+      "hardware_tested": false,
+      "scope": "real ARM route logic, mocked I2C writes",
+      "checks": [
+        "exclusive headphones/speaker/off paths",
+        "BTL inversion and equal paired volume",
+        "mute before route change",
+        "menu/loading mute preserved",
+        "silent gameplay drains APU",
+        "invalid/uninitialised selection rejected",
+        "failed I2C change mutes both outputs",
+        "retry recovers"
+      ],
+      "axf_sha256": "fae0580b9f08107af2cd04213c63c6796224b3ccecc8655bccc0f17a31145b0f"
+    },
+    "menu_visual_results": {
+      "result": "PASS",
+      "scope": "actual Keil menu/LCD glyph code under Unicorn, not board LCD capture",
+      "checks": [
+        "all LCD rectangles bounded",
+        "all pixel streams bounded",
+        "three games without controller ROM",
+        "full game names",
+        "selection redraw avoids full clear",
+        "wrap/scroll",
+        "zero games",
+        "unknown cover and long title",
+        "8x8 font scaling",
+        "native settings button highlight/release",
+        "KEY1 opens settings without loading ROM",
+        "SW hold returns to same game",
+        "one selection per deflection; no hold/noise/rebound repeat",
+        "60ms stable centre rearm",
+        "all three covers match native source pixel for pixel after one scaling pass",
+        "Settings output selector, no hold-repeat, choice retained on return",
+        "save failure remains visible over stick calibration hint",
+        "actual KEY2 -> SD/FDS start and long SW return with audio pause/resume"
+      ],
+      "axf_sha256": "fae0580b9f08107af2cd04213c63c6796224b3ccecc8655bccc0f17a31145b0f",
+      "storage": "ARM FatFs / synthetic FAT32"
+    }
+  },
+  "board_version": "0.17.5-storage-preview, flashed before offline-only instruction; no further board access",
+  "limits": "Benchmark is FDS sample-core instruction count, excludes DMA/LCD and whole-system timing. Fault injection models cuts after whole sectors, not arbitrary physical card power failures."
+}

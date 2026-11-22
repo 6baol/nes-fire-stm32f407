@@ -1,0 +1,116 @@
+{
+  "version": "0.17.2-sd-preview",
+  "build": "0 errors, 0 warnings (full rebuild)",
+  "flashed": true,
+  "hardware_tested": true,
+  "result": "PASS",
+  "firmware_sha256": "bf9951773e444f3308091ef35781585566838b23fb9b87d58f2560d22f194e5a",
+  "full_readback_bytes": 138240,
+  "card_writes": false,
+  "physical_feedback": "pending",
+  "axf_sha256": "38026cd56ba602556b02c10dd84e67ff3a80b2e624c0197a5b2e8aa2a7a8b5f5",
+  "driver_tests": "PASS actual ARM wrapper: clock/fallback/bounce alignment/retry/bounds",
+  "local_library": {
+    "result": "PASS",
+    "checks": [
+      "real ARM FatFs reads FAT32 library",
+      "five ROMs loaded and verified in SRAM",
+      "five decoded COVs match originals",
+      "menu cover cache",
+      "live ROM protected from cover reads",
+      "no SD reads during game frames",
+      "arena upper boundary",
+      "no card and invalid FAT fallback",
+      "missing/empty/truncated/NUL/oversized/unsafe/unsupported/duplicate catalog rejected",
+      "missing/short/corrupt/unreadable ROM rejected",
+      "cover truncation and CRC rejected",
+      "64 entries accepted, 65 rejected",
+      "odd-sized 4-bit / 8-bit / portrait COV decoded exactly",
+      "CRC-valid wrong mapper header rejected",
+      "FAT32 with MBR partition and unpartitioned FAT32 both mount"
+    ],
+    "hardware_tested": false,
+    "filesystem": "actual compiled FatFs R0.16 on synthetic FAT32 blocks",
+    "axf_sha256": "38026cd56ba602556b02c10dd84e67ff3a80b2e624c0197a5b2e8aa2a7a8b5f5"
+  },
+  "local_gameplay": {
+    "result": "PASS",
+    "scope": "ARM FatFs -> SRAM -> actual game execution on synthetic FAT32 blocks",
+    "hardware_tested": false,
+    "smb3_frames": 1335,
+    "new_games": [
+      {
+        "file": "Metroid (USA).nes",
+        "sha256": "e6e6b7014685adae447ebb3833242815747bc1e5df83ade79f693fb67cf565b6",
+        "frames": 1162,
+        "cpu_faults": 0,
+        "apu_queue_drops": 0,
+        "pcm_range": [
+          52,
+          218
+        ],
+        "hardware_tested": false,
+        "player_x_before": 124.0,
+        "player_x_right": 139.0,
+        "initial_ground_y": 159,
+        "jump_y": [
+          159,
+          159,
+          155,
+          151,
+          147,
+          144,
+          141,
+          137,
+          134,
+          131,
+          128,
+          125
+        ],
+        "title_and_start_to_game": true,
+        "movement_and_jump_checked": true,
+        "axf_sha256": "38026cd56ba602556b02c10dd84e67ff3a80b2e624c0197a5b2e8aa2a7a8b5f5"
+      },
+      {
+        "file": "Wizards & Warriors (U).nes",
+        "sha256": "463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc",
+        "frames": 1402,
+        "cpu_faults": 0,
+        "apu_queue_drops": 0,
+        "pcm_range": [
+          6,
+          219
+        ],
+        "hardware_tested": false,
+        "player_x_before": 93.0,
+        "player_x_right": 120.0,
+        "initial_ground_y": 79,
+        "jump_y": [
+          79,
+          57,
+          57,
+          57,
+          72,
+          68,
+          64,
+          60,
+          56,
+          52,
+          48,
+          45
+        ],
+        "title_and_start_to_game": true,
+        "movement_and_jump_checked": true,
+        "axf_sha256": "38026cd56ba602556b02c10dd84e67ff3a80b2e624c0197a5b2e8aa2a7a8b5f5"
+      }
+    ],
+    "smb2_fds_title_and_1_1": true,
+    "no_sd_reads_during_game_frames": true,
+    "axf_sha256": "38026cd56ba602556b02c10dd84e67ff3a80b2e624c0197a5b2e8aa2a7a8b5f5"
+  },
+  "hardware_reports": [
+    "board_sd_v0.17.2-sd-preview.json",
+    "board_sd_fds_v0.17.2-sd-preview.json"
+  ],
+  "limits": "five covers checked physically through counters; SMB3 and SMB2 FDS tested on board; other three games validated in local ARM execution; LCD appearance/headphone sound require user confirmation"
+}

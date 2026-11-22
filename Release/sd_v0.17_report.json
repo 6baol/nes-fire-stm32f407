@@ -1,0 +1,247 @@
+{
+  "version": "0.17-sd-preview",
+  "build": "0 errors, 0 warnings",
+  "bin_bytes": 137216,
+  "code_bytes": 79092,
+  "ro_data_bytes": 56124,
+  "rw_data_bytes": 264,
+  "zi_data_bytes": 78088,
+  "hardware_tested": false,
+  "flashed": false,
+  "physical_sd_io_tested": false,
+  "axf_sha256": "0c6b2b79ab38fcbc4d55836cdba275b7bb78a0b97a999e74e1355ddc184b63e9",
+  "files": {
+    "NesFire_v0.17-sd-preview.hex": {
+      "bytes": 386005,
+      "sha256": "036bbd2f295236846533459c53a6f41739bcb296a1a8c70ecd415844f5a1f0a8"
+    },
+    "NesFire_v0.17-sd-preview.bin": {
+      "bytes": 137216,
+      "sha256": "251ab684645f42ac394f1feff8f7e135832f293c431637dbadc1749f8f2705d9"
+    }
+  },
+  "tests": {
+    "sd_library_results": {
+      "result": "PASS",
+      "checks": [
+        "real ARM FatFs reads FAT32 library",
+        "five ROMs loaded and verified in SRAM",
+        "five decoded COVs match originals",
+        "menu cover cache",
+        "live ROM protected from cover reads",
+        "no SD reads during game frames",
+        "arena upper boundary",
+        "no card and invalid FAT fallback",
+        "missing/empty/truncated/NUL/oversized/unsafe/unsupported/duplicate catalog rejected",
+        "missing/short/corrupt/unreadable ROM rejected",
+        "cover truncation and CRC rejected",
+        "64 entries accepted, 65 rejected",
+        "odd-sized 4-bit / 8-bit / portrait COV decoded exactly",
+        "CRC-valid wrong mapper header rejected",
+        "FAT32 with MBR partition and unpartitioned FAT32 both mount"
+      ],
+      "hardware_tested": false,
+      "filesystem": "actual compiled FatFs R0.16 on synthetic FAT32 blocks",
+      "axf_sha256": "0c6b2b79ab38fcbc4d55836cdba275b7bb78a0b97a999e74e1355ddc184b63e9"
+    },
+    "sd_gameplay_results": {
+      "result": "PASS",
+      "scope": "ARM FatFs -> SRAM -> actual game execution on synthetic FAT32 blocks",
+      "hardware_tested": false,
+      "smb3_frames": 1335,
+      "new_games": [
+        {
+          "file": "Metroid (USA).nes",
+          "sha256": "e6e6b7014685adae447ebb3833242815747bc1e5df83ade79f693fb67cf565b6",
+          "frames": 1162,
+          "cpu_faults": 0,
+          "apu_queue_drops": 0,
+          "pcm_range": [
+            52,
+            218
+          ],
+          "hardware_tested": false,
+          "player_x_before": 124.0,
+          "player_x_right": 139.0,
+          "initial_ground_y": 159,
+          "jump_y": [
+            159,
+            159,
+            155,
+            151,
+            147,
+            144,
+            141,
+            137,
+            134,
+            131,
+            128,
+            125
+          ],
+          "title_and_start_to_game": true,
+          "movement_and_jump_checked": true,
+          "axf_sha256": "0c6b2b79ab38fcbc4d55836cdba275b7bb78a0b97a999e74e1355ddc184b63e9"
+        },
+        {
+          "file": "Wizards & Warriors (U).nes",
+          "sha256": "463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc",
+          "frames": 1402,
+          "cpu_faults": 0,
+          "apu_queue_drops": 0,
+          "pcm_range": [
+            6,
+            219
+          ],
+          "hardware_tested": false,
+          "player_x_before": 93.0,
+          "player_x_right": 120.0,
+          "initial_ground_y": 79,
+          "jump_y": [
+            79,
+            57,
+            57,
+            57,
+            72,
+            68,
+            64,
+            60,
+            56,
+            52,
+            48,
+            45
+          ],
+          "title_and_start_to_game": true,
+          "movement_and_jump_checked": true,
+          "axf_sha256": "0c6b2b79ab38fcbc4d55836cdba275b7bb78a0b97a999e74e1355ddc184b63e9"
+        }
+      ],
+      "smb2_fds_title_and_1_1": true,
+      "no_sd_reads_during_game_frames": true,
+      "axf_sha256": "0c6b2b79ab38fcbc4d55836cdba275b7bb78a0b97a999e74e1355ddc184b63e9"
+    },
+    "menu_visual_results": {
+      "result": "PASS",
+      "scope": "actual Keil menu/LCD glyph code under Unicorn, not board LCD capture",
+      "checks": [
+        "all LCD rectangles bounded",
+        "all pixel streams bounded",
+        "three games without controller ROM",
+        "full game names",
+        "selection redraw avoids full clear",
+        "wrap/scroll",
+        "zero games",
+        "unknown cover and long title",
+        "8x8 font scaling",
+        "native settings button highlight/release",
+        "KEY1 opens settings without loading ROM",
+        "SW hold returns to same game",
+        "one selection per deflection; no hold/noise/rebound repeat",
+        "60ms stable centre rearm",
+        "all three covers match native source pixel for pixel after one scaling pass",
+        "actual KEY2 -> SD/FDS start and long SW return with audio pause/resume"
+      ],
+      "axf_sha256": "0c6b2b79ab38fcbc4d55836cdba275b7bb78a0b97a999e74e1355ddc184b63e9",
+      "storage": "ARM FatFs / synthetic FAT32"
+    }
+  },
+  "card_install": {
+    "result": "PASS",
+    "timestamp_utc": "2026-11-18T00:30:29.018892+00:00",
+    "target": "F:\\NES",
+    "formatted": false,
+    "root_entries_preserved": [
+      "NES",
+      "System Volume Information",
+      "TH06"
+    ],
+    "files": [
+      {
+        "file": "DISKSYS.ROM",
+        "bytes": 8192,
+        "sha256": "99c18490ed9002d9c6d999b9d8d15be5c051bdfa7cc7e73318053c9a994b0178",
+        "action": "verified"
+      },
+      {
+        "file": "G0000.NES",
+        "bytes": 40976,
+        "sha256": "f61548fdf1670cffefcc4f0b7bdcdd9eaba0c226e3b74f8666071496988248de",
+        "action": "verified"
+      },
+      {
+        "file": "G0000.COV",
+        "bytes": 30776,
+        "sha256": "3c70d2c038f7ab20885367c86e744e33e0d752d5a51b6bc5903c42126131bcdc",
+        "action": "verified"
+      },
+      {
+        "file": "G0001.FDS",
+        "bytes": 65500,
+        "sha256": "ff8afb9ae6b705b4e51dbcb193dcebadf4c049800a71003d3a45052648e52eda",
+        "action": "verified"
+      },
+      {
+        "file": "G0001.COV",
+        "bytes": 30776,
+        "sha256": "c1f84ee5d00357e52929a6782e8f5f42d99bfe2273bce46e3be312e8be727fa3",
+        "action": "verified"
+      },
+      {
+        "file": "G0002.NES",
+        "bytes": 393232,
+        "sha256": "6ea0777ca520ba7ad7b0ea0f6452140d59aa0b1dffe5045cb1e8020dde10c267",
+        "action": "verified"
+      },
+      {
+        "file": "G0002.COV",
+        "bytes": 30776,
+        "sha256": "02f4fe4b86630ad1fc62a1f2c0e886eb91fff96f5648118d60e15fe5cd904e9d",
+        "action": "verified"
+      },
+      {
+        "file": "G0003.NES",
+        "bytes": 131088,
+        "sha256": "e6e6b7014685adae447ebb3833242815747bc1e5df83ade79f693fb67cf565b6",
+        "action": "verified"
+      },
+      {
+        "file": "G0003.COV",
+        "bytes": 30776,
+        "sha256": "b0f30065e991b75e15b9dbf24d1e1b0d3fbc6a6768bbe69798550dec3f2af54f",
+        "action": "verified"
+      },
+      {
+        "file": "G0004.NES",
+        "bytes": 131088,
+        "sha256": "463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc",
+        "action": "verified"
+      },
+      {
+        "file": "G0004.COV",
+        "bytes": 30776,
+        "sha256": "0878321b26a1dcd3f4b523240efbad92e2558b1b27a357258158e0df862ab6e9",
+        "action": "verified"
+      },
+      {
+        "file": "LIBRARY.IDX",
+        "bytes": 282,
+        "sha256": "34451eaef5a31ffcefb71fa2e1b9d52aa1c8c25403e0362d43fc968260da1035",
+        "action": "created"
+      },
+      {
+        "file": "SD17.JSON",
+        "bytes": 2932,
+        "sha256": "e61f58a9f4e433204589550161a4ffc0ee97023ffd4d806ee5b6d9abcfe85401",
+        "action": "created"
+      }
+    ],
+    "metadata_update_authorized": false,
+    "hardware_tested": false
+  },
+  "additional_checks": [
+    "audio DMA mute prevents APU/ROM access during loading",
+    "60 Hz scheduler",
+    "11 importer tests",
+    "native menu ASan/UBSan",
+    "SD installer conflict protection"
+  ]
+}

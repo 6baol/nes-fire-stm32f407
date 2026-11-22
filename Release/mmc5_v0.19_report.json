@@ -1,0 +1,472 @@
+{
+  "version": "0.19-mmc5-preview",
+  "result": "PASS",
+  "hardware_tested": true,
+  "flashed": true,
+  "physical_sd_written": true,
+  "created": "2026-11-19T10:16:34.789057+08:00",
+  "build": "0 errors, 0 warnings (full rebuild)",
+  "memory_bytes": {
+    "code": 98208,
+    "ro": 56348,
+    "rw": 276,
+    "zi": 83308,
+    "bin": 155648
+  },
+  "final_axf_sha256": "282ce572b0ae85f54bd70db06280ee288ae3cd7ed4b5f0146c834be647255d57",
+  "bin_sha256": "90b05e69aec7d7f870d585ae530d36861f5de2d8f37cf052efadf9eb7acb23d9",
+  "full_game_validation_bin_sha256": "90b05e69aec7d7f870d585ae530d36861f5de2d8f37cf052efadf9eb7acb23d9",
+  "final_firmware_identical_to_game_tested_executable": true,
+  "validation_note": "Full game and old-game reports retain pre-resource-update AXF hashes. Final resource build changes debug metadata; executable BIN and HEX are identical. Final MMC5 core, seven-game library/save, and menu checks use final AXF.",
+  "source_games": [
+    {
+      "file": "smb.nes",
+      "label": "SUPER MARIO BROS.",
+      "mapper": 0,
+      "sha256": "f61548fdf1670cffefcc4f0b7bdcdd9eaba0c226e3b74f8666071496988248de",
+      "source_sha256": "0b3d9e1f01ed1668205bab34d6c82b0e281456e137352e4f36a9b2cfa3b66dea",
+      "normalized": true
+    },
+    {
+      "file": "Super Mario Bros. 2 (Japan) (En).fds",
+      "label": "SUPER MARIO BROS. 2",
+      "mapper": 20,
+      "sha256": "ff8afb9ae6b705b4e51dbcb193dcebadf4c049800a71003d3a45052648e52eda",
+      "source_sha256": "ff8afb9ae6b705b4e51dbcb193dcebadf4c049800a71003d3a45052648e52eda",
+      "normalized": false
+    },
+    {
+      "file": "SMB3.nes",
+      "label": "SUPER MARIO BROS. 3",
+      "mapper": 4,
+      "sha256": "6ea0777ca520ba7ad7b0ea0f6452140d59aa0b1dffe5045cb1e8020dde10c267",
+      "source_sha256": "6ea0777ca520ba7ad7b0ea0f6452140d59aa0b1dffe5045cb1e8020dde10c267",
+      "normalized": false
+    },
+    {
+      "file": "Metroid (USA).nes",
+      "label": "METROID",
+      "mapper": 1,
+      "sha256": "e6e6b7014685adae447ebb3833242815747bc1e5df83ade79f693fb67cf565b6",
+      "source_sha256": "e6e6b7014685adae447ebb3833242815747bc1e5df83ade79f693fb67cf565b6",
+      "normalized": false
+    },
+    {
+      "file": "Wizards & Warriors (U).nes",
+      "label": "WIZARDS & WARRIORS",
+      "mapper": 7,
+      "sha256": "463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc",
+      "source_sha256": "463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc",
+      "normalized": false
+    },
+    {
+      "file": "Castlevania III - Dracula's Curse (USA).nes",
+      "label": "CASTLEVANIA III: DRACULA'S CURSE",
+      "mapper": 5,
+      "sha256": "1c7b2ed2c1fb5839a6764006aa476f5c9d48f99465b6141980f3a5af1dfec0d6",
+      "source_sha256": "085ec6395681c7ebfda19c2986069c21a3d27738cc61ada76249de70a07ed7d3",
+      "normalized": true
+    },
+    {
+      "file": "Just Breed (Japan).nes",
+      "label": "JUST BREED",
+      "mapper": 5,
+      "sha256": "7d3b5180300857cb685e807d9c5ec92c29f01b51aabaf7563bf4dabdf754953c",
+      "source_sha256": "1b7c6a038454c1f2fa05e2c63030ce9f8e5b0d612405ed5cc5f5e461d6cbc7e0",
+      "normalized": true
+    }
+  ],
+  "reports": {
+    "mmc5_core_results": {
+      "result": "PASS",
+      "tests": [
+        "test_prg",
+        "test_ram_and_indirect_jump",
+        "test_chr_cache",
+        "test_exram_fill_irq_multiplier",
+        "test_audio",
+        "test_capture_guard"
+      ],
+      "hardware_tested": false,
+      "axf_sha256": "282ce572b0ae85f54bd70db06280ee288ae3cd7ed4b5f0146c834be647255d57"
+    },
+    "mmc5_games_sd_results": {
+      "result": "PASS",
+      "hardware_tested": false,
+      "games": [
+        {
+          "file": "Castlevania III - Dracula's Curse (USA).nes",
+          "frames": 1719,
+          "snapshots": [
+            "title",
+            "nameentry",
+            "stage1",
+            "move",
+            "jump"
+          ],
+          "pcm_range": [
+            0,
+            255
+          ],
+          "expansion_audio_writes": 1,
+          "cpu_faults": 0,
+          "apu_queue_drops": 0,
+          "no_sd_io_during_game": true,
+          "rom_payload_unchanged": true,
+          "sram_cold_restore": false
+        },
+        {
+          "file": "Just Breed (Japan).nes",
+          "frames": 5788,
+          "snapshots": [
+            "filemenu",
+            "nameentry",
+            "introtext",
+            "intro0",
+            "intro1",
+            "intro2",
+            "intro3",
+            "intro4",
+            "intro5",
+            "intro6",
+            "intro7",
+            "intro8",
+            "intro9",
+            "intro10",
+            "intro11",
+            "move",
+            "town"
+          ],
+          "pcm_range": [
+            0,
+            236
+          ],
+          "expansion_audio_writes": 13139,
+          "cpu_faults": 0,
+          "apu_queue_drops": 0,
+          "no_sd_io_during_game": true,
+          "rom_payload_unchanged": true,
+          "sram_cold_restore": true
+        }
+      ],
+      "axf_sha256": "8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7"
+    },
+    "mmc5_regression_results": {
+      "result": "PASS",
+      "tests": [
+        {
+          "test": "test_nes_arm.py",
+          "exit_code": 0,
+          "seconds": 1.12,
+          "output_tail": "{\n  \"result\": \"PASS\",\n  \"firmware\": \"actual Keil AXF under Unicorn Cortex-M\",\n  \"tests\": [\n    \"6502 reset/NMI execution\",\n    \"PPU 256x240 output\",\n    \"right/left controller shifts\",\n    \"A button changes sprite palette\",\n    \"frame skipping\",\n    \"malformed ROM rejection\",\n    \"CHR ROM write protection\",\n    \"UxROM live code bank switch\",\n    \"CHR RAM tile update\",\n    \"CNROM CHR bank switch\",\n    \"palette mirroring\",\n    \"OAM sprite DMA\"\n  ],\n  \"faults\": 0,\n  \"hardware_tested\": false,\n  \"axf_sha256\": \"8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7\",\n  \"bin_sha256\": \"90b05e69aec7d7f870d585ae530d36861f5de2d8f37cf052efadf9eb7acb23d9\"\n}\n"
+        },
+        {
+          "test": "test_mmc1_axrom_arm.py",
+          "exit_code": 0,
+          "seconds": 2.08,
+          "output_tail": "PASS: test_serial_and_mapping\nPASS: test_nametables\nPASS: test_sram\nPASS: test_rmw_and_live_code\nPASS: test_chr_ram_and_snrom_gate\nPASS: test_axrom\nPASS: test_validation\nPASS: test_switching\n"
+        },
+        {
+          "test": "test_mmc3_arm.py",
+          "exit_code": 0,
+          "seconds": 0.89,
+          "output_tail": "PASS: MMC3 mapping, SRAM, IRQ registers and frame integration\n"
+        },
+        {
+          "test": "test_mmc3_switch_arm.py",
+          "exit_code": 0,
+          "seconds": 0.89,
+          "output_tail": "{\n  \"result\": \"PASS\",\n  \"sequence\": [\n    \"SMB3\",\n    \"SMB1\",\n    \"SMB2 FDS\",\n    \"SMB3\"\n  ],\n  \"checks\": [\n    \"SMB3 IRQ pending and SRAM disabled\",\n    \"SMB1 normal cartridge dispatch\",\n    \"SMB2 FDS PRG RAM dispatch\",\n    \"SMB3 restored with cleared IRQ and writable SRAM\"\n  ],\n  \"cpu_faults\": 0,\n  \"scope\": \"actual Keil ARM instructions under Unicorn; not a board test\",\n  \"hardware_tested\": false\n}\n"
+        },
+        {
+          "test": "test_discrete_mappers_arm.py",
+          "exit_code": 0,
+          "seconds": 2.58,
+          "output_tail": "PASS: test_registers_and_wrap\nPASS: test_conflicts_and_aliases\nPASS: test_live_6502_and_reset_vector\nPASS: test_gxrom_rmw\nPASS: test_camerica_mirroring_and_chr\nPASS: test_absent_sram_and_switching\nPASS: test_header_validation\n"
+        },
+        {
+          "test": "test_discrete_mappers_sd_arm.py",
+          "exit_code": 0,
+          "seconds": 1.38,
+          "output_tail": "PASS SD index / CRC / preload / CPU / banks: 11\nPASS SD index / CRC / preload / CPU / banks: 66\nPASS SD index / CRC / preload / CPU / banks: 71\n"
+        },
+        {
+          "test": "test_sd_library_arm.py",
+          "exit_code": 0,
+          "seconds": 7.58,
+          "output_tail": "PASS SD: 0 SUPER MARIO BROS. bytes 40976\nPASS SD: 1 SUPER MARIO BROS. 2 bytes 65500\nPASS SD: 2 SUPER MARIO BROS. 3 bytes 393232\nPASS SD: 3 METROID bytes 131088\nPASS SD: 4 WIZARDS & WARRIORS bytes 131088\n{\n  \"result\": \"PASS\",\n  \"checks\": [\n    \"real ARM FatFs reads FAT32 library\",\n    \"five ROMs loaded and verified in SRAM\",\n    \"five decoded COVs match originals\",\n    \"menu cover cache\",\n    \"live ROM protected from cover reads\",\n    \"no SD reads during game frames\",\n    \"arena upper boundary\",\n    \"no card and invalid FAT fallback\",\n    \"missing/empty/truncated/NUL/oversized/unsafe/unsupported/duplicate catalog rejected\",\n    \"missing/short/corrupt/unreadable ROM rejected\",\n    \"cover truncation and CRC rejected\",\n    \"64 entries accepted, 65 rejected\",\n    \"odd-sized 4-bit / 8-bit / portrait COV decoded exactly\",\n    \"CRC-valid wrong mapper header rejected\",\n    \"FAT32 with MBR partition and unpartitioned FAT32 both mount\"\n  ],\n  \"hardware_tested\": false,\n  \"filesystem\": \"actual compiled FatFs R0.16 on synthetic FAT32 blocks\",\n  \"axf_sha256\": \"8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7\"\n}\n"
+        },
+        {
+          "test": "test_sd_saves_arm.py",
+          "exit_code": 0,
+          "seconds": 24.89,
+          "output_tail": "     \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 7,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 8,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 9,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 10,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 11,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 12,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 13,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 14,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 15,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 16,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 17,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 18,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 19,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 20,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 21,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 22,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 23,\n      \"save_result\": 0,\n      \"recovered\": \"new\"\n    }\n  ],\n  \"axf_sha256\": \"8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7\"\n}\n"
+        },
+        {
+          "test": "test_fds_drive_arm.py",
+          "exit_code": 0,
+          "seconds": 2.99,
+          "output_tail": "PASS: sync, gaps, all 18 blocks, 52269 disk bytes via actual ARM registers\nPASS: motor stop, rewind, restart, read-only status and unmount\nPASS: known damaged BIOS rejected without changing CPU state\nNo real BIOS/game/physical-board boot is claimed.\n"
+        },
+        {
+          "test": "test_fds_sides_arm.py",
+          "exit_code": 0,
+          "seconds": 0.61,
+          "output_tail": "{\n  \"result\": \"PASS\",\n  \"hardware_tested\": false,\n  \"checks\": [\n    \"side B stream contents\",\n    \"half-second eject visible to BIOS\",\n    \"no CPU/RAM reset\",\n    \"no source mutation\",\n    \"invalid/pending requests rejected\",\n    \"real Select+left/right chord\",\n    \"held chord does not repeat\",\n    \"chord filtered from game\",\n    \"wrap and unmount cancel\"\n  ],\n  \"axf_sha256\": \"8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7\"\n}\n"
+        },
+        {
+          "test": "test_fds_audio_arm.py",
+          "exit_code": 0,
+          "seconds": 2.56,
+          "output_tail": "{\n  \"result\": \"PASS\",\n  \"hardware_tested\": false,\n  \"scope\": \"real ARM FDS registers/APU mixer; synthetic waveform, not headphone recording\",\n  \"tone_hz\": 439.9815242494226,\n  \"static_modulated_hz\": 549.9769053117783,\n  \"pcm_range\": [\n    112,\n    143\n  ],\n  \"checks\": [\n    \"I/O and wave write gates\",\n    \"wave readback and 6-bit clamp\",\n    \"write-mode output hold and immediate mute\",\n    \"volume/mod envelopes and halt\",\n    \"long interval overflow fallback\",\n    \"odd-position modulation writes preserve paired entries\",\n    \"manual gain saturation\",\n    \"440Hz wavetable\",\n    \"550Hz static modulation\",\n    \"master-volume ratios\",\n    \"programmed modulation table\",\n    \"timestamped writes in APU queue\",\n    \"no APU queue drops\"\n  ],\n  \"axf_sha256\": \"8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7\"\n}\n"
+        },
+        {
+          "test": "test_audio_output_arm.py",
+          "exit_code": 0,
+          "seconds": 0.47,
+          "output_tail": "{\n  \"result\": \"PASS\",\n  \"hardware_tested\": false,\n  \"scope\": \"real ARM route logic, mocked I2C writes\",\n  \"checks\": [\n    \"cold init selects speaker and disables headphones\",\n    \"reinitialisation restores speaker default\",\n    \"exclusive headphones/speaker/off paths\",\n    \"BTL inversion and equal paired volume\",\n    \"mute before route change\",\n    \"menu/loading mute preserved\",\n    \"silent gameplay drains APU\",\n    \"invalid/uninitialised selection rejected\",\n    \"failed I2C change mutes both outputs\",\n    \"retry recovers\"\n  ],\n  \"axf_sha256\": \"8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7\"\n}\n"
+        },
+        {
+          "test": "test_sd_audio_mute_arm.py",
+          "exit_code": 0,
+          "seconds": 0.45,
+          "output_tail": "PASS: muted DMA outputs zero without processing APU/ROM; unmute resumes APU\n"
+        },
+        {
+          "test": "test_game_import.py",
+          "exit_code": 0,
+          "seconds": 4.64,
+          "output_tail": "92\n1  SUPER MARIO BROS. 3         SMB3.nes                                         4   40976\ntotal SD ROM payload: 65568 bytes (64.0 KiB); library <=64 games, each <=640 KiB; embedded build <=768 KiB total\nImported: SUPER MARIO BROS. 3\nNo board access. Build locally when ready; flashing is a separate manual step.\n#  label                       file                                           map   bytes\n0  FIRST GAME                  first.nes                                        0   24592\ntotal SD ROM payload: 24592 bytes (24.0 KiB); library <=64 games, each <=640 KiB; embedded build <=768 KiB total\nwrote User\\nes\\nes_roms.c and User\\nes\\nes_roms.h\n#  label                       file                                           map   bytes\n0  FIRST GAME                  first.nes                                        0   24592\ntotal SD ROM payload: 24592 bytes (24.0 KiB); library <=64 games, each <=640 KiB; embedded build <=768 KiB total\nwrote User\\nes\\nes_roms.c and User\\nes\\nes_roms.h\n#  label                       file                                           map   bytes\n0  FIRST GAME                  first.nes                                        0   24592\ntotal SD ROM payload: 24592 bytes (24.0 KiB); library <=64 games, each <=640 KiB; embedded build <=768 KiB total\nwrote User\\nes\\nes_roms.c and User\\nes\\nes_roms.h\n#  label                       file                                           map   bytes\n0  FIRST GAME                  first.nes                                        0   24592\ntotal SD ROM payload: 24592 bytes (24.0 KiB); library <=64 games, each <=640 KiB; embedded build <=768 KiB total\nwrote User\\nes\\nes_roms.c and User\\nes\\nes_roms.h\n..............\n----------------------------------------------------------------------\nRan 14 tests in 4.260s\n\nOK\n"
+        }
+      ],
+      "axf_sha256": "8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7",
+      "hardware_tested": false
+    },
+    "mmc5_old_games_results": {
+      "result": "PASS",
+      "tests": [
+        {
+          "test": "test_sd_gameplay_arm.py",
+          "args": [],
+          "exit_code": 0,
+          "output_tail": "  155,\n        151,\n        147,\n        144,\n        141,\n        137,\n        134,\n        131,\n        128,\n        125\n      ],\n      \"title_and_start_to_game\": true,\n      \"movement_and_jump_checked\": true,\n      \"axf_sha256\": \"8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7\"\n    },\n    {\n      \"file\": \"Wizards & Warriors (U).nes\",\n      \"sha256\": \"463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc\",\n      \"frames\": 1222,\n      \"cpu_faults\": 0,\n      \"apu_queue_drops\": 0,\n      \"pcm_range\": [\n        12,\n        236\n      ],\n      \"hardware_tested\": false,\n      \"player_x_before\": 94.7,\n      \"player_x_right\": 108.2,\n      \"initial_ground_y\": 79,\n      \"jump_y\": [\n        79,\n        57,\n        57,\n        57,\n        72,\n        68,\n        64,\n        60,\n        56,\n        52,\n        48,\n        45\n      ],\n      \"title_and_start_to_game\": true,\n      \"movement_and_jump_checked\": true,\n      \"axf_sha256\": \"8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7\"\n    }\n  ],\n  \"smb2_fds_title_and_1_1\": true,\n  \"no_sd_reads_during_game_frames\": true,\n  \"axf_sha256\": \"8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7\"\n}\n"
+        },
+        {
+          "test": "test_wizards_visual_arm.py",
+          "args": [],
+          "exit_code": 0,
+          "output_tail": "PASS draw 120 frames\nPASS skip 120 frames\nPASS third 360 frames\n{\n  \"result\": \"PASS\",\n  \"hardware_tested\": false,\n  \"scope\": \"real ARM CPU/PPU, consecutive Wizards HUD/scroll check\",\n  \"full_draw_frames\": 120,\n  \"skipped_frames\": 120,\n  \"one_in_three_logic_frames\": 360,\n  \"hud_frames_checked\": 240,\n  \"draw_skip_cpu_ram_pc_match\": true,\n  \"axf_sha256\": \"8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7\"\n}\n"
+        },
+        {
+          "test": "render_menu_arm.py",
+          "args": [
+            "--sd"
+          ],
+          "exit_code": 0,
+          "output_tail": "menu_smb2.png LCD pixels 183808\nmenu_smb3.png LCD pixels 183808\nmenu_metroid.png LCD pixels 178176\nmenu_wizards.png LCD pixels 180736\nPASS: LCD bounds, artwork, navigation and fallbacks; rendered to D:\\Project\\BA_Game\\Nes_fire_emulator\\Tests\\nes_output\n"
+        }
+      ],
+      "hardware_tested": false,
+      "axf_sha256": "8c45f2bcf6200eb81d9ec3b13119ad5057a156626e2d5222965e5ea269016aa7"
+    },
+    "mmc5_seven_library_results": {
+      "result": "PASS",
+      "tests": [
+        {
+          "test": "test_sd_library_arm.py",
+          "exit_code": 0,
+          "output_tail": " bytes 40976\nPASS SD: 1 SUPER MARIO BROS. 2 bytes 65500\nPASS SD: 2 SUPER MARIO BROS. 3 bytes 393232\nPASS SD: 3 METROID bytes 131088\nPASS SD: 4 WIZARDS & WARRIORS bytes 131088\nPASS SD: 5 CASTLEVANIA III: DRACULA'S CURSE bytes 393232\nPASS SD: 6 JUST BREED bytes 786448\n{\n  \"result\": \"PASS\",\n  \"checks\": [\n    \"real ARM FatFs reads FAT32 library\",\n    \"library ROMs loaded and verified in SRAM\",\n    \"library decoded COVs match originals\",\n    \"menu cover cache\",\n    \"live ROM protected from cover reads\",\n    \"no SD reads during game frames\",\n    \"arena upper boundary\",\n    \"no card and invalid FAT fallback\",\n    \"missing/empty/truncated/NUL/oversized/unsafe/unsupported/duplicate catalog rejected\",\n    \"missing/short/corrupt/unreadable ROM rejected\",\n    \"cover truncation and CRC rejected\",\n    \"64 entries accepted, 65 rejected\",\n    \"odd-sized 4-bit / 8-bit / portrait COV decoded exactly\",\n    \"CRC-valid wrong mapper header rejected\",\n    \"FAT32 with MBR partition and unpartitioned FAT32 both mount\"\n  ],\n  \"hardware_tested\": false,\n  \"filesystem\": \"actual compiled FatFs R0.16 on synthetic FAT32 blocks\",\n  \"axf_sha256\": \"282ce572b0ae85f54bd70db06280ee288ae3cd7ed4b5f0146c834be647255d57\"\n}\n"
+        },
+        {
+          "test": "test_sd_saves_arm.py",
+          "exit_code": 0,
+          "output_tail": "overed\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 13,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 14,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 15,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 16,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 17,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 18,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 19,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 20,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 21,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 22,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 23,\n      \"save_result\": 0,\n      \"recovered\": \"new\"\n    }\n  ],\n  \"axf_sha256\": \"282ce572b0ae85f54bd70db06280ee288ae3cd7ed4b5f0146c834be647255d57\"\n}\n"
+        }
+      ],
+      "axf_sha256": "282ce572b0ae85f54bd70db06280ee288ae3cd7ed4b5f0146c834be647255d57"
+    }
+  },
+  "sd_install": {
+    "result": "PASS",
+    "timestamp_utc": "2026-11-19T02:13:30.485185+00:00",
+    "target": "F:\\NES",
+    "formatted": false,
+    "root_entries_preserved": [
+      "NES",
+      "System Volume Information",
+      "TH06"
+    ],
+    "files": [
+      {
+        "file": "DISKSYS.ROM",
+        "bytes": 8192,
+        "sha256": "99c18490ed9002d9c6d999b9d8d15be5c051bdfa7cc7e73318053c9a994b0178",
+        "action": "verified"
+      },
+      {
+        "file": "G0000.NES",
+        "bytes": 40976,
+        "sha256": "f61548fdf1670cffefcc4f0b7bdcdd9eaba0c226e3b74f8666071496988248de",
+        "action": "verified"
+      },
+      {
+        "file": "G0000.COV",
+        "bytes": 30776,
+        "sha256": "3c70d2c038f7ab20885367c86e744e33e0d752d5a51b6bc5903c42126131bcdc",
+        "action": "verified"
+      },
+      {
+        "file": "G0001.FDS",
+        "bytes": 65500,
+        "sha256": "ff8afb9ae6b705b4e51dbcb193dcebadf4c049800a71003d3a45052648e52eda",
+        "action": "verified"
+      },
+      {
+        "file": "G0001.COV",
+        "bytes": 30776,
+        "sha256": "c1f84ee5d00357e52929a6782e8f5f42d99bfe2273bce46e3be312e8be727fa3",
+        "action": "verified"
+      },
+      {
+        "file": "G0002.NES",
+        "bytes": 393232,
+        "sha256": "6ea0777ca520ba7ad7b0ea0f6452140d59aa0b1dffe5045cb1e8020dde10c267",
+        "action": "verified"
+      },
+      {
+        "file": "G0002.COV",
+        "bytes": 30776,
+        "sha256": "02f4fe4b86630ad1fc62a1f2c0e886eb91fff96f5648118d60e15fe5cd904e9d",
+        "action": "verified"
+      },
+      {
+        "file": "G0003.NES",
+        "bytes": 131088,
+        "sha256": "e6e6b7014685adae447ebb3833242815747bc1e5df83ade79f693fb67cf565b6",
+        "action": "verified"
+      },
+      {
+        "file": "G0003.COV",
+        "bytes": 30776,
+        "sha256": "b0f30065e991b75e15b9dbf24d1e1b0d3fbc6a6768bbe69798550dec3f2af54f",
+        "action": "verified"
+      },
+      {
+        "file": "G0004.NES",
+        "bytes": 131088,
+        "sha256": "463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc",
+        "action": "verified"
+      },
+      {
+        "file": "G0004.COV",
+        "bytes": 30776,
+        "sha256": "0878321b26a1dcd3f4b523240efbad92e2558b1b27a357258158e0df862ab6e9",
+        "action": "verified"
+      },
+      {
+        "file": "G0005.NES",
+        "bytes": 393232,
+        "sha256": "1c7b2ed2c1fb5839a6764006aa476f5c9d48f99465b6141980f3a5af1dfec0d6",
+        "action": "created"
+      },
+      {
+        "file": "G0005.COV",
+        "bytes": 30776,
+        "sha256": "81d0ac8e130eecf67f9440437b054da589a522d4edc5df050508436b1553e2c2",
+        "action": "created"
+      },
+      {
+        "file": "G0006.NES",
+        "bytes": 786448,
+        "sha256": "7d3b5180300857cb685e807d9c5ec92c29f01b51aabaf7563bf4dabdf754953c",
+        "action": "created"
+      },
+      {
+        "file": "G0006.COV",
+        "bytes": 30776,
+        "sha256": "8e75d718b8d74de1debb32174c5e0c73b9c7e044391d626e283c1130bbd54604",
+        "action": "created"
+      },
+      {
+        "file": "LIBRARY.IDX",
+        "bytes": 402,
+        "sha256": "abc40c69f93eb0b4534913fdefa46743a2edea22c4b5a2e38c2bf6010693701b",
+        "action": "updated"
+      },
+      {
+        "file": "SD17.JSON",
+        "bytes": 3985,
+        "sha256": "30c39ccee2a7ec250ea4994b7592fb31f0086ff20f53a9c27c30d24848da7890",
+        "action": "updated"
+      }
+    ],
+    "metadata_update_authorized": true,
+    "hardware_tested": false,
+    "metadata_backup": "D:\\Project\\BA_Game\\Nes_fire_emulator\\Release\\sd_metadata_before_v0.19_20261119_101329",
+    "firmware_min_version": "0.19",
+    "firmware_flashed": false
+  },
+  "firmware_files": {
+    "NesFire_v0.19-mmc5-preview.hex": {
+      "bytes": 437845,
+      "sha256": "5646014eb28e43e3760663bb277aff431e5baa7f3e8b452486d76c6b5bc2a11f"
+    },
+    "NesFire_v0.19-mmc5-preview.bin": {
+      "bytes": 155648,
+      "sha256": "90b05e69aec7d7f870d585ae530d36861f5de2d8f37cf052efadf9eb7acb23d9"
+    }
+  },
+  "limitations": [
+    "8 KiB WRAM profile only",
+    "No PCM read monitoring or PCM IRQ",
+    "Scanline-level IRQ/PPU approximation; vertical split not commercial-game tested",
+    "No MMC5A extra registers",
+    "Measured board FPS, long-term and later game progress remain untested",
+    "On-board cold save restore remains untested; offline restore test passed"
+  ],
+  "hardware_test_scope": "User-confirmed basic Castlevania III USA stage 1-01 controls/display/speaker audio; Just Breed Japan opening/town text/display/music. No measured game FPS, long-term or on-board save acceptance.",
+  "flashed_by": "user",
+  "user_acceptance": {
+    "version": "0.19-mmc5-preview",
+    "recorded_at": "2026-11-19T10:40:36.868525+08:00",
+    "result": "PASS",
+    "hardware_tested": true,
+    "scope": "Basic user-observed MMC5 gameplay/display/audio acceptance for the two supplied games; not a complete MMC5 or long-term acceptance",
+    "user_flashed": true,
+    "flashed_by_agent": false,
+    "agent_reset_requested": false,
+    "agent_halt_requested": false,
+    "agent_keys_injected": false,
+    "games": [
+      {
+        "file": "Castlevania III - Dracula's Curse (USA).nes",
+        "feedback": "画面、操作和声音都正常",
+        "scope": "User followed stage 1-01 direction / KEY2 jump / KEY1 attack / speaker music and tempo check",
+        "result": "PASS"
+      },
+      {
+        "file": "Just Breed (Japan).nes",
+        "feedback": "文字、画面和音乐正常",
+        "scope": "User checked new-game/name entry, opening text, town characters, music and tempo",
+        "result": "PASS"
+      }
+    ],
+    "flash_bytes_verified": 155648,
+    "bin_sha256": "90b05e69aec7d7f870d585ae530d36861f5de2d8f37cf052efadf9eb7acb23d9",
+    "readonly_sampling": {
+      "report": "board_menu_readonly_acceptance_v0.19.json",
+      "sampled_state": "menu",
+      "library_count": 7,
+      "speaker_route_configured": true,
+      "faults_zero": true,
+      "game_frame_rate_measured": false
+    },
+    "not_tested": [
+      "Instantaneous/measured in-game board FPS",
+      "Long-term play and later chapters",
+      "MMC5 vertical split in a commercial game",
+      "On-board persistent save cold restore",
+      "Other MMC5 games and board profiles"
+    ]
+  }
+}

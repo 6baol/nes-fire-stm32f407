@@ -1,0 +1,27 @@
+{
+  "version": "0.14.1-ui-preview",
+  "hardware_tested": false,
+  "flashed": false,
+  "navigation": "One step per deflection; 60ms stable centre rearm; 0.65 trigger / 0.25 release",
+  "covers": "Native 256x240 -> one nearest-neighbour LCD pass; no intermediate downsample",
+  "tests": [
+    "ARM app no hold/noise/rebound repeat",
+    "stable-centre rearm and next deliberate move",
+    "three title captures match source-to-LCD RGB565 pixels",
+    "LCD bounds",
+    "Settings entry/exit and simultaneous button display",
+    "8 importer tests",
+    "A+B input debounce"
+  ],
+  "files": {
+    "NesFire_v0.14.1-ui-preview.hex": {
+      "bytes": 2163118,
+      "sha256": "c0769cbd20b9127b38597866d00541903b01af0157d6e526f025181a41a9041d"
+    },
+    "NesFire_v0.14.1-ui-preview.bin": {
+      "bytes": 769024,
+      "sha256": "ec0f6574e9a6aaec673eeb95fd74970d540490cda8f05ba7e7f9dd05a0953e8b"
+    }
+  },
+  "axf_sha256": "2f670472119b449f61cbe99e7a55450ac9c8fdb3ae74343fa4046fec23262249"
+}

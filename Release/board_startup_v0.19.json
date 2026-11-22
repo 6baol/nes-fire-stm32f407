@@ -1,0 +1,21 @@
+{
+  "version": "0.19-mmc5-preview",
+  "checked_at": "2026-11-19T10:32:21.657945+08:00",
+  "result": "PASS",
+  "scope": "User-flashed firmware readback and running menu startup only; MMC5 gameplay/sound/speed acceptance pending",
+  "flashed_by_agent": false,
+  "reset_requested": false,
+  "halt_requested": false,
+  "ram_written": false,
+  "physical_sd_written_during_check": false,
+  "flash_bytes_verified": 155648,
+  "bin_sha256": "90b05e69aec7d7f870d585ae530d36861f5de2d8f37cf052efadf9eb7acb23d9",
+  "sd_active": true,
+  "library_count": 7,
+  "speaker_route_configured": true,
+  "audio_dma_advancing": true,
+  "cpu_codec_dma_faults_zero": true,
+  "gameplay_hardware_tested": false,
+  "listener_confirmation": false,
+  "raw_report": "board_speaker_readonly_v0.19-mmc5-preview.json"
+}

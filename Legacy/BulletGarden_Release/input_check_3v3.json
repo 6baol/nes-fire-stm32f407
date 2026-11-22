@@ -1,0 +1,65 @@
+[
+  {
+    "PB7_level": 1,
+    "sw_raw_stable": [
+      0,
+      0
+    ],
+    "joystick": {
+      "raw_x": 2055,
+      "raw_y": 2111,
+      "center_x": 2045,
+      "center_y": 2106,
+      "x": 0.0,
+      "y": 0.0,
+      "calibrated": 1,
+      "healthy": 1,
+      "errors": 0
+    },
+    "game_mode": 0,
+    "CFSR": 0,
+    "HFSR": 0
+  },
+  {
+    "PB7_level": 1,
+    "sw_raw_stable": [
+      0,
+      0
+    ],
+    "joystick": {
+      "raw_x": 2051,
+      "raw_y": 2108,
+      "center_x": 2045,
+      "center_y": 2106,
+      "x": 0.0,
+      "y": 0.0,
+      "calibrated": 1,
+      "healthy": 1,
+      "errors": 0
+    },
+    "game_mode": 0,
+    "CFSR": 0,
+    "HFSR": 0
+  },
+  {
+    "PB7_level": 1,
+    "sw_raw_stable": [
+      0,
+      0
+    ],
+    "joystick": {
+      "raw_x": 2044,
+      "raw_y": 2111,
+      "center_x": 2045,
+      "center_y": 2106,
+      "x": 0.0,
+      "y": 0.0,
+      "calibrated": 1,
+      "healthy": 1,
+      "errors": 0
+    },
+    "game_mode": 0,
+    "CFSR": 0,
+    "HFSR": 0
+  }
+]

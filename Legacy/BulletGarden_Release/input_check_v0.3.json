@@ -1,0 +1,71 @@
+[
+  {
+    "PB7_level": 1,
+    "PB7_mode": 0,
+    "PB7_pull": 1,
+    "sw_raw_stable": [
+      0,
+      0
+    ],
+    "joystick": [
+      3184,
+      3275,
+      0,
+      0,
+      0.0,
+      0.0,
+      0,
+      1,
+      0
+    ],
+    "game_mode": 0,
+    "key1": 0,
+    "key2": 0
+  },
+  {
+    "PB7_level": 1,
+    "PB7_mode": 0,
+    "PB7_pull": 1,
+    "sw_raw_stable": [
+      0,
+      0
+    ],
+    "joystick": [
+      3196,
+      3279,
+      0,
+      0,
+      0.0,
+      0.0,
+      0,
+      1,
+      0
+    ],
+    "game_mode": 0,
+    "key1": 0,
+    "key2": 0
+  },
+  {
+    "PB7_level": 1,
+    "PB7_mode": 0,
+    "PB7_pull": 1,
+    "sw_raw_stable": [
+      0,
+      0
+    ],
+    "joystick": [
+      3192,
+      3271,
+      0,
+      0,
+      0.0,
+      0.0,
+      0,
+      1,
+      0
+    ],
+    "game_mode": 0,
+    "key1": 0,
+    "key2": 0
+  }
+]

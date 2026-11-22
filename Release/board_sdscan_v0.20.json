@@ -1,0 +1,44 @@
+{
+  "version": "0.20-sd-scan",
+  "hardware_tested": true,
+  "date": "2026-11-20",
+  "scope": "Flash programming with full readback, then read-only SWD inspection of the library state. No gameplay, input injection or save-write test in this round.",
+  "firmware": {
+    "hex": "NesFire_v0.20-sd-scan.hex",
+    "bin_bytes": 164864,
+    "bin_sha256": "a45da1fd1f7e6ee56e171df236e9cdfd953c3263f5e43de2003ad1959496c849",
+    "programmer": "pyOCD CMSIS-DAP / SWD 1000000Hz",
+    "full_readback_match": true,
+    "backup": "backups/flash_20261120_231431.bin"
+  },
+  "card": {
+    "layout": "legacy PC pack: NES/G0000.NES ... G0006.NES plus LIBRARY.IDX",
+    "sd_active": 1,
+    "sd_count": 7,
+    "titles": [
+      "SUPER MARIO BROS.",
+      "SUPER MARIO BROS. 2",
+      "SUPER MARIO BROS. 3",
+      "METROID",
+      "WIZARDS & WARRIORS",
+      "CASTLEVANIA III: DRACULA'S CURSE",
+      "JUST BREED"
+    ],
+    "labels_from": "LIBRARY.IDX display fallback (old card names are G0000..G0006)",
+    "mappers": [0, 20, 4, 1, 7, 5, 5]
+  },
+  "boot_scan": {
+    "cold_file_reads_including_index_write_prerequisite": 16,
+    "warm_file_reads_after_reset": 4,
+    "index_cache_written": true,
+    "status": "",
+    "nes_faults": 0,
+    "cfsr": "0x00000000"
+  },
+  "not_verified": [
+    "gameplay, frame rate and audio on this build",
+    "long original filenames on a real card (verified only in ARM simulation)",
+    "save writes on the physical card",
+    "removing LIBRARY.IDX from the physical card"
+  ]
+}

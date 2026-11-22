@@ -1,0 +1,8 @@
+{
+  "version": "0.25-m74-117",
+  "programmer": "pyOCD CMSIS-DAP / SWD 1000000Hz",
+  "bytes_verified": 169984,
+  "sha256": "aa1d317ffa8b9e57a1d775d92e16a31cfc0412c1f744871d4553f89bc9281508",
+  "full_readback_match": true,
+  "verify_only": false
+}

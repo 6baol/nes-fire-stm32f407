@@ -1,0 +1,772 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 INCLUDE          equates.s
+    1 00000000         
+    2 00000000        A 
+                       globalptr
+                               RN               r10         ;//=wram_globals* p
+                                                            tr
+    3 00000000         ;//cpu_zpage RN r11 ;=CPU_RAM
+    4 00000000         ;-------------------------------------------------------
+                       ---------------------
+    5 00000000         
+    6 00000000         
+    7 00000000                 MAP              0,globalptr ;//MAP 用于定义
+                                                            一个结构化的�
+                                                            ��存表的首地�
+                                                            �
+    8 00000000         ;//6502.s   ;//定义内存表的首地址为globalptr
+    9 00000000 00000000 
+                       opz     #                4           ;opz # 256*4       
+                                                            ;//代码表地址 
+                                                                  
+   10 00000000 00000004 
+                       readmem_tbl
+                               #                8*4         ;//8*4
+   11 00000000 00000024 
+                       writemem_tbl
+                               #                8*4         ;//8*4
+   12 00000000 00000044 
+                       memmap_tbl
+                               #                8*4         ;//存储器映象 
+                                                            ram+rom
+   13 00000000 00000064 
+                       cpuregs #                7*4         ;//1208存放6502�
+                                                            �存器保存的开
+                                                            始地址
+   14 00000000 00000080 
+                       m6502_s #                4           ;//
+   15 00000000 00000084 
+                       lastbank
+                               #                4           ;//6502PC从 ROM的
+                                                            最后偏移量
+   16 00000000 00000088 
+                       nexttimeout
+                               #                4
+   17 00000000         
+   18 00000000 0000008C 
+                       rombase #                4           ;//ROM开始地址
+   19 00000000 00000090 
+                       romnumber
+                               #                4           ;// ROM大小  
+   20 00000000 00000094 
+                       rommask #                4           ;//ROM掩膜 rommas
+                                                            k=romsize-1
+   21 00000000         
+   22 00000000 00000098 
+                       joy0data
+                               #                4           ;//串行数据
+   23 00000000 0000009C 
+                       joy1data
+                               #                4           ;//手柄1串行数
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                                                            据
+   24 00000000         
+   25 00000000 000000A0 
+                       clocksh #                4           ;//执行的时钟�
+                                                            �� apu用
+   26 00000000 000000A4 
+                       cpunmif #                4           ;cpu中断标志
+   27 00000000 000000A8 
+                       cpuirqf #                4           ;cpu中断标志 
+   28 00000000         ;-------------------------------------------------------
+                       -----------------------------------
+   29 00000000         
+   30 00000000         
+   31 00000000         ;// # 2 ;align      
+   32 00000000         
+   33 00000000                 END
+    2 00000000         
+    3 00000000         
+    4 00000000                 IMPORT           NES_RAM
+    5 00000000                 IMPORT           NES_SRAM
+    6 00000000                 IMPORT           CPU_reset
+    7 00000000                 IMPORT           romfile     ;from main.c
+    8 00000000                 IMPORT           cpu_data    ; 6502.s 
+    9 00000000                 IMPORT           op_table
+   10 00000000         
+   11 00000000                 EXPORT           cpu6502_init
+   12 00000000                 EXPORT           map67_
+   13 00000000                 EXPORT           map89_
+   14 00000000                 EXPORT           mapAB_
+   15 00000000                 EXPORT           mapCD_
+   16 00000000                 EXPORT           mapEF_
+   17 00000000                 EXPORT           flush
+   18 00000000         ;-------------------------------------------------------
+                       ---------------------
+   19 00000000                 AREA             rom_code, CODE, READONLY
+   20 00000000                 THUMB
+   21 00000000                 PRESERVE8
+   22 00000000         ;-------------------------------------------------------
+                       ---------------------
+   23 00000000         cpu6502_init
+                               PROC
+   24 00000000         ;-------------------------------------------------------
+                       ---------------------
+   25 00000000 E92D 5FF0       stmfd            sp!,{r4-r12,lr}
+   26 00000004         
+   27 00000004 F8DF A1C8       ldr              r10,=cpu_data ;读取地址
+   28 00000008 F8DF B1C8       ldr              r11,=NES_RAM ;r11=cpu_zpage
+   29 0000000C         
+   30 0000000C F8DB B000       ldr              r11,[r11]   ;NES_RAM用了指�
+                                                            � 
+   31 00000010         ;*******************************************************
+                         
+   32 00000010 F8CA B044       str              r11,memmap_tbl ;NES_RAM用了�
+                                                            �针
+   33 00000014 F8CA B048       str              r11,memmap_tbl+4
+   34 00000018 F8CA B04C       str              r11,memmap_tbl+8
+   35 0000001C         
+   36 0000001C 486E            ldr              r0,=NES_SRAM ;NES_SRAM用了指
+                                                            针
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   37 0000001E 6800            ldr              r0,[r0]
+   38 00000020 F8CA 0050       str              r0,memmap_tbl+12
+   39 00000024         ;*******************************************************
+                       ***************   
+   40 00000024         
+   41 00000024 486D            ldr              r0,=op_table ;获取代码跳�
+                                                            �表地址
+   42 00000026 F8CA 0000       str              r0,opz      ;保存
+   43 0000002A         
+   44 0000002A 486D            ldr              r0,=romfile
+   45 0000002C 6800            ldr              r0,[r0]     ;R0现在指向ROM�
+                                                            ��像（包括头�
+                                                            �
+   46 0000002E F100 0310       add              r3,r0,#16   ;r3现在指向rom�
+                                                            ��像(不包括头�
+                                                            ��
+   47 00000032 F8CA 308C       str              r3,rombase  ;设置rom基地址
+                                                            
+   48 00000036         ;r3=rombase til end of loadcart so DON'T FUCK IT UP
+   49 00000036 F04F 0201       mov              r2,#1
+   50 0000003A F813 1C0C       ldrb             r1,[r3,#-12] ; 16kB PROM的数�
+                                                            ��    2
+   51 0000003E EBC2 3081       rsb              r0,r2,r1,lsl#14 ;romsize=X*16KB
+                                                              <<14 逆向减法
+                                                            指令  r0=0x7fff
+   52 00000042 F8CA 0094       str              r0,rommask  ;rommask=promsize-1
+                                                              32768-1 
+   53 00000046         ;-------------------------------------------------------
+                       ----------------------------- 
+   54 00000046 F04F 0900       mov              r9,#0       ;(消除任何encod
+                                                            ePC的映射器*初
+                                                            始化过程中的�
+                                                            ��误)
+   55 0000004A F8CA 9084       str              r9,lastbank ;6502PC从 ROM的�
+                                                            �后偏移量写0
+   56 0000004E         
+   57 0000004E F04F 0000       mov              r0,#0       ;默认rom映射
+   58 00000052 F000 F875       bl               map89AB_    ;89AB=1st 16k
+   59 00000056 F04F 30FF       mov              r0,#-1
+   60 0000005A F000 F88F       bl               mapCDEF_    ;CDEF=last 16k
+   61 0000005E         ;-------------------------------------------------------
+                       ---------------------
+   62 0000005E         
+   63 0000005E F813 1C0A       ldrb             r1,[r3,#-10] ;get mapper#
+   64 00000062 F813 2C09       ldrb             r2,[r3,#-9]
+   65 00000066 F012 0F0E       tst              r2,#0x0e    ;long live DiskDude
+                                                            !
+   66 0000006A F001 01F0       and              r1,r1,#0xf0
+   67 0000006E F002 02F0       and              r2,r2,#0xf0
+   68 00000072 EA42 1011       orr              r0,r2,r1,lsr#4
+   69 00000076 BF18 0908       movne            r0,r1,lsr#4 ;ignore high nibble
+                                                             if header looks ba
+                                                            d 忽略高四位�
+                                                            �如果头看起来
+                                                            很糟糕
+   70 0000007A         ;r0=mapper号
+   71 0000007A         ;-------------------------------------------------------
+                       --------------------- 
+   72 0000007A         
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+   73 0000007A 485A            ldr              r0,=Mapper_W
+   74 0000007C F8CA 0034       str              r0,writemem_tbl+16
+   75 00000080 F8CA 0038       str              r0,writemem_tbl+20
+   76 00000084 F8CA 003C       str              r0,writemem_tbl+24
+   77 00000088 F8CA 0040       str              r0,writemem_tbl+28
+   78 0000008C         ;-------------------------------------------------------
+                       -----------------------
+   79 0000008C         
+   80 0000008C F7FF FFFE       bl               CPU_reset   ;reset everything e
+                                                            lse
+   81 00000090 E8BD 5FF0       ldmfd            sp!,{r4-r12,lr}
+   82 00000094 4770            bx               lr
+   83 00000096                 ENDP
+   84 00000096         
+   85 00000096         ;-------------------------------------------------------
+                       ---------------------
+   86 00000096         map67_                               ;rom paging.. r0=pa
+                                                            ge#
+   87 00000096         ;-------------------------------------------------------
+                       ---------------------
+   88 00000096 E92D 5600       push             {r9,r10,r12,lr}
+   89 0000009A F8DF A134       ldr              r10,=cpu_data
+   90 0000009E F8DA 1094       ldr              r1,rommask
+   91 000000A2 EA01 3040       and              r0,r1,r0,lsl#13
+   92 000000A6 F8DA 108C       ldr              r1,rombase
+   93 000000AA 4408            add              r0,r1,r0
+   94 000000AC F5A0 40C0       sub              r0,r0,#0x6000
+   95 000000B0 F8CA 0050       str              r0,memmap_tbl+12
+   96 000000B4 E8BD 9600       pop              {r9,r10,r12,pc}
+   97 000000B8         ;-------------------------------------------------------
+                       ---------------------
+   98 000000B8         map89_                               ;rom paging.. r0=pa
+                                                            ge# ROM分页
+   99 000000B8         ;-------------------------------------------------------
+                       ---------------------
+  100 000000B8 E92D 5600       push             {r9,r10,r12,lr}
+  101 000000BC F8DF A110       ldr              r10,=cpu_data
+  102 000000C0 F8DA 108C       ldr              r1,rombase  ;rom开始地址
+  103 000000C4 F5A1 4100       sub              r1,r1,#0x8000
+  104 000000C8 F8DA 2094       ldr              r2,rommask
+  105 000000CC EA02 3040       and              r0,r2,r0,lsl#13
+  106 000000D0 4408            add              r0,r1,r0
+  107 000000D2 F8CA 0054       str              r0,memmap_tbl+16
+  108 000000D6 E8BD 9600       pop              {r9,r10,r12,pc}
+  109 000000DA         ;-------------------------------------------------------
+                       ---------------------
+  110 000000DA         mapAB_
+  111 000000DA         ;-------------------------------------------------------
+                       ---------------------
+  112 000000DA E92D 5600       push             {r9,r10,r12,lr}
+  113 000000DE F8DF A0F0       ldr              r10,=cpu_data
+  114 000000E2 F8DA 108C       ldr              r1,rombase
+  115 000000E6 F5A1 4120       sub              r1,r1,#0xa000
+  116 000000EA F8DA 2094       ldr              r2,rommask
+  117 000000EE EA02 3040       and              r0,r2,r0,lsl#13
+  118 000000F2 4408            add              r0,r1,r0
+  119 000000F4 F8CA 0058       str              r0,memmap_tbl+20
+  120 000000F8 E8BD 9600       pop              {r9,r10,r12,pc}
+  121 000000FC         ;-------------------------------------------------------
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+                       ---------------------
+  122 000000FC         mapCD_
+  123 000000FC         ;-------------------------------------------------------
+                       ---------------------
+  124 000000FC E92D 5600       push             {r9,r10,r12,lr}
+  125 00000100 F8DF A0CC       ldr              r10,=cpu_data
+  126 00000104 F8DA 108C       ldr              r1,rombase
+  127 00000108 F5A1 4140       sub              r1,r1,#0xc000
+  128 0000010C F8DA 2094       ldr              r2,rommask
+  129 00000110 EA02 3040       and              r0,r2,r0,lsl#13
+  130 00000114 4408            add              r0,r1,r0
+  131 00000116 F8CA 005C       str              r0,memmap_tbl+24
+  132 0000011A E8BD 9600       pop              {r9,r10,r12,pc}
+  133 0000011E         ;-------------------------------------------------------
+                       ---------------------
+  134 0000011E         mapEF_
+  135 0000011E         ;-------------------------------------------------------
+                       ---------------------
+  136 0000011E E92D 5600       push             {r9,r10,r12,lr}
+  137 00000122 F8DF A0AC       ldr              r10,=cpu_data
+  138 00000126 F8DA 108C       ldr              r1,rombase
+  139 0000012A F5A1 4160       sub              r1,r1,#0xe000
+  140 0000012E F8DA 2094       ldr              r2,rommask
+  141 00000132 EA02 3040       and              r0,r2,r0,lsl#13
+  142 00000136 4408            add              r0,r1,r0
+  143 00000138 F8CA 0060       str              r0,memmap_tbl+28
+  144 0000013C E8BD 9600       pop              {r9,r10,r12,pc}
+  145 00000140         ;-------------------------------------------------------
+                       ---------------------
+  146 00000140         map89AB_
+  147 00000140         ;-------------------------------------------------------
+                       ---------------------
+  148 00000140 F8DA 108C       ldr              r1,rombase  ;rom基地址（不
+                                                            包括头）
+  149 00000144 F5A1 4100       sub              r1,r1,#0x8000
+  150 00000148 F8DA 2094       ldr              r2,rommask
+  151 0000014C EA02 3080       and              r0,r2,r0,lsl#14
+  152 00000150 4408            add              r0,r1,r0
+  153 00000152 F8CA 0054       str              r0,memmap_tbl+16
+  154 00000156 F8CA 0058       str              r0,memmap_tbl+20
+  155 0000015A         flush                                ;update m6502_pc & 
+                                                            lastbank
+  156 0000015A F8DA 1084       ldr              r1,lastbank
+  157 0000015E EBA9 0901       sub              r9,r9,r1
+  158 00000162 F409 4160       and              r1,r9,#0xE000 ;//r9和0xe000按
+                                                            位与运算
+  159 00000166 F10A 0244       adr              r2,memmap_tbl ;//把存储器�
+                                                            �象地址加载到
+                                                            r2
+  160 0000016A EA4F 21D1       lsr              r1,r1,#11   ;//>>11位   r1/204
+                                                            8
+  161 0000016E 5850            ldr              r0,[r2,r1]  ;//读取r2地址+r
+                                                            1偏移的数据到
+                                                            r0
+  162 00000170         
+  163 00000170 F8CA 0084       str              r0,lastbank ;//保存6502PC从 
+                                                            ROM的最后偏移�
+                                                            �� 
+  164 00000174 4481            add              r9,r9,r0    ;//m6502_pc+r0
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+  165 00000176 F04E 0E01       orr              lr,#0x01    ;lr最低位置1防
+                                                            止进入arm状态
+  166 0000017A 4770            bx               lr
+  167 0000017C         
+  168 0000017C         ;-------------------------------------------------------
+                       ---------------------
+  169 0000017C         mapCDEF_
+  170 0000017C         ;-------------------------------------------------------
+                       ---------------------
+  171 0000017C F8DA 108C       ldr              r1,rombase
+  172 00000180 F5A1 4140       sub              r1,r1,#0xc000
+  173 00000184 F8DA 2094       ldr              r2,rommask
+  174 00000188 EA02 3080       and              r0,r2,r0,lsl#14
+  175 0000018C 4408            add              r0,r1,r0
+  176 0000018E F8CA 005C       str              r0,memmap_tbl+24
+  177 00000192 F8CA 0060       str              r0,memmap_tbl+28
+  178 00000196 E7FE            b                flush
+  179 00000198         ;-------------------------------------------------------
+                       ---------------------
+  180 00000198         map89ABCDEF_
+  181 00000198         ;-------------------------------------------------------
+                       ---------------------
+  182 00000198 F8DA 108C       ldr              r1,rombase
+  183 0000019C F5A1 4100       sub              r1,r1,#0x8000
+  184 000001A0 F8DA 2094       ldr              r2,rommask
+  185 000001A4 EA02 30C0       and              r0,r2,r0,lsl#15
+  186 000001A8 4408            add              r0,r1,r0
+  187 000001AA F8CA 0054       str              r0,memmap_tbl+16
+  188 000001AE F8CA 0058       str              r0,memmap_tbl+20
+  189 000001B2 F8CA 005C       str              r0,memmap_tbl+24
+  190 000001B6 F8CA 0060       str              r0,memmap_tbl+28
+  191 000001BA E7FE            b                flush
+  192 000001BC         ;*******************************************************
+                       ******************************
+  193 000001BC                 IMPORT           asm_Mapper_Write ;
+  194 000001BC         Mapper_W
+  195 000001BC         ;-------------------------------------------
+  196 000001BC B508            stmfd            sp!,{r3,lr} ;LR 寄存器放栈
+                                                            
+  197 000001BE 4661            mov              r1,r12
+  198 000001C0 F7FF FFFE       bl               asm_Mapper_Write
+  199 000001C4 E8BD 4008       ldmfd            sp!,{r3,lr}
+  200 000001C8 E7FE            b                flush
+  201 000001CA F04E 0E01       orr              lr,#0x01    ;lr最低位置1防
+                                                            止进入arm状态
+  202 000001CE 4770            bx               lr
+  203 000001D0         ; nop
+  204 000001D0         ;-------------------------------------------------------
+                       --------------------------------
+  205 000001D0         
+  206 000001D0                 END
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+              00000000 
+Command Line: --debug --xref --diag_suppress=9931,A1950W --cpu=Cortex-M4.fp.sp 
+--depend=.\output\cart.d -o.\output\cart.o -I..\User\nes -IC:\Users\18497\AppDa
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+ta\Local\Arm\Packs\Keil\STM32F4xx_DFP\2.15.0\Drivers\CMSIS\Device\ST\STM32F4xx\
+Include --predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 543
+" --predefine="STM32F407xx SETA 1" --list=.\listings\cart.lst ..\User\nes\cart.
+s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+Mapper_W 000001BC
+
+Symbol: Mapper_W
+   Definitions
+      At line 194 in file ..\User\nes\cart.s
+   Uses
+      At line 73 in file ..\User\nes\cart.s
+Comment: Mapper_W used once
+cpu6502_init 00000000
+
+Symbol: cpu6502_init
+   Definitions
+      At line 23 in file ..\User\nes\cart.s
+   Uses
+      At line 11 in file ..\User\nes\cart.s
+Comment: cpu6502_init used once
+flush 0000015A
+
+Symbol: flush
+   Definitions
+      At line 155 in file ..\User\nes\cart.s
+   Uses
+      At line 17 in file ..\User\nes\cart.s
+      At line 178 in file ..\User\nes\cart.s
+      At line 191 in file ..\User\nes\cart.s
+      At line 200 in file ..\User\nes\cart.s
+
+map67_ 00000096
+
+Symbol: map67_
+   Definitions
+      At line 86 in file ..\User\nes\cart.s
+   Uses
+      At line 12 in file ..\User\nes\cart.s
+Comment: map67_ used once
+map89ABCDEF_ 00000198
+
+Symbol: map89ABCDEF_
+   Definitions
+      At line 180 in file ..\User\nes\cart.s
+   Uses
+      None
+Comment: map89ABCDEF_ unused
+map89AB_ 00000140
+
+Symbol: map89AB_
+   Definitions
+      At line 146 in file ..\User\nes\cart.s
+   Uses
+      At line 58 in file ..\User\nes\cart.s
+Comment: map89AB_ used once
+map89_ 000000B8
+
+Symbol: map89_
+   Definitions
+      At line 98 in file ..\User\nes\cart.s
+   Uses
+      At line 13 in file ..\User\nes\cart.s
+Comment: map89_ used once
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+mapAB_ 000000DA
+
+Symbol: mapAB_
+   Definitions
+      At line 110 in file ..\User\nes\cart.s
+   Uses
+      At line 14 in file ..\User\nes\cart.s
+Comment: mapAB_ used once
+mapCDEF_ 0000017C
+
+Symbol: mapCDEF_
+   Definitions
+      At line 169 in file ..\User\nes\cart.s
+   Uses
+      At line 60 in file ..\User\nes\cart.s
+Comment: mapCDEF_ used once
+mapCD_ 000000FC
+
+Symbol: mapCD_
+   Definitions
+      At line 122 in file ..\User\nes\cart.s
+   Uses
+      At line 15 in file ..\User\nes\cart.s
+Comment: mapCD_ used once
+mapEF_ 0000011E
+
+Symbol: mapEF_
+   Definitions
+      At line 134 in file ..\User\nes\cart.s
+   Uses
+      At line 16 in file ..\User\nes\cart.s
+Comment: mapEF_ used once
+rom_code 00000000
+
+Symbol: rom_code
+   Definitions
+      At line 19 in file ..\User\nes\cart.s
+   Uses
+      None
+Comment: rom_code unused
+12 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Register relative symbols
+
+clocksh 000000A0
+
+Symbol: clocksh
+   Definitions
+      At line 25 in file ..\User\nes\equates.s
+   Uses
+      None
+Comment: clocksh unused
+cpuirqf 000000A8
+
+Symbol: cpuirqf
+   Definitions
+      At line 27 in file ..\User\nes\equates.s
+   Uses
+      None
+Comment: cpuirqf unused
+cpunmif 000000A4
+
+Symbol: cpunmif
+   Definitions
+      At line 26 in file ..\User\nes\equates.s
+   Uses
+      None
+Comment: cpunmif unused
+cpuregs 00000064
+
+Symbol: cpuregs
+   Definitions
+      At line 13 in file ..\User\nes\equates.s
+   Uses
+      None
+Comment: cpuregs unused
+joy0data 00000098
+
+Symbol: joy0data
+   Definitions
+      At line 22 in file ..\User\nes\equates.s
+   Uses
+      None
+Comment: joy0data unused
+joy1data 0000009C
+
+Symbol: joy1data
+   Definitions
+      At line 23 in file ..\User\nes\equates.s
+   Uses
+      None
+Comment: joy1data unused
+lastbank 00000084
+
+Symbol: lastbank
+   Definitions
+      At line 15 in file ..\User\nes\equates.s
+   Uses
+      At line 55 in file ..\User\nes\cart.s
+      At line 156 in file ..\User\nes\cart.s
+      At line 163 in file ..\User\nes\cart.s
+
+m6502_s 00000080
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Register relative symbols
+
+
+Symbol: m6502_s
+   Definitions
+      At line 14 in file ..\User\nes\equates.s
+   Uses
+      None
+Comment: m6502_s unused
+memmap_tbl 00000044
+
+Symbol: memmap_tbl
+   Definitions
+      At line 12 in file ..\User\nes\equates.s
+   Uses
+      At line 32 in file ..\User\nes\cart.s
+      At line 33 in file ..\User\nes\cart.s
+      At line 34 in file ..\User\nes\cart.s
+      At line 38 in file ..\User\nes\cart.s
+      At line 95 in file ..\User\nes\cart.s
+      At line 107 in file ..\User\nes\cart.s
+      At line 119 in file ..\User\nes\cart.s
+      At line 131 in file ..\User\nes\cart.s
+      At line 143 in file ..\User\nes\cart.s
+      At line 153 in file ..\User\nes\cart.s
+      At line 154 in file ..\User\nes\cart.s
+      At line 159 in file ..\User\nes\cart.s
+      At line 176 in file ..\User\nes\cart.s
+      At line 177 in file ..\User\nes\cart.s
+      At line 187 in file ..\User\nes\cart.s
+      At line 188 in file ..\User\nes\cart.s
+      At line 189 in file ..\User\nes\cart.s
+      At line 190 in file ..\User\nes\cart.s
+
+nexttimeout 00000088
+
+Symbol: nexttimeout
+   Definitions
+      At line 16 in file ..\User\nes\equates.s
+   Uses
+      None
+Comment: nexttimeout unused
+opz 00000000
+
+Symbol: opz
+   Definitions
+      At line 9 in file ..\User\nes\equates.s
+   Uses
+      At line 42 in file ..\User\nes\cart.s
+Comment: opz used once
+readmem_tbl 00000004
+
+Symbol: readmem_tbl
+   Definitions
+      At line 10 in file ..\User\nes\equates.s
+   Uses
+      None
+Comment: readmem_tbl unused
+rombase 0000008C
+
+Symbol: rombase
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Register relative symbols
+
+   Definitions
+      At line 18 in file ..\User\nes\equates.s
+   Uses
+      At line 47 in file ..\User\nes\cart.s
+      At line 92 in file ..\User\nes\cart.s
+      At line 102 in file ..\User\nes\cart.s
+      At line 114 in file ..\User\nes\cart.s
+      At line 126 in file ..\User\nes\cart.s
+      At line 138 in file ..\User\nes\cart.s
+      At line 148 in file ..\User\nes\cart.s
+      At line 171 in file ..\User\nes\cart.s
+      At line 182 in file ..\User\nes\cart.s
+
+rommask 00000094
+
+Symbol: rommask
+   Definitions
+      At line 20 in file ..\User\nes\equates.s
+   Uses
+      At line 52 in file ..\User\nes\cart.s
+      At line 90 in file ..\User\nes\cart.s
+      At line 104 in file ..\User\nes\cart.s
+      At line 116 in file ..\User\nes\cart.s
+      At line 128 in file ..\User\nes\cart.s
+      At line 140 in file ..\User\nes\cart.s
+      At line 150 in file ..\User\nes\cart.s
+      At line 173 in file ..\User\nes\cart.s
+      At line 184 in file ..\User\nes\cart.s
+
+romnumber 00000090
+
+Symbol: romnumber
+   Definitions
+      At line 19 in file ..\User\nes\equates.s
+   Uses
+      None
+Comment: romnumber unused
+writemem_tbl 00000024
+
+Symbol: writemem_tbl
+   Definitions
+      At line 11 in file ..\User\nes\equates.s
+   Uses
+      At line 74 in file ..\User\nes\cart.s
+      At line 75 in file ..\User\nes\cart.s
+      At line 76 in file ..\User\nes\cart.s
+      At line 77 in file ..\User\nes\cart.s
+
+16 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+CPU_reset 00000000
+
+Symbol: CPU_reset
+   Definitions
+      At line 6 in file ..\User\nes\cart.s
+   Uses
+      At line 80 in file ..\User\nes\cart.s
+Comment: CPU_reset used once
+NES_RAM 00000000
+
+Symbol: NES_RAM
+   Definitions
+      At line 4 in file ..\User\nes\cart.s
+   Uses
+      At line 28 in file ..\User\nes\cart.s
+Comment: NES_RAM used once
+NES_SRAM 00000000
+
+Symbol: NES_SRAM
+   Definitions
+      At line 5 in file ..\User\nes\cart.s
+   Uses
+      At line 36 in file ..\User\nes\cart.s
+Comment: NES_SRAM used once
+asm_Mapper_Write 00000000
+
+Symbol: asm_Mapper_Write
+   Definitions
+      At line 193 in file ..\User\nes\cart.s
+   Uses
+      At line 198 in file ..\User\nes\cart.s
+Comment: asm_Mapper_Write used once
+cpu_data 00000000
+
+Symbol: cpu_data
+   Definitions
+      At line 8 in file ..\User\nes\cart.s
+   Uses
+      At line 27 in file ..\User\nes\cart.s
+      At line 89 in file ..\User\nes\cart.s
+      At line 101 in file ..\User\nes\cart.s
+      At line 113 in file ..\User\nes\cart.s
+      At line 125 in file ..\User\nes\cart.s
+      At line 137 in file ..\User\nes\cart.s
+
+op_table 00000000
+
+Symbol: op_table
+   Definitions
+      At line 9 in file ..\User\nes\cart.s
+   Uses
+      At line 41 in file ..\User\nes\cart.s
+Comment: op_table used once
+romfile 00000000
+
+Symbol: romfile
+   Definitions
+      At line 7 in file ..\User\nes\cart.s
+   Uses
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+External symbols
+
+      At line 44 in file ..\User\nes\cart.s
+Comment: romfile used once
+7 symbols
+372 symbols in table

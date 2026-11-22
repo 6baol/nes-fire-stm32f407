@@ -1,0 +1,17 @@
+{
+  "version": "0.10",
+  "bin_sha256": "0d656a44ac302ac160e8ed313dfd8cab3007af68943d6d9f9173d8b0d0118e0a",
+  "confirmation": {
+    "date": "2026-11-17",
+    "source": "user feedback",
+    "feedback": "画面、操作和声音都正常",
+    "lcd_appearance": true,
+    "physical_controls": true,
+    "headphone_audio_and_tempo": true
+  },
+  "remaining_limits": [
+    "Read-only FDS medium; no disk saves",
+    "Later worlds and complete playthrough not verified",
+    "No automatic side switching or FDS expansion audio"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "version": "0.1",
+  "target": "STM32F407ZGT6 / Batianhu V2 / 480x800 MCU LCD",
+  "compiler": "Arm Compiler 6.24 (Keil project selection)",
+  "build": "0 errors, 0 warnings (full rebuild)",
+  "hardware_tested": true,
+  "wiring": "VRx=PA4 (CN3-25), VRy=PA6 (CN3-21), SW=PB7 (CN3-23), 3V3/GND; camera disconnected",
+  "firmware_prefix": "NesFire_v0.1",
+  "files": {
+    "NesFire_v0.1.hex": {
+      "bytes": 253508,
+      "sha256": "6aa170c260513d651c1c15086c3a0dc552b39a4f29a123e68bb8662c392c1577"
+    },
+    "NesFire_v0.1.bin": {
+      "bytes": 90112,
+      "sha256": "3221a2de5851c2086e750c25fd657b300ba85af6ba4566bc1b9715699f6bc6b6"
+    }
+  },
+  "rom": {
+    "name": "smb.nes",
+    "mapper": 0,
+    "size": 40976,
+    "sha256": "f61548fdf1670cffefcc4f0b7bdcdd9eaba0c226e3b74f8666071496988248de",
+    "source_sha256": "0b3d9e1f01ed1668205bab34d6c82b0e281456e137352e4f36a9b2cfa3b66dea",
+    "header_normalized": true
+  },
+  "hardware_report": "board_smb.json",
+  "hardware_scope": "Title, World 1-1, injected Start/Right, 50-54 logic Hz, 25-27 draw Hz; jump capture interrupted; physical controls unverified"
+}

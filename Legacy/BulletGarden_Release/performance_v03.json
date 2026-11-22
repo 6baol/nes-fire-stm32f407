@@ -1,0 +1,38 @@
+[
+  {
+    "requested_bullets": 0,
+    "mode": 2,
+    "game_tick": 250,
+    "active_bullets": 5,
+    "fps": 16,
+    "render_us": 74573,
+    "render_max_us": 234162,
+    "logic_max_us": 195,
+    "overruns": 0,
+    "fill_us": 0
+  },
+  {
+    "requested_bullets": 128,
+    "mode": 2,
+    "game_tick": 1240,
+    "active_bullets": 174,
+    "fps": 4,
+    "render_us": 272856,
+    "render_max_us": 272856,
+    "logic_max_us": 811,
+    "overruns": 0,
+    "fill_us": 0
+  },
+  {
+    "requested_bullets": 256,
+    "mode": 2,
+    "game_tick": 1240,
+    "active_bullets": 256,
+    "fps": 3,
+    "render_us": 283089,
+    "render_max_us": 327963,
+    "logic_max_us": 1102,
+    "overruns": 0,
+    "fill_us": 0
+  }
+]

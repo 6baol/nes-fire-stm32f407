@@ -1,0 +1,35 @@
+{
+  "version": "0.22-sd-cjk",
+  "hardware_tested": true,
+  "date": "2026-11-20",
+  "scope": "Flash write + full readback, then read-only SWD check without the card inserted. Card contents prepared and verified on the PC.",
+  "firmware": {
+    "hex": "NesFire_v0.22-sd-cjk.hex",
+    "bin_bytes": 168960,
+    "full_readback_match": true,
+    "programmer": "pyOCD CMSIS-DAP / SWD 1000000Hz"
+  },
+  "board_without_card": {
+    "sd_active": 0,
+    "catalog_count": 0,
+    "status": "SD INIT ERROR 00000004",
+    "nes_faults": 0,
+    "cfsr": "0x00000000",
+    "fallback": "built-in game path stays available"
+  },
+  "card": {
+    "visible_roms": 406,
+    "top_level_roms": 7,
+    "subfolder": "400 个nes游戏打包下载 (399 files)",
+    "ignored_dirs": ["_LEGACY", "SAVES"],
+    "fonts": ["FONT.MAP", "FONT.HZK"],
+    "titles_db": false,
+    "titles_db_note": "removed on purpose: the filenames are already readable and the dictionary would open every ROM during the first catalog build"
+  },
+  "not_yet_verified": [
+    "first boot with the card inserted (catalog build time and 406-entry menu)",
+    "Chinese glyph appearance on the LCD",
+    "gameplay of the 263 supported ROMs",
+    "the 136 ROMs rejected by mapper/layout rules"
+  ]
+}

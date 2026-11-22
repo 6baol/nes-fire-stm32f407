@@ -1,0 +1,48 @@
+{
+  "version": "0.15-mappers-preview",
+  "build": "0 errors, 0 warnings",
+  "new_mappers": [
+    1,
+    7
+  ],
+  "new_mapper_tests": {
+    "result": "PASS",
+    "scope": "synthetic cartridges on actual ARM AXF; no commercial ROM or board acceptance",
+    "tests": [
+      "test_serial_and_mapping",
+      "test_nametables",
+      "test_sram",
+      "test_rmw_and_live_code",
+      "test_chr_ram_and_snrom_gate",
+      "test_axrom",
+      "test_validation",
+      "test_switching"
+    ],
+    "hardware_tested": false,
+    "axf_sha256": "b33a54d50c07901ee978798786f72c7a3ab6d78feb5ead2b84d5ccc3dbb79c7a"
+  },
+  "regressions_passed": [
+    "9 importer tests",
+    "CPU/PPU",
+    "MMC3",
+    "SMB3 gameplay and status panel",
+    "SMB2 FDS gameplay",
+    "APU PCM",
+    "cross-game switching",
+    "menu/Settings/nav/cover pixels"
+  ],
+  "files": {
+    "NesFire_v0.15-mappers-preview.hex": {
+      "bytes": 2165998,
+      "sha256": "2bf50b2bf0d4764093d7480b2d39945861c9639f250a8a5fcf83270955949b60"
+    },
+    "NesFire_v0.15-mappers-preview.bin": {
+      "bytes": 770048,
+      "sha256": "487e78b3767a2a40b8470893be6b5edbcb2318581ae1b66db360026ceb06e9f0"
+    }
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "new_commercial_games_tested": false,
+  "save_persistence": false
+}

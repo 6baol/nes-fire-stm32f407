@@ -1,0 +1,31 @@
+{
+  "version": "0.13.1-mmc3-preview",
+  "fix": "MMC3 A000 CIRAM mapping direction",
+  "build": "0 errors, 0 warnings",
+  "tests_passed": [
+    "MMC3 registers and physical nametable aliases",
+    "new regression rejects original v0.13 BIN",
+    "SMB3 flow and status panel",
+    "draw/skip consistency",
+    "cross-game switching",
+    "SMB2 BIOS/disk gameplay",
+    "6502 and PPU regression",
+    "ARM APU regression"
+  ],
+  "hardware_tested": false,
+  "flashed": false,
+  "files": {
+    "NesFire_v0.13.1-mmc3-preview.bin": {
+      "bytes": 739328,
+      "sha256": "c621acbe067bb70690e9e7d0fee6611b5832a991746170fb551539109aeeaa2f"
+    },
+    "NesFire_v0.13.1-mmc3-preview.hex": {
+      "bytes": 2079598,
+      "sha256": "c750803cbe9a60032a8d9917e0e97310120ed07ad200cc859b1aaf05268ea12d"
+    },
+    "Fire_F407ZG.axf": {
+      "bytes": 1127104,
+      "sha256": "e52e93c3e43cba75e1591e7b91e8813affc331d6715d9db89b20da2ee5f358a4"
+    }
+  }
+}

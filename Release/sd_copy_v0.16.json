@@ -1,0 +1,95 @@
+{
+  "result": "PASS",
+  "date": "2026-11-18",
+  "target": "F:/NES",
+  "filesystem": "FAT32",
+  "formatted": false,
+  "existing_files_overwritten": false,
+  "root_entries_preserved": [
+    "System Volume Information",
+    "TH06"
+  ],
+  "files": [
+    {
+      "file": "DISKSYS.ROM",
+      "bytes": 8192,
+      "sha256": "99c18490ed9002d9c6d999b9d8d15be5c051bdfa7cc7e73318053c9a994b0178",
+      "created": true
+    },
+    {
+      "file": "G0000.COV",
+      "bytes": 30776,
+      "sha256": "3c70d2c038f7ab20885367c86e744e33e0d752d5a51b6bc5903c42126131bcdc",
+      "created": true
+    },
+    {
+      "file": "G0000.NES",
+      "bytes": 40976,
+      "sha256": "f61548fdf1670cffefcc4f0b7bdcdd9eaba0c226e3b74f8666071496988248de",
+      "created": true
+    },
+    {
+      "file": "G0001.COV",
+      "bytes": 30776,
+      "sha256": "c1f84ee5d00357e52929a6782e8f5f42d99bfe2273bce46e3be312e8be727fa3",
+      "created": true
+    },
+    {
+      "file": "G0001.FDS",
+      "bytes": 65500,
+      "sha256": "ff8afb9ae6b705b4e51dbcb193dcebadf4c049800a71003d3a45052648e52eda",
+      "created": true
+    },
+    {
+      "file": "G0002.COV",
+      "bytes": 30776,
+      "sha256": "02f4fe4b86630ad1fc62a1f2c0e886eb91fff96f5648118d60e15fe5cd904e9d",
+      "created": true
+    },
+    {
+      "file": "G0002.NES",
+      "bytes": 393232,
+      "sha256": "6ea0777ca520ba7ad7b0ea0f6452140d59aa0b1dffe5045cb1e8020dde10c267",
+      "created": true
+    },
+    {
+      "file": "G0003.COV",
+      "bytes": 30776,
+      "sha256": "b0f30065e991b75e15b9dbf24d1e1b0d3fbc6a6768bbe69798550dec3f2af54f",
+      "created": true
+    },
+    {
+      "file": "G0003.NES",
+      "bytes": 131088,
+      "sha256": "e6e6b7014685adae447ebb3833242815747bc1e5df83ade79f693fb67cf565b6",
+      "created": true
+    },
+    {
+      "file": "G0004.COV",
+      "bytes": 30776,
+      "sha256": "0878321b26a1dcd3f4b523240efbad92e2558b1b27a357258158e0df862ab6e9",
+      "created": true
+    },
+    {
+      "file": "G0004.NES",
+      "bytes": 131088,
+      "sha256": "463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc",
+      "created": true
+    },
+    {
+      "file": "GAMES.JSON",
+      "bytes": 2915,
+      "sha256": "4517cacc4e06db2e02f5df45aae452a57dff60748fce43ebde4f192495acea87",
+      "created": true
+    },
+    {
+      "file": "INDEX.TSV",
+      "bytes": 185,
+      "sha256": "8ee8f876e0d066877bead3fc6a014c63ad41cae7e32cf77dee3ed3c0b6cc5e4a",
+      "created": true
+    }
+  ],
+  "total_bytes": 927056,
+  "firmware_sd_loader_available": false,
+  "hardware_tested": false
+}

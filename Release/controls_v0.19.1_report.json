@@ -1,0 +1,172 @@
+{
+  "version": "0.19.1-controls-preview",
+  "result": "PASS",
+  "created": "2026-11-19T11:18:46.072746+08:00",
+  "hardware_tested": false,
+  "flashed": false,
+  "physical_sd_written": false,
+  "axf_sha256": "9da785efc4242c7a056b8ea729b38ac988de5ff49d983e32a5f9941a814c8ef9",
+  "files": {
+    "NesFire_v0.19.1-controls-preview.hex": {
+      "bytes": 440725,
+      "sha256": "10b2c4ce9d4f5022ada8581f1a0f7a7df6f7b51e90bd968287abcb3a69c9941a"
+    },
+    "NesFire_v0.19.1-controls-preview.bin": {
+      "bytes": 156672,
+      "sha256": "a73113f1255b494dd8b0b33ad1f13b66fda20f07c075fd92aef04f2af575132e"
+    }
+  },
+  "build": "0 errors, 0 warnings (full rebuild)",
+  "memory_bytes": {
+    "code": 98720,
+    "ro": 56348,
+    "rw": 280,
+    "zi": 90480,
+    "bin": 156672
+  },
+  "input_profile": {
+    "mapper": 5,
+    "rom_bytes": 786448,
+    "normalized_crc32": "60579af2",
+    "title": "Just Breed (Japan)"
+  },
+  "baseline_running_board_version": "0.19-mmc5-preview",
+  "baseline_report": "input_readonly_v0.19.json",
+  "baseline_observed_logic_hz": [
+    39,
+    39
+  ],
+  "reports": {
+    "rpg_controls_results": {
+      "result": "PASS",
+      "hardware_tested": false,
+      "checks": [
+        "4-way dominant-axis hysteresis",
+        "A/B/Start priority during held stick",
+        "no mandatory recenter after confirmation",
+        "real GPIO and 20ms debounce",
+        "menu bypass",
+        "CRC-specific profile and cross-game reset",
+        "native diagonal+A+B unchanged",
+        "cost-based RPG rendering cadence"
+      ],
+      "axf_sha256": "9da785efc4242c7a056b8ea729b38ac988de5ff49d983e32a5f9941a814c8ef9"
+    },
+    "justbreed_confirmation_results": {
+      "result": "PASS",
+      "scope": "Actual Japanese ROM name-entry comparison: confirmation during held right",
+      "native_and_adapted_both_confirmed_in_this_scene": true,
+      "note": "Cursor handling differs. This scene does not reproduce every user-reported missed press.",
+      "native_pad": 129,
+      "adapted_pad": 1,
+      "native_frame_sha256": "7fb1d714747b87d1bc3e03a5367eeab9644cbaba3d04faa994dcae3d4491323f",
+      "adapted_frame_sha256": "55455eba20f1324b037c618c380479fbde661a73609835db88b7abe4069f5ee8",
+      "hardware_tested": false,
+      "axf_sha256": "9da785efc4242c7a056b8ea729b38ac988de5ff49d983e32a5f9941a814c8ef9"
+    },
+    "controls_v0.19.1_regression": {
+      "result": "PASS",
+      "tests": [
+        {
+          "test": "test_nes_input.py",
+          "exit_code": 0,
+          "output_tail": "PASS: B held + A press/release; reverse order; all A/B/Start combinations; no accidental Select\n"
+        },
+        {
+          "test": "test_nes_scheduler.py",
+          "exit_code": 0,
+          "output_tail": "PASS: real ARM scheduler retains ~60 logic Hz /20 render Hz with 35ms display frames, no clock drops: 120 40\n"
+        },
+        {
+          "test": "test_rpg_controls_arm.py",
+          "exit_code": 0,
+          "output_tail": "PASS: RPG controls / native GPIO / profile isolation / cadence\n"
+        },
+        {
+          "test": "test_mmc5_arm.py",
+          "exit_code": 0,
+          "output_tail": "PASS test_prg\nPASS test_ram_and_indirect_jump\nPASS test_chr_cache\nPASS test_exram_fill_irq_multiplier\nPASS test_audio\nPASS test_capture_guard\n"
+        },
+        {
+          "test": "test_sd_library_arm.py",
+          "exit_code": 0,
+          "output_tail": " bytes 40976\nPASS SD: 1 SUPER MARIO BROS. 2 bytes 65500\nPASS SD: 2 SUPER MARIO BROS. 3 bytes 393232\nPASS SD: 3 METROID bytes 131088\nPASS SD: 4 WIZARDS & WARRIORS bytes 131088\nPASS SD: 5 CASTLEVANIA III: DRACULA'S CURSE bytes 393232\nPASS SD: 6 JUST BREED bytes 786448\n{\n  \"result\": \"PASS\",\n  \"checks\": [\n    \"real ARM FatFs reads FAT32 library\",\n    \"library ROMs loaded and verified in SRAM\",\n    \"library decoded COVs match originals\",\n    \"menu cover cache\",\n    \"live ROM protected from cover reads\",\n    \"no SD reads during game frames\",\n    \"arena upper boundary\",\n    \"no card and invalid FAT fallback\",\n    \"missing/empty/truncated/NUL/oversized/unsafe/unsupported/duplicate catalog rejected\",\n    \"missing/short/corrupt/unreadable ROM rejected\",\n    \"cover truncation and CRC rejected\",\n    \"64 entries accepted, 65 rejected\",\n    \"odd-sized 4-bit / 8-bit / portrait COV decoded exactly\",\n    \"CRC-valid wrong mapper header rejected\",\n    \"FAT32 with MBR partition and unpartitioned FAT32 both mount\"\n  ],\n  \"hardware_tested\": false,\n  \"filesystem\": \"actual compiled FatFs R0.16 on synthetic FAT32 blocks\",\n  \"axf_sha256\": \"9da785efc4242c7a056b8ea729b38ac988de5ff49d983e32a5f9941a814c8ef9\"\n}\n"
+        },
+        {
+          "test": "test_sd_saves_arm.py",
+          "exit_code": 0,
+          "output_tail": "overed\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 13,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 14,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 15,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 16,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 17,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 18,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 19,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 20,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 21,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 22,\n      \"save_result\": 1,\n      \"recovered\": \"previous\"\n    },\n    {\n      \"sectors_before_cut\": 23,\n      \"save_result\": 0,\n      \"recovered\": \"new\"\n    }\n  ],\n  \"axf_sha256\": \"9da785efc4242c7a056b8ea729b38ac988de5ff49d983e32a5f9941a814c8ef9\"\n}\n"
+        },
+        {
+          "test": "test_audio_output_arm.py",
+          "exit_code": 0,
+          "output_tail": "{\n  \"result\": \"PASS\",\n  \"hardware_tested\": false,\n  \"scope\": \"real ARM route logic, mocked I2C writes\",\n  \"checks\": [\n    \"cold init selects speaker and disables headphones\",\n    \"reinitialisation restores speaker default\",\n    \"exclusive headphones/speaker/off paths\",\n    \"BTL inversion and equal paired volume\",\n    \"mute before route change\",\n    \"menu/loading mute preserved\",\n    \"silent gameplay drains APU\",\n    \"invalid/uninitialised selection rejected\",\n    \"failed I2C change mutes both outputs\",\n    \"retry recovers\"\n  ],\n  \"axf_sha256\": \"9da785efc4242c7a056b8ea729b38ac988de5ff49d983e32a5f9941a814c8ef9\"\n}\n"
+        },
+        {
+          "test": "test_sd_audio_mute_arm.py",
+          "exit_code": 0,
+          "output_tail": "PASS: muted DMA outputs zero without processing APU/ROM; unmute resumes APU\n"
+        },
+        {
+          "test": "test_touchpad_arm.py",
+          "exit_code": 0,
+          "output_tail": "PASS: B held + A press/release; reverse order; all A/B/Start combinations; no accidental Select\n{\n  \"result\": \"PASS\",\n  \"scope\": \"actual Keil ARM touch driver with simulated GPIO/TIM2, no hardware sensitivity claim\",\n  \"checks\": [\n    \"PA5/TIM2 mapping and APB1 prescaler\",\n    \"neighbour pin preservation\",\n    \"10 sample trimmed calibration\",\n    \"first-sample light-touch press, noise margin and debounced release\",\n    \"Select+A+B+Start coexistence\",\n    \"timeout and overflow release\",\n    \"first-edge IRQ latch survives delayed foreground and later spurious IRQ\"\n  ],\n  \"state\": {\n    \"raw\": 520,\n    \"baseline\": 500,\n    \"ready\": 1,\n    \"pressed\": 1,\n    \"samples\": 23,\n    \"errors\": 2\n  }\n}\n"
+        },
+        {
+          "test": "render_menu_arm.py",
+          "exit_code": 0,
+          "output_tail": "menu_smb2.png LCD pixels 183808\nmenu_smb3.png LCD pixels 183808\nmenu_metroid.png LCD pixels 178176\nmenu_wizards.png LCD pixels 180736\nmenu_game5.png LCD pixels 187136\nmenu_game6.png LCD pixels 182528\nPASS: LCD bounds, artwork, navigation and fallbacks; rendered to D:\\Project\\BA_Game\\Nes_fire_emulator\\Tests\\nes_output\n"
+        },
+        {
+          "test": "test_sd_gameplay_arm.py",
+          "exit_code": 0,
+          "output_tail": "  155,\n        151,\n        147,\n        144,\n        141,\n        137,\n        134,\n        131,\n        128,\n        125\n      ],\n      \"title_and_start_to_game\": true,\n      \"movement_and_jump_checked\": true,\n      \"axf_sha256\": \"9da785efc4242c7a056b8ea729b38ac988de5ff49d983e32a5f9941a814c8ef9\"\n    },\n    {\n      \"file\": \"Wizards & Warriors (U).nes\",\n      \"sha256\": \"463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc\",\n      \"frames\": 1222,\n      \"cpu_faults\": 0,\n      \"apu_queue_drops\": 0,\n      \"pcm_range\": [\n        12,\n        236\n      ],\n      \"hardware_tested\": false,\n      \"player_x_before\": 94.7,\n      \"player_x_right\": 108.2,\n      \"initial_ground_y\": 79,\n      \"jump_y\": [\n        79,\n        57,\n        57,\n        57,\n        72,\n        68,\n        64,\n        60,\n        56,\n        52,\n        48,\n        45\n      ],\n      \"title_and_start_to_game\": true,\n      \"movement_and_jump_checked\": true,\n      \"axf_sha256\": \"9da785efc4242c7a056b8ea729b38ac988de5ff49d983e32a5f9941a814c8ef9\"\n    }\n  ],\n  \"smb2_fds_title_and_1_1\": true,\n  \"no_sd_reads_during_game_frames\": true,\n  \"axf_sha256\": \"9da785efc4242c7a056b8ea729b38ac988de5ff49d983e32a5f9941a814c8ef9\"\n}\n"
+        },
+        {
+          "test": "test_wizards_visual_arm.py",
+          "exit_code": 0,
+          "output_tail": "PASS draw 120 frames\nPASS skip 120 frames\nPASS third 360 frames\n{\n  \"result\": \"PASS\",\n  \"hardware_tested\": false,\n  \"scope\": \"real ARM CPU/PPU, consecutive Wizards HUD/scroll check\",\n  \"full_draw_frames\": 120,\n  \"skipped_frames\": 120,\n  \"one_in_three_logic_frames\": 360,\n  \"hud_frames_checked\": 240,\n  \"draw_skip_cpu_ram_pc_match\": true,\n  \"axf_sha256\": \"9da785efc4242c7a056b8ea729b38ac988de5ff49d983e32a5f9941a814c8ef9\"\n}\n"
+        }
+      ],
+      "hardware_tested": false,
+      "axf_sha256": "9da785efc4242c7a056b8ea729b38ac988de5ff49d983e32a5f9941a814c8ef9"
+    },
+    "cache_benchmark": {
+      "result": "PASS",
+      "scope": "Actual ARM core for one rendered Just Breed town frame; excludes physical LCD wait and input adaptation",
+      "old": {
+        "label": "v019",
+        "frames": 3271,
+        "arm_instructions": 2741302,
+        "tile_compiles": 1846,
+        "frame_sha256": "f968f97ecc1a6f29a382f1dd13c46b52208830a3231390dd163998e713865de5",
+        "ram_sha256": "f5b373aabe2c51b3ee06e9139aa6b5b7a7223a7dfc8dd057511a337dd1338746",
+        "sram_sha256": "1f46195ca987c73f0a67adceef3839f4dfba194d3e16142927c7d728e4a4b56b",
+        "cpu_pc": 57789,
+        "axf_sha256": "282ce572b0ae85f54bd70db06280ee288ae3cd7ed4b5f0146c834be647255d57"
+      },
+      "new": {
+        "label": "v0191",
+        "frames": 3271,
+        "arm_instructions": 2085878,
+        "tile_compiles": 2,
+        "frame_sha256": "f968f97ecc1a6f29a382f1dd13c46b52208830a3231390dd163998e713865de5",
+        "ram_sha256": "f5b373aabe2c51b3ee06e9139aa6b5b7a7223a7dfc8dd057511a337dd1338746",
+        "sram_sha256": "1f46195ca987c73f0a67adceef3839f4dfba194d3e16142927c7d728e4a4b56b",
+        "cpu_pc": 57789,
+        "axf_sha256": "9da785efc4242c7a056b8ea729b38ac988de5ff49d983e32a5f9941a814c8ef9"
+      },
+      "instruction_reduction_percent": 23.909222697827527,
+      "frame_ram_sram_pc_identical": true,
+      "hardware_tested": false
+    }
+  },
+  "save_compatibility": "Same ROM CRC, size and 8 KiB SRAM file format; no ROM or physical-card changes",
+  "limitations": [
+    "No board validation of new controls or timing yet",
+    "No proof of every reported missed press; native and adapted A both worked in the tested name-entry scene",
+    "Physical button debounce remains 20ms",
+    "Cost-based frame cadence is an estimate; no claim of measured 60Hz",
+    "Input profile applies only to exact supported Japanese image"
+  ]
+}

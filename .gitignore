@@ -1,0 +1,34 @@
+# Copyrighted ROM images and the Famicom Disk System BIOS: never distribute.
+Roms/
+*.nes
+*.fds
+disksys.rom
+User/nes/nes_fds_bios.c
+User/nes/nes_fds_bios.h
+
+# Upstream reference material without a licence.
+Reference/
+
+# Build outputs, flash images and local captures.
+Project/Output/
+Release/*.hex
+Release/*.bin
+Release/*.axf
+Release/*.map
+Release/*.o
+Release/*disasm*.txt
+Release/SD_ROOT/
+Release/*_before_v*/
+Tests/output/
+Tests/nes_output/
+Tests/__pycache__/
+
+# Font bitmaps rendered from system fonts, and game screenshots.
+Assets/fonts/*.HZK
+Assets/fonts/*.MAP
+Assets/fonts/cjk*/
+Assets/posters/
+
+*.o
+*.pyc
+__pycache__/

@@ -1,0 +1,163 @@
+﻿{
+    "version":  "0.41-align",
+    "target":  "STM32F407ZGT6 / Batianhu V2 / 480x800 MCU LCD",
+    "compiler":  "Arm Compiler 6.24 (Keil project selection)",
+    "build":  "0 errors, 0 warnings (full rebuild)",
+    "hardware_tested":  false,
+    "storage_mode":  "SD library; first game embedded as fallback",
+    "embedded_game_count":  1,
+    "wiring":  "VRx=PA4 (CN3-25), VRy=PA6 (CN3-21), SW=PB7 (CN3-23), 3V3/GND; camera disconnected",
+    "firmware_prefix":  "NesFire_v0.41-align",
+    "rom":  {
+                "name":  "smb.nes",
+                "mapper":  0,
+                "size":  40976,
+                "sha256":  "f61548fdf1670cffefcc4f0b7bdcdd9eaba0c226e3b74f8666071496988248de",
+                "source_sha256":  "0b3d9e1f01ed1668205bab34d6c82b0e281456e137352e4f36a9b2cfa3b66dea",
+                "header_normalized":  true,
+                "games":  [
+                              {
+                                  "name":  "smb.nes",
+                                  "label":  "SUPER MARIO BROS.",
+                                  "mapper":  0,
+                                  "size":  40976,
+                                  "sha256":  "f61548fdf1670cffefcc4f0b7bdcdd9eaba0c226e3b74f8666071496988248de"
+                              },
+                              {
+                                  "name":  "Super Mario Bros. 2 (Japan) (En).fds",
+                                  "label":  "SUPER MARIO BROS. 2",
+                                  "mapper":  20,
+                                  "size":  65500,
+                                  "sha256":  "ff8afb9ae6b705b4e51dbcb193dcebadf4c049800a71003d3a45052648e52eda"
+                              },
+                              {
+                                  "name":  "SMB3.nes",
+                                  "label":  "SUPER MARIO BROS. 3",
+                                  "mapper":  4,
+                                  "size":  393232,
+                                  "sha256":  "6ea0777ca520ba7ad7b0ea0f6452140d59aa0b1dffe5045cb1e8020dde10c267"
+                              },
+                              {
+                                  "name":  "Metroid (USA).nes",
+                                  "label":  "METROID",
+                                  "mapper":  1,
+                                  "size":  131088,
+                                  "sha256":  "e6e6b7014685adae447ebb3833242815747bc1e5df83ade79f693fb67cf565b6"
+                              },
+                              {
+                                  "name":  "Wizards \u0026 Warriors (U).nes",
+                                  "label":  "WIZARDS \u0026 WARRIORS",
+                                  "mapper":  7,
+                                  "size":  131088,
+                                  "sha256":  "463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc"
+                              },
+                              {
+                                  "name":  "Castlevania III - Dracula\u0027s Curse (USA).nes",
+                                  "label":  "CASTLEVANIA III: DRACULA\u0027S CURSE",
+                                  "mapper":  5,
+                                  "size":  393232,
+                                  "sha256":  "1c7b2ed2c1fb5839a6764006aa476f5c9d48f99465b6141980f3a5af1dfec0d6"
+                              },
+                              {
+                                  "name":  "Just Breed (Japan).nes",
+                                  "label":  "JUST BREED",
+                                  "mapper":  5,
+                                  "size":  786448,
+                                  "sha256":  "7d3b5180300857cb685e807d9c5ec92c29f01b51aabaf7563bf4dabdf754953c"
+                              }
+                          ]
+            },
+    "files":  {
+                  "NesFire_v0.41-align.hex":  {
+                                                  "bytes":  495445,
+                                                  "sha256":  "d06c3ff57eccb3c08ab5c420f43fe6981dc5176c5dda411c871153036f8c53f3"
+                                              },
+                  "NesFire_v0.41-align.bin":  {
+                                                  "bytes":  176128,
+                                                  "sha256":  "39898df950a9d89ee4ad065187f33d42c0a886bb3ac777ef1ac9cb9783305fdf"
+                                              }
+              },
+    "bios":  {
+                 "source":  "Roms\\disksys.rom",
+                 "bytes":  8192,
+                 "md5":  "ca30b50f880eb660a320674ed365ef7a",
+                 "sha1":  "57fe1bdee955bb48d357e463ccbf129496930b62",
+                 "sha256":  "99c18490ed9002d9c6d999b9d8d15be5c051bdfa7cc7e73318053c9a994b0178",
+                 "vectors":  {
+                                 "nmi":  57739,
+                                 "reset":  60964,
+                                 "irq":  57799
+                             }
+             },
+    "fds_mode":  "read-only disk; Select+left/right side swap; NES APU plus FDS wavetable/envelopes/modulation",
+    "save_mode":  "SD battery cartridge SRAM; CRC-checked dual slots; save on menu exit; no instant states or FDS disk writes",
+    "audio_default":  "SPEAKER; Settings can select HEADPHONES / SPEAKER / MUTE; reset returns to SPEAKER",
+    "posters":  {
+                    "covers":  [
+                                   {
+                                       "file":  "smb.nes",
+                                       "source":  "smb_title.png",
+                                       "source_sha256":  "a0d14e4aacbec815af08c7ae9c364c6e83d9ae7e1b3f6d0df910c51986de9953",
+                                       "width":  256,
+                                       "height":  240,
+                                       "pixel_bits":  4,
+                                       "flash_bytes":  30752
+                                   },
+                                   {
+                                       "file":  "Super Mario Bros. 2 (Japan) (En).fds",
+                                       "source":  "smb2_title.png",
+                                       "source_sha256":  "3d2083e53b8f0096f372ba5281d110a51f95506189886c0da5be58144ab3ec3e",
+                                       "width":  256,
+                                       "height":  240,
+                                       "pixel_bits":  4,
+                                       "flash_bytes":  30752
+                                   },
+                                   {
+                                       "file":  "SMB3.nes",
+                                       "source":  "smb3_title.png",
+                                       "source_sha256":  "e44bf43a50f1b969ef5b2200022467a6e4b920fd3f7213be47de9fa46c19f070",
+                                       "width":  256,
+                                       "height":  240,
+                                       "pixel_bits":  4,
+                                       "flash_bytes":  30752
+                                   },
+                                   {
+                                       "file":  "Metroid (USA).nes",
+                                       "source":  "metroid_title.png",
+                                       "source_sha256":  "0a7a14d741d848f1f8ef78cace3c410da0347f18fafbcf2db4b92943e06620a4",
+                                       "width":  256,
+                                       "height":  240,
+                                       "pixel_bits":  4,
+                                       "flash_bytes":  30752
+                                   },
+                                   {
+                                       "file":  "Wizards \u0026 Warriors (U).nes",
+                                       "source":  "wizards_title.png",
+                                       "source_sha256":  "cccd82a3155ea48b01f3a8462d0269c45336f22ee3a26ac022ec43de53b6bd29",
+                                       "width":  256,
+                                       "height":  240,
+                                       "pixel_bits":  4,
+                                       "flash_bytes":  30752
+                                   },
+                                   {
+                                       "file":  "Castlevania III - Dracula\u0027s Curse (USA).nes",
+                                       "source":  "castlevania3_title.png",
+                                       "source_sha256":  "2661d963f6a3fdcbe4beb5903665c9296d07607d46bcaf0911b82ba6980d124f",
+                                       "width":  256,
+                                       "height":  240,
+                                       "pixel_bits":  4,
+                                       "flash_bytes":  30752
+                                   },
+                                   {
+                                       "file":  "Just Breed (Japan).nes",
+                                       "source":  "justbreed_scene.png",
+                                       "source_sha256":  "8e214ff7f59e2485f285dad8425d5a6814d943be55bb916a8d0fb425fe687dae",
+                                       "width":  256,
+                                       "height":  240,
+                                       "pixel_bits":  4,
+                                       "flash_bytes":  30752
+                                   }
+                               ],
+                    "total_flash_bytes":  215264
+                }
+}

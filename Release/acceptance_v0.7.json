@@ -1,0 +1,12 @@
+{
+  "version": "0.7",
+  "bin_sha256": "2ede7bcb9d462afa5b14c17bf43d3e2d7ddb65f988d517d72a24f9f2b6cce926",
+  "full_readback_match": true,
+  "user_confirmed_directions_restored": true,
+  "user_confirmed_music_tempo_normal": true,
+  "wall_logic_hz": 59.80345158209856,
+  "audio_dma_errors": 0,
+  "apu_queue_drops": 0,
+  "cpu_faults": 0,
+  "clock_drops": 0
+}

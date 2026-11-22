@@ -1,0 +1,8 @@
+{
+  "version": "0.41-align",
+  "programmer": "pyOCD CMSIS-DAP / SWD 1000000Hz",
+  "bytes_verified": 176128,
+  "sha256": "39898df950a9d89ee4ad065187f33d42c0a886bb3ac777ef1ac9cb9783305fdf",
+  "full_readback_match": true,
+  "verify_only": false
+}

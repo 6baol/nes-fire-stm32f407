@@ -1,0 +1,8 @@
+{
+  "version": "0.17.7-speaker-preview",
+  "date": "2026-11-18",
+  "speaker_music_and_sfx": "normal",
+  "manual_restart_confirmed": true,
+  "default_after_restart": "SPEAKER",
+  "user_feedback": "音乐和音效正常"
+}

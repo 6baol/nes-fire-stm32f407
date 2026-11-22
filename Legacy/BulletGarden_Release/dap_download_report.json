@@ -1,0 +1,8 @@
+{
+  "version": "0.2",
+  "interface": "Fire CMSIS-DAP / SWD",
+  "date": "2026-11-16",
+  "keil_log_result": "Erase Done.Programming Done.Verify OK.Application running",
+  "release_hex_sha256": "1fd10fc9a0b17b22a3a0aad7427da4a3798f7b71421cf7b76b182d8ea1d29f10",
+  "full_gameplay_hardware_tested": false
+}

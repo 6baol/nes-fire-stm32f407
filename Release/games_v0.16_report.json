@@ -1,0 +1,86 @@
+{
+  "version": "0.16-games-preview",
+  "hardware_tested": false,
+  "flashed": false,
+  "build": "0 errors, 0 warnings",
+  "rom_payload_bytes": 761884,
+  "posters_flash_bytes": 153760,
+  "new_games": [
+    {
+      "file": "Metroid (USA).nes",
+      "sha256": "e6e6b7014685adae447ebb3833242815747bc1e5df83ade79f693fb67cf565b6",
+      "frames": 1162,
+      "cpu_faults": 0,
+      "apu_queue_drops": 0,
+      "pcm_range": [
+        52,
+        218
+      ],
+      "hardware_tested": false,
+      "player_x_before": 124.0,
+      "player_x_right": 139.0,
+      "initial_ground_y": 159,
+      "jump_y": [
+        159,
+        159,
+        155,
+        151,
+        147,
+        144,
+        141,
+        137,
+        134,
+        131,
+        128,
+        125
+      ],
+      "title_and_start_to_game": true,
+      "movement_and_jump_checked": true,
+      "axf_sha256": "7e0985a92b322cfb945406fa434493304336fd389f57d755b1855f4407e81981"
+    },
+    {
+      "file": "Wizards & Warriors (U).nes",
+      "sha256": "463018ac63de3b31a006882538fa1e0b500ba113ad7263e09669039e1193d7dc",
+      "frames": 1402,
+      "cpu_faults": 0,
+      "apu_queue_drops": 0,
+      "pcm_range": [
+        6,
+        219
+      ],
+      "hardware_tested": false,
+      "player_x_before": 93.0,
+      "player_x_right": 120.0,
+      "initial_ground_y": 79,
+      "jump_y": [
+        79,
+        57,
+        57,
+        57,
+        72,
+        68,
+        64,
+        60,
+        56,
+        52,
+        48,
+        45
+      ],
+      "title_and_start_to_game": true,
+      "movement_and_jump_checked": true,
+      "axf_sha256": "7e0985a92b322cfb945406fa434493304336fd389f57d755b1855f4407e81981"
+    }
+  ],
+  "sd_pack_prepared_locally": true,
+  "firmware_sd_loader_available": false,
+  "files": {
+    "NesFire_v0.16-games-preview.hex": {
+      "bytes": 2814066,
+      "sha256": "c23feb45e040bd1282c855d89f71780ed90c1c9e7b2ecd7393da68b4d74141fb"
+    },
+    "NesFire_v0.16-games-preview.bin": {
+      "bytes": 1000448,
+      "sha256": "e312b9f4dca9308633de0f8ee70be1f7169a184745abca8bd6eb01da7a066a3c"
+    }
+  }
+}

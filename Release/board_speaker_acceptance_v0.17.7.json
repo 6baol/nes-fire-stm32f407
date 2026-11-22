@@ -1,0 +1,27 @@
+{
+  "version": "0.17.7-speaker-preview",
+  "date": "2026-11-18",
+  "result": "PASS speaker acceptance",
+  "flashed_by": "user",
+  "full_flash_match": true,
+  "bytes_verified": 149504,
+  "actual_sha256": "490a9cd1fd194f64c6d56c91dd6a6cc3a6985d65af3b1ca38d1955421cb9bf77",
+  "hardware_tested": true,
+  "scope": "speaker default and reset default, codec I2C mirror, live audio DMA/synthesis, listener confirmation; not SD-save or FDS-side hardware acceptance",
+  "user_feedback": "音乐和音效正常",
+  "restart_observed": true,
+  "user_confirmed_manual_restart": true,
+  "post_restart_speaker_default": true,
+  "audio_dma_advances_before_and_after_restart": true,
+  "errors_zero": true,
+  "raw_report": "board_speaker_readonly_v0.17.7-speaker-preview.json",
+  "raw_report_note": "Unsegmented CHECK REQUIRED was caused by the user-confirmed manual reset during samples; configured samples before and after reset are valid.",
+  "our_actions": {
+    "reset": false,
+    "halt": false,
+    "flash_written": false,
+    "ram_written": false,
+    "test_keys": false,
+    "card_writes_requested": false
+  }
+}

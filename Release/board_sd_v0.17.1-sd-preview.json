@@ -1,0 +1,29 @@
+{
+  "version": "0.17.1-sd-preview",
+  "hardware_tested": true,
+  "card_writes": false,
+  "samples": [
+    {
+      "sd_last_error": 16777216,
+      "sd_init_attempts": 3,
+      "sd_read_retries": 0,
+      "sd_blocks_read": 0,
+      "sd_bus_width": 0,
+      "sd_count": 0,
+      "nes_sd_file_reads": 0,
+      "nes_faults": 0,
+      "nes_logic_hz": 0,
+      "nes_draw_hz": 0,
+      "nes_clock_drops": 0,
+      "nes_apu_queue_drops": 0,
+      "nes_audio_dma_errors": 0,
+      "tag": "boot",
+      "sd_active": 0,
+      "app_state": 0,
+      "index": 0,
+      "cfsr": 0,
+      "hfsr": 0
+    }
+  ],
+  "scope": "live SD state, menu and loaded ROM verification; not LCD photo/headphone recording"
+}
