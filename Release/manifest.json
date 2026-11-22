@@ -1,6 +1,6 @@
 ﻿{
     "version":  "0.43",
-    "git_commit":  "643d5a8bb1c806cb2906b6d84d765c547c8caaf4",
+    "git_commit":  "e50e67bfee1f3e5b8da4e7f2dae5c07d66737fc4",
     "source_dirty":  true,
     "target":  "STM32F407ZGT6 / Batianhu V2 / 480x800 MCU LCD",
     "compiler":  "Arm Compiler 6.24 (Keil project selection)",
@@ -73,23 +73,23 @@
     "files":  {
                   "NesFire_v0.43.hex":  {
                                             "bytes":  535765,
-                                            "sha256":  "f42bcdafe0b054cd3d0c99e6eb56bcb132a182c39ed8a6976a7a7b88bb71ffa4"
+                                            "sha256":  "ebf1e03e0626c762c11c49bfe3e1e45843f14e823999286d5938a3bcdab55bb8"
                                         },
                   "NesFire_v0.43.bin":  {
                                             "bytes":  190464,
-                                            "sha256":  "469b9b662daab5b0d4ec08b4524efdd5d38cef67a3d1fc4a358acf580bf1a39c"
+                                            "sha256":  "8ec06aff3576d75f9904fcb8f85bf9fa8818037dfa89ad8fcc0225d7bb9dab41"
                                         },
                   "NesFire_v0.43.axf":  {
-                                            "bytes":  879412,
-                                            "sha256":  "d4522db66e96515390afe1cf538a32da781f7a4b2b90fc0f2cacaab2dac57d62"
+                                            "bytes":  879524,
+                                            "sha256":  "8087799b134f4c0ee9654717c21f6e1140d6baaceb560880fbff963f0c578f05"
                                         },
                   "NesFire_v0.43.map":  {
-                                            "bytes":  925022,
-                                            "sha256":  "b2b3a74265fc75e419c3b83b3961307b14cd9f33d44d8248574a0f3593d13d0a"
+                                            "bytes":  925342,
+                                            "sha256":  "95da8b9d92f30355e40f47f1ee09716f608b28fd128ce185399be961332f99c1"
                                         }
               },
     "linker_bytes":  {
-                         "code":  131608,
+                         "code":  131544,
                          "read_only":  57636,
                          "read_write":  296,
                          "zero_initialized":  166680
