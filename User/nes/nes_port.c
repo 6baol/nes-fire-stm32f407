@@ -504,8 +504,8 @@ static void record_frame_time(int drew,uint32_t frame_us)
 
 static void save_error_poll(void)
 {
-    int retry=KEY2_PRESSED||SW_PRESSED||(nes_test_pad&1);
-    int resume=KEY1_PRESSED||(nes_test_pad&2);
+    int retry=KEY2_PRESSED||(SHIELD&(PAD_A|PAD_F))||SW_PRESSED||(nes_test_pad&1);
+    int resume=KEY1_PRESSED||(SHIELD&PAD_B)||(nes_test_pad&2);
     if(!retry&&!resume){save_error_armed=1;return;}
     if(!save_error_armed)return;
     save_error_armed=0;
@@ -606,7 +606,7 @@ static void open_library_options(void)
 static void library_check_poll(uint32_t now)
 {
     unsigned pending;
-    int back=KEY1_PRESSED||(nes_test_pad&2);
+    int back=KEY1_PRESSED||(SHIELD&PAD_B)||(nes_test_pad&2);
     if(!back)library_key_armed=1;
     else if(library_key_armed) {
         (void)NesLibrary_SetFilter(NES_LIBRARY_FILTER_ALL);
@@ -636,8 +636,8 @@ static void library_options_poll(uint32_t now)
 {
     const JoystickState *j=Joystick_Get();
     int dir=0,centered=0;
-    int back=KEY1_PRESSED||(nes_test_pad&2);
-    int select=KEY2_PRESSED||SW_PRESSED||(nes_test_pad&1);
+    int back=KEY1_PRESSED||(SHIELD&PAD_B)||(nes_test_pad&2);
+    int select=KEY2_PRESSED||(SHIELD&(PAD_A|PAD_F))||SW_PRESSED||(nes_test_pad&1);
     if(j->healthy&&j->calibrated) {
         dir=j->y>0.65f?1:(j->y< -0.65f?-1:0);
         centered=j->y<0.25f&&j->y> -0.25f;
@@ -699,10 +699,10 @@ static void search_poll(uint32_t now)
         NesSearch_Move(&search,dx,dy);
         NesSearch_Draw(&search);
     }
-    if(KEY1_PRESSED||(nes_test_pad&2)) {
+    if(KEY1_PRESSED||(SHIELD&PAD_B)||(nes_test_pad&2)) {
         if(search_key_armed){search_key_armed=0;return_to_library();return;}
     } else search_key_armed=1;
-    if(KEY2_PRESSED||SW_PRESSED||(nes_test_pad&1)) {
+    if(KEY2_PRESSED||(SHIELD&(PAD_A|PAD_F))||SW_PRESSED||(nes_test_pad&1)) {
         if(search_ok_armed) {
             search_ok_armed=0;
             if(NesSearch_Select(&search)==1) {
@@ -765,23 +765,24 @@ static void menu_poll(uint32_t now)
         menu_repeat_due=now+90;
         if(NesMenu_Move(&menu,dir)){load_error[0]='\0';menu_redraw_selection();}
     }
-    if(page && menu_page_armed) {
+    if(page && (menu_page_armed||(int32_t)(now-menu_page_due)>=0)) {
         menu_page_armed=0;
+        menu_page_due=now+150;
         if(NesMenu_Page(&menu,page,(unsigned)NesMenu_Rows())){load_error[0]='\0';menu_redraw_selection();}
     }
     if(KEY1_PRESSED||KEY2_PRESSED||SW_PRESSED||SHIELD||(nes_test_pad&3)) {
-        int k1=KEY1_PRESSED||(nes_test_pad&2);
+        int k1=KEY1_PRESSED||(SHIELD&PAD_B)||(nes_test_pad&2);
         int k2=KEY2_PRESSED;
         int ok=(SHIELD&PAD_A)||(SHIELD&PAD_F)||SW_PRESSED||((nes_test_pad&1)&&!k1&&!k2);
         if(k1) {
-            /* Tap KEY1 for Settings; holding it still opens the library actions. */
+            /* Tap KEY1 for Settings; holding it opens the library actions. */
             if(!key1_pending){key1_pending=1;key1_down=now;}
             else if((uint32_t)(now-key1_down)>=1000){
                 key1_pending=0;menu_armed=0;open_library_options();return;
             }
         } else if(k2) {
-            /* KEY2 is the library shortcut. */
-            if(menu_armed){menu_armed=0;open_library_options();return;}
+            /* KEY2 is the search shortcut. */
+            if(menu_armed){menu_armed=0;open_search();return;}
         } else if(menu_armed) {
             menu_armed=0;
             if(ok){start_selected();return;}
