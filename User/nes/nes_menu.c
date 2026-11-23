@@ -150,14 +150,18 @@ static void detail_header(const NesMenuState *m)
 {
     const UiLayout *l=ui();
     char count[16];
-    /* Update only the name and the index; the cover may follow later. */
+    /* Keep the counter inside the list column: glyph drawing past x=480 of the
+     * panel stops, so the right-hand cover area cannot carry text. */
+    {
+        unsigned box=l->list_x+l->list_w-96u;
+        fill(box,l->count_y,96,16,BG);
+        snprintf(count,sizeof(count),"%u/%u",m->count?(unsigned)m->index+1:0,(unsigned)m->count);
+        small((uint16_t)(box+96u-8u*(unsigned)strlen(count)),l->count_y,count,MUTED,BG);
+    }
     /* Landscape has no room for a second name line: the highlighted row
-     * already carries the title, so only the counter is updated there. */
+     * already carries the title. */
     if(nes_screen_landscape)return;
     fill(l->list_x,l->name_y,l->list_w,CjkFont_Cell()+4,BG);
-    fill(l->w-108,l->count_y,96,16,BG);
-    snprintf(count,sizeof(count),"%u/%u",m->count?(unsigned)m->index+1:0,(unsigned)m->count);
-    small((uint16_t)(l->w-12u-8u*(unsigned)strlen(count)),l->count_y,count,MUTED,BG);
     if(!m->count){full_name(l->list_x,l->name_y,l->list_w,l->cols/CjkFont_Cell(),"NO GAMES",BG,0);return;}
     {
         const NesRomImage *game=NesLibrary_Game((unsigned)m->index);

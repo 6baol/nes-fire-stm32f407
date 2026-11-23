@@ -131,7 +131,7 @@ uint8_t NesPort_SetLandscape(uint8_t on)
     nes_screen_landscape=on;
     /* Mode 6 is the panel's native portrait; 7 is the quarter turn the case is
      * meant to be used in (mode 5 mirrors the other way). */
-    lcd_gram_scan(on?7:6);
+    lcd_gram_scan(on?3:6);
     lcd_fill_color(0,0,(uint16_t)(on?800u:480u),(uint16_t)(on?480u:800u),BLACK);
     return applied;
 }
