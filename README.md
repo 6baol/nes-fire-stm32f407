@@ -97,7 +97,7 @@ NesFire 是一个运行在 **野火 STM32F407ZGT6 霸天虎 V2** 上的 NES / Fa
 - 没有 `.COV` 的 ROM：首玩约 3 秒（FDS 约 6 秒）自动截取开始画面，空白画面自动重试。
 
 <p align="center">
-  <img src="Doc/images/import-gui.png" width="720" alt="NesFire 导入助手">
+  <img src="Doc/images/import-gui.png" width="900" alt="NesFire 导入助手（完整窗口）">
 </p>
 
 > 导入助手的下载和详细说明见 [Doc/external_roms.md](Doc/external_roms.md)。
