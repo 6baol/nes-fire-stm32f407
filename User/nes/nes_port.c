@@ -116,6 +116,22 @@ static char shown_status[48];
 static char load_error[48];
 static char notice[48],running_title[57];
 static uint32_t notice_until;
+volatile uint8_t nes_screen_landscape;
+/* Panel scan modes: even = 480x800 portrait, odd = 800x480 rotated. Mode 3 is
+ * the 90 degree counter-clockwise view the menus and the game are laid out for. */
+uint8_t NesPort_SetLandscape(uint8_t on)
+{
+    on=on?1:0;
+    if(on==nes_screen_landscape)return nes_screen_landscape;
+    nes_screen_landscape=on;
+    lcd_gram_scan(on?3:2);
+    lcd_fill_color(0,0,(uint16_t)(on?800u:480u),(uint16_t)(on?480u:800u),BLACK);
+    return nes_screen_landscape;
+}
+uint8_t NesPort_Landscape(void)
+{
+    return nes_screen_landscape;
+}
 static uint8_t disk_combo_latched;
 static unsigned disk_shown=~0u;
 

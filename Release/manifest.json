@@ -1,6 +1,6 @@
 ﻿{
     "version":  "0.43",
-    "git_commit":  "e50e67bfee1f3e5b8da4e7f2dae5c07d66737fc4",
+    "git_commit":  "cb29369aa66cad5ac5cc52ca1a2f6ca52cce28af",
     "source_dirty":  true,
     "target":  "STM32F407ZGT6 / Batianhu V2 / 480x800 MCU LCD",
     "compiler":  "Arm Compiler 6.24 (Keil project selection)",
@@ -80,12 +80,12 @@
                                             "sha256":  "8ec06aff3576d75f9904fcb8f85bf9fa8818037dfa89ad8fcc0225d7bb9dab41"
                                         },
                   "NesFire_v0.43.axf":  {
-                                            "bytes":  879524,
-                                            "sha256":  "8087799b134f4c0ee9654717c21f6e1140d6baaceb560880fbff963f0c578f05"
+                                            "bytes":  879888,
+                                            "sha256":  "73c3d749bac94a6b1b110eed13038b6bdf1173618d9574b12f2d8ad836a2f0c7"
                                         },
                   "NesFire_v0.43.map":  {
-                                            "bytes":  925342,
-                                            "sha256":  "95da8b9d92f30355e40f47f1ee09716f608b28fd128ce185399be961332f99c1"
+                                            "bytes":  926368,
+                                            "sha256":  "726a2d0433ceed76da5d39a85ecd19fd3134c3cedfacd769a00c5f25a7d20745"
                                         }
               },
     "linker_bytes":  {
