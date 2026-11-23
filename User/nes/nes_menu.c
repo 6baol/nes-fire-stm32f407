@@ -89,13 +89,18 @@ int NesMenu_Page(NesMenuState *m,int dir,unsigned step)
     int next;unsigned rows=ui()->rows;
     if(!m->count || !dir)return 0;
     next=(int)m->index+(int)dir*(int)step;
-    if(next<0)next=0;
-    if(next>=(int)m->count)next=(int)m->count-1;
+    /* Paging wraps at both ends so the last page returns to the first. */
+    if(next<0)next=(int)m->count-1;
+    if(next>=(int)m->count)next=0;
     if(next==m->index)return 0;
     m->index=(int16_t)next;
     if(next<m->first)m->first=(uint16_t)next;
     else if(next>=(int)(m->first+rows))m->first=(uint16_t)(next-(int)rows+1);
     return 1;
+}
+unsigned NesMenu_Rows(void)
+{
+    return ui()->rows;
 }
 /* Text wraps at word boundaries; game names are never abbreviated here.
  * Characters are counted in UTF-8 units so a Chinese name occupies one cell. */

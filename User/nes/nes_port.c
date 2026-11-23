@@ -551,7 +551,9 @@ static void menu_redraw_selection(void)
     uint32_t started=DWT->CYCCNT;
     NesMenu_DrawRows(&menu);
     menu_info(0);
-    cover_pending=1;cover_due=HAL_GetTick();
+    /* The cover is read only once the stick has been still for 150 ms, so
+     * holding a direction scrolls without waiting on the card. */
+    cover_pending=1;cover_due=HAL_GetTick()+150;
     nes_menu_redraw_us=(DWT->CYCCNT-started)/(HAL_RCC_GetHCLKFreq()/1000000u);
     ++nes_menu_updates;
 }
@@ -745,7 +747,7 @@ static void menu_poll(uint32_t now)
     }
     if(page && menu_page_armed) {
         menu_page_armed=0;
-        if(NesMenu_Page(&menu,page,5)){load_error[0]='\0';menu_redraw_selection();}
+        if(NesMenu_Page(&menu,page,(unsigned)NesMenu_Rows())){load_error[0]='\0';menu_redraw_selection();}
     }
     if(KEY1_PRESSED||KEY2_PRESSED||SW_PRESSED||SHIELD||(nes_test_pad&3)) {
         int k1=KEY1_PRESSED||(nes_test_pad&2);

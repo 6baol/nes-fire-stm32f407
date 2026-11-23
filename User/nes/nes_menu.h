@@ -37,6 +37,7 @@ void NesMenu_SaveError(const char *reason);
 void NesSettings_Draw(uint8_t audio_ok);
 void NesSettings_Audio(uint8_t output,uint8_t audio_ok,uint8_t failed);
 void NesSettings_Screen(uint8_t landscape);
+unsigned NesMenu_Rows(void);
 void NesSettings_Update(uint8_t pad,uint16_t raw_x,uint16_t raw_y,
                         uint8_t stick_ready,uint8_t cap_ready,uint16_t cap_raw);
 
