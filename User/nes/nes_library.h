@@ -61,6 +61,17 @@ unsigned NesLibrary_InputProfile(void);
 /* Battery-backed cartridge SRAM. No card I/O from Nes_Frame(). */
 int NesLibrary_Save(void);
 int NesLibrary_SavePending(void);
+/* Device settings live in NES/SETTINGS.BIN: version, orientation, volume,
+ * output, CRC32. Load returns 1 when a valid record was applied to *settings;
+ * save returns 0 on success. Storage errors never affect runtime behaviour. */
+typedef struct {
+    uint8_t version;
+    uint8_t landscape;
+    uint8_t volume;
+    uint8_t output;
+} NesLibrarySettings;
+int NesLibrary_LoadSettings(NesLibrarySettings *settings);
+int NesLibrary_SaveSettings(const NesLibrarySettings *settings);
 const char *NesLibrary_Status(void);
 const char *NesLibrary_Error(void);
 extern volatile uint32_t nes_sd_file_reads;

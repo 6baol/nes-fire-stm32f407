@@ -1,6 +1,6 @@
 ﻿{
-    "version":  "0.62-keys",
-    "git_commit":  "ebb8e34a8c258aa710b304725456dec63d22128a",
+    "version":  "0.64-spk2",
+    "git_commit":  "de94e99f5219f95e23841f31769aa3d8727950c6",
     "source_dirty":  true,
     "target":  "STM32F407ZGT6 / Batianhu V2 / 480x800 MCU LCD",
     "compiler":  "Arm Compiler 6.24 (Keil project selection)",
@@ -10,7 +10,7 @@
     "storage_mode":  "SD library; first game embedded as fallback",
     "embedded_game_count":  1,
     "wiring":  "VRx=PA4 (CN3-25), VRy=PA6 (CN3-21), SW=PB7 (CN3-23), 3V3/GND; camera disconnected",
-    "firmware_prefix":  "NesFire_v0.62-keys",
+    "firmware_prefix":  "NesFire_v0.64-spk2",
     "rom":  {
                 "name":  "smb.nes",
                 "mapper":  0,
@@ -71,28 +71,28 @@
                           ]
             },
     "files":  {
-                  "NesFire_v0.62-keys.hex":  {
-                                                 "bytes":  544405,
-                                                 "sha256":  "9274d7c71b2ef4e32c42b82293c2afcf7ad35d6446ea66202befdd1adf468f13"
+                  "NesFire_v0.64-spk2.hex":  {
+                                                 "bytes":  555942,
+                                                 "sha256":  "e368c12a06e96354117787bd07826fa820ca84df60e157ebe95e02f64bd14ac2"
                                              },
-                  "NesFire_v0.62-keys.bin":  {
-                                                 "bytes":  193536,
-                                                 "sha256":  "e8ffbf5b7844ad15b0ab0495d8ee6e783bb352d9ecaf203854494839290e163f"
+                  "NesFire_v0.64-spk2.bin":  {
+                                                 "bytes":  197632,
+                                                 "sha256":  "fca6b4046f4d63d1bc3cc1bf4d115e71aa7ce57418236e7c6237bbac26ba478b"
                                              },
-                  "NesFire_v0.62-keys.axf":  {
-                                                 "bytes":  893472,
-                                                 "sha256":  "aa79e9470bb53b684f65bde1c05454c57a55dbe9661c5a0bb0eaf454c3bb83ef"
+                  "NesFire_v0.64-spk2.axf":  {
+                                                 "bytes":  914524,
+                                                 "sha256":  "ebbdd1773dbce0120f0ad80f9fd264f79a9cd370e0dd75493ddaa6d6d1a79485"
                                              },
-                  "NesFire_v0.62-keys.map":  {
-                                                 "bytes":  934453,
-                                                 "sha256":  "4226f424b8a7cead942137bf1b247795f8d46e936fd5e17fd17810d56f2da69a"
+                  "NesFire_v0.64-spk2.map":  {
+                                                 "bytes":  957682,
+                                                 "sha256":  "caa6765ad95ebbe44891e923c144e0085295cb21a870554c1e5c3993c33c3bc4"
                                              }
               },
     "linker_bytes":  {
-                         "code":  134496,
-                         "read_only":  57712,
+                         "code":  137868,
+                         "read_only":  57736,
                          "read_write":  296,
-                         "zero_initialized":  167344
+                         "zero_initialized":  167728
                      },
     "bios":  {
                  "source":  "Roms\\disksys.rom",

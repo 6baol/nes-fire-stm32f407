@@ -80,14 +80,19 @@ volatile uint32_t nes_library_boot_ms,nes_search_ms,nes_load_ms,nes_save_ms;
 static uint8_t capturing;
 static uint32_t cap_status_due,cap_last_count;
 static uint8_t cap_last_pressed=255,cap_last_ready=255;
+static uint8_t cap_rotate_armed=1;
 extern volatile uint32_t touchpad_press_count;
 
-enum {APP_MENU=0,APP_GAME=1,APP_SETTINGS=2,APP_SEARCH=3,APP_LIBRARY=4,APP_SAVE_ERROR=5,APP_LIBRARY_CHECK=6};
+/* APP_LIBRARY (4) is retired: the settings centre replaced the old library
+ * options page. The remaining numbers stay fixed for the SWD/test harness. */
+enum {APP_MENU=0,APP_GAME=1,APP_SETTINGS=2,APP_SEARCH=3,APP_LIBRARY=4,APP_SAVE_ERROR=5,APP_LIBRARY_CHECK=6,APP_DETAILS=7};
 static uint32_t settings_due;
-static uint8_t settings_axis_armed,settings_center_seen;
-static uint8_t settings_y_armed,settings_y_seen;
-static uint32_t settings_y_due;
-static uint32_t settings_center_due;
+static uint8_t settings_page,settings_cursor,audio_cursor;
+static uint8_t settings_x_armed,settings_x_seen,settings_y_armed,settings_y_seen;
+static uint32_t settings_x_due,settings_y_due;
+static uint8_t settings_key_armed,settings_storage,settings_save_failed,settings_output_failed;
+static char settings_msg[40];
+static uint32_t settings_msg_until;
 static uint8_t app_state=APP_MENU;
 static NesMenuState menu;
 static uint8_t sw_hold_active;
@@ -104,14 +109,17 @@ static uint8_t menu_armed;
 static uint32_t menu_repeat_due;
 static uint8_t cover_pending;
 static uint32_t cover_due;
-static uint8_t cap_search_armed=1;
-static uint32_t key1_down;
-static uint8_t key1_pending;
 static NesSearchState search;
+static uint8_t search_from_settings;
+static NesDetails details;
+static char details_label[NES_IMPORT_LABEL_MAX+1];
+static char details_file[NES_IMPORT_PATH_MAX+1];
+static char details_status[56];
+static uint8_t details_key_armed;
 static uint8_t search_armed,search_center_seen,search_key_armed,search_ok_armed;
 static uint32_t search_center_due;
-static uint8_t library_cursor,library_axis_armed,library_centered,library_key_armed;
-static uint32_t library_center_due,library_progress_due;
+static uint8_t library_key_armed;
+static uint32_t library_progress_due;
 static unsigned library_check_total;
 static uint8_t save_error_armed;
 static uint8_t stick_shown=255;
@@ -194,9 +202,9 @@ static uint8_t pad_poll(uint32_t now)
 #define KEY1_PRESSED (HAL_GPIO_ReadPin(KEY1_GPIO_PORT,KEY1_PIN)==GPIO_PIN_SET)
 
 static const char *const view_hints[]={
-    "SEARCH RESULTS - HOLD KEY1 FOR LIBRARY", "LOADABLE HEADERS - HOLD KEY1 FOR LIBRARY",
-    "UNSUPPORTED - HOLD KEY1 FOR LIBRARY", "FAVORITES - HOLD KEY1 FOR LIBRARY",
-    "RECENTLY PLAYED - HOLD KEY1 FOR LIBRARY"
+    "SEARCH RESULTS - KEY1 SETTINGS", "LOADABLE HEADERS - KEY1 SETTINGS",
+    "UNSUPPORTED - KEY1 SETTINGS", "FAVORITES - KEY1 SETTINGS",
+    "RECENTLY PLAYED - KEY1 SETTINGS"
 };
 
 static void text(unsigned x,unsigned y,const char *s) {PixelFont_Text((uint16_t)x,(uint16_t)(y+4),s,WHITE,BLACK,2);}
@@ -259,6 +267,8 @@ static uint8_t held(Button *b,uint8_t raw,uint32_t now)
     if((uint32_t)(now-b->changed)>=20) b->stable=raw;
     return b->stable;
 }
+static void draw_settings(void);
+static void draw_details(void);
 void NesPort_Input(void)
 {
     uint32_t now=HAL_GetTick();uint8_t pad=0,aa,bb,ss;
@@ -271,10 +281,8 @@ void NesPort_Input(void)
             watched=nes_screen_landscape;
             NesPort_SetLandscape(watched);
             if(app_state==APP_MENU)NesMenu_Draw(&menu);
-            else if(app_state==APP_SETTINGS){
-                NesSettings_Draw(menu.audio_ok);
-                NesSettings_Audio((uint8_t)NesAudio_GetOutput(),menu.audio_ok,0);
-            }
+            else if(app_state==APP_SETTINGS)draw_settings();
+            else if(app_state==APP_DETAILS)draw_details();
             else if(app_state==APP_SEARCH)NesSearch_Draw(&search);
         }
     }
@@ -445,7 +453,10 @@ static void return_to_library(void)
     NesLibrary_EnterMenu();
     app_state=APP_MENU;
     sw_hold_active=0;
-    menu_axis_armed=0;menu_page_armed=0;menu_center_seen=0;menu_page_seen=0;menu_armed=0;key1_pending=0;
+    menu_axis_armed=0;menu_page_armed=0;menu_center_seen=0;menu_page_seen=0;menu_armed=0;
+    settings_key_armed=0;settings_x_armed=settings_x_seen=0;settings_y_armed=settings_y_seen=0;
+    settings_output_failed=0;settings_msg[0]='\0';
+    details_key_armed=0;
     cover_pending=0;load_error[0]='\0';notice[0]='\0';
     draw_library();
 }
@@ -577,9 +588,10 @@ static void menu_redraw_selection(void)
     nes_menu_redraw_us=(DWT->CYCCNT-started)/(HAL_RCC_GetHCLKFreq()/1000000u);
     ++nes_menu_updates;
 }
-static void open_search(void)
+static void open_search(int from_settings)
 {
     NesSearch_Init(&search);
+    search_from_settings=(uint8_t)from_settings;
     search_armed=0;search_center_seen=0;
     /* The key that opened this page may still be held: arm on release. */
     search_key_armed=0;search_ok_armed=0;
@@ -588,19 +600,187 @@ static void open_search(void)
     NesSearch_Draw(&search);
 }
 
-static void draw_library_options(void)
+/* ---- Settings centre -------------------------------------------------- */
+static const char *settings_status(void)
 {
-    int favorite=menu.count&&NesLibrary_IsFavorite((unsigned)menu.index);
-    NesMenu_LibraryOptions(library_cursor,NesLibrary_Filter()+1u,favorite,menu.count!=0);
+    return (int32_t)(HAL_GetTick()-settings_msg_until)<0?settings_msg:"";
 }
-
-static void open_library_options(void)
+static void settings_notice(const char *msg)
 {
-    library_cursor=(uint8_t)(NesLibrary_Filter()+1u);
-    library_axis_armed=0;library_centered=0;library_key_armed=0;
+    snprintf(settings_msg,sizeof(settings_msg),"%s",msg);
+    settings_msg_until=HAL_GetTick()+3000;
+}
+static void settings_persist(void)
+{
+    NesLibrarySettings s;
+    if(!settings_storage)return;
+    s.version=1;
+    s.landscape=nes_screen_landscape?1:0;
+    s.volume=NesAudio_GetVolume();
+    s.output=(uint8_t)NesAudio_GetOutput();
+    settings_save_failed=NesLibrary_SaveSettings(&s)?1:0;
+}
+static void draw_settings(void)
+{
+    const JoystickState *j=Joystick_Get();
+    const TouchpadState *cap=Touchpad_Get();
+    if(settings_page==NES_SETTINGS_PAGE_CONTROL) {
+        NesSettings_Control();
+        NesSettings_Update(PADdata,j->raw_x,j->raw_y,j->healthy&&j->calibrated,cap->ready,cap->raw);
+    } else if(settings_page==NES_SETTINGS_PAGE_AUDIO)
+        NesSettings_Audio(audio_cursor,NesAudio_GetVolume(),(uint8_t)NesAudio_GetOutput(),
+                          menu.audio_ok,settings_output_failed,settings_save_failed);
+    else if(settings_page==NES_SETTINGS_PAGE_SCREEN)
+        NesSettings_Screen(nes_screen_landscape,settings_save_failed);
+    else
+        NesSettings_Root(settings_cursor,NesLibrary_Filter(),
+            menu.count&&NesLibrary_IsFavorite((unsigned)menu.index),menu.count!=0,
+            NesAudio_GetVolume(),(uint8_t)NesAudio_GetOutput(),settings_status());
+}
+static void open_settings(void)
+{
+    settings_page=NES_SETTINGS_PAGE_ROOT;
+    settings_cursor=(uint8_t)NesLibrary_Filter();
+    settings_key_armed=0;
+    settings_x_armed=settings_x_seen=0;
+    settings_y_armed=settings_y_seen=0;
+    settings_output_failed=0;
+    settings_msg[0]='\0';
     sw_hold_active=0;cover_pending=0;
-    app_state=APP_LIBRARY;
-    draw_library_options();
+    app_state=APP_SETTINGS;
+    draw_settings();
+}
+static void settings_flip(void)
+{
+    nes_screen_landscape=nes_screen_landscape?0:1;
+    settings_persist();
+}
+static void settings_move(int dir)
+{
+    if(settings_page==NES_SETTINGS_PAGE_ROOT) {
+        int next=(int)settings_cursor+dir;
+        if(next<0)next=(int)NES_SETTINGS_ITEMS-1;
+        if(next>=(int)NES_SETTINGS_ITEMS)next=0;
+        settings_cursor=(uint8_t)next;
+        draw_settings();
+    } else if(settings_page==NES_SETTINGS_PAGE_AUDIO) {
+        audio_cursor=audio_cursor?0:1;
+        draw_settings();
+    }
+}
+static void settings_adjust(int dir)
+{
+    if(settings_page==NES_SETTINGS_PAGE_AUDIO) {
+        int changed;
+        if(audio_cursor==0) {
+            int before=(int)NesAudio_GetVolume();
+            int volume=before+dir*5;
+            if(volume<0)volume=0;
+            if(volume>100)volume=100;
+            NesAudio_SetVolume((uint8_t)volume);
+            changed=(int)NesAudio_GetVolume()!=before;
+        } else {
+            int before=(int)NesAudio_GetOutput();
+            int output=before+dir;
+            if(output<0)output=NES_AUDIO_OFF;
+            if(output>NES_AUDIO_OFF)output=0;
+            settings_output_failed=NesAudio_SetOutput((NesAudioOutput)output);
+            changed=(int)NesAudio_GetOutput()!=before;
+        }
+        /* Do not rewrite the card when a value is already at its limit. */
+        if(changed)settings_persist();
+        draw_settings();
+    } else if(settings_page==NES_SETTINGS_PAGE_SCREEN) settings_flip();
+}
+static void settings_select(void)
+{
+    if(settings_cursor==NES_SETTINGS_SEARCH) {open_search(1);return;}
+    if(settings_cursor==NES_SETTINGS_CONTROL) {
+        settings_page=NES_SETTINGS_PAGE_CONTROL;settings_due=HAL_GetTick();
+        draw_settings();return;
+    }
+    if(settings_cursor==NES_SETTINGS_AUDIO) {
+        settings_page=NES_SETTINGS_PAGE_AUDIO;audio_cursor=0;
+        draw_settings();return;
+    }
+    if(settings_cursor==NES_SETTINGS_SCREEN) {
+        settings_page=NES_SETTINGS_PAGE_SCREEN;
+        draw_settings();return;
+    }
+    if(settings_cursor==NES_SETTINGS_FAVORITE) {
+        int result=menu.count?NesLibrary_ToggleFavorite((unsigned)menu.index):-1;
+        update_menu_count(1);
+        settings_notice(result==1?"ADDED TO FAVORITES":result==0?"REMOVED FROM FAVORITES":
+            result==-2?"FAVORITES LIST FULL":menu.count?"FAVORITE WRITE FAILED - CHECK SD":"NO GAME SELECTED");
+        draw_settings();return;
+    }
+    NesLibrary_ClearView();
+    (void)NesLibrary_SetFilter(settings_cursor);
+    library_check_total=NesLibrary_FilterPending();
+    if(library_check_total) {
+        lcd_fill_color(0,0,480,800,BLACK);
+        text(16,380,"CHECKING ROM HEADERS...");
+        text(16,458,"KEY1 CANCEL");
+        library_progress_due=HAL_GetTick();
+        app_state=APP_LIBRARY_CHECK;
+        return;
+    }
+    update_menu_count(0);
+    return_to_library();
+}
+static void settings_act(int back)
+{
+    if(back) {
+        if(settings_page!=NES_SETTINGS_PAGE_ROOT) {
+            settings_page=NES_SETTINGS_PAGE_ROOT;
+            draw_settings();
+        } else return_to_library();
+        return;
+    }
+    if(settings_page==NES_SETTINGS_PAGE_ROOT)settings_select();
+    else if(settings_page==NES_SETTINGS_PAGE_AUDIO)settings_adjust(1);
+    else if(settings_page==NES_SETTINGS_PAGE_SCREEN)settings_flip();
+}
+static void settings_poll(uint32_t now)
+{
+    const JoystickState *j=Joystick_Get();
+    const TouchpadState *cap=Touchpad_Get();
+    int dx=0,dy=0,cx=0,cy=0;
+    if(j->healthy&&j->calibrated) {
+        dx=j->x>0.65f?1:(j->x< -0.65f?-1:0);
+        dy=j->y>0.65f?1:(j->y< -0.65f?-1:0);
+        cx=j->x<0.25f&&j->x> -0.25f;
+        cy=j->y<0.25f&&j->y> -0.25f;
+    }
+    if(nes_test_pad&0x30){dy=(nes_test_pad&0x10)?-1:1;cy=0;}
+    if(nes_test_pad&0xc0){dx=(nes_test_pad&0x40)?-1:1;cx=0;}
+    /* A diagonal push must not move and adjust in the same pass. */
+    if(dx&&dy&&j->healthy&&j->calibrated) {
+        float ax=j->x<0?-j->x:j->x,ay=j->y<0?-j->y:j->y;
+        if(ay>=ax)dx=0;else dy=0;
+    }
+    if(cy) {
+        if(!settings_y_seen){settings_y_seen=1;settings_y_due=now+60;}
+        if((int32_t)(now-settings_y_due)>=0)settings_y_armed=1;
+    } else settings_y_seen=0;
+    if(cx) {
+        if(!settings_x_seen){settings_x_seen=1;settings_x_due=now+60;}
+        if((int32_t)(now-settings_x_due)>=0)settings_x_armed=1;
+    } else settings_x_seen=0;
+    if(dy&&settings_y_armed){settings_y_armed=0;settings_move(dy);}
+    if(dx&&settings_x_armed){settings_x_armed=0;settings_adjust(dx);}
+    if(settings_page==NES_SETTINGS_PAGE_CONTROL&&(int32_t)(now-settings_due)>=0) {
+        settings_due=now+50;
+        NesSettings_Update(PADdata,j->raw_x,j->raw_y,j->healthy&&j->calibrated,cap->ready,cap->raw);
+    }
+    {
+        int back=KEY1_PRESSED||(SHIELD&PAD_B)||(nes_test_pad&2);
+        int ok=KEY2_PRESSED||(SHIELD&(PAD_A|PAD_F))||SW_PRESSED||(nes_test_pad&1);
+        if(!back&&!ok){settings_key_armed=1;return;}
+        if(!settings_key_armed)return;
+        settings_key_armed=0;
+        settings_act(back);
+    }
 }
 
 static void library_check_poll(uint32_t now)
@@ -632,53 +812,6 @@ static void library_check_poll(uint32_t now)
     }
 }
 
-static void library_options_poll(uint32_t now)
-{
-    const JoystickState *j=Joystick_Get();
-    int dir=0,centered=0;
-    int back=KEY1_PRESSED||(SHIELD&PAD_B)||(nes_test_pad&2);
-    int select=KEY2_PRESSED||(SHIELD&(PAD_A|PAD_F))||SW_PRESSED||(nes_test_pad&1);
-    if(j->healthy&&j->calibrated) {
-        dir=j->y>0.65f?1:(j->y< -0.65f?-1:0);
-        centered=j->y<0.25f&&j->y> -0.25f;
-    }
-    if(nes_test_pad&0x30){dir=(nes_test_pad&0x10)?-1:1;centered=0;}
-    if(centered) {
-        if(!library_centered){library_centered=1;library_center_due=now+60;}
-        if((int32_t)(now-library_center_due)>=0)library_axis_armed=1;
-    } else library_centered=0;
-    if(dir&&library_axis_armed) {
-        library_axis_armed=0;
-        library_cursor=(uint8_t)((library_cursor+NES_LIBRARY_OPTIONS+dir)%NES_LIBRARY_OPTIONS);
-        draw_library_options();
-    }
-    if(!select&&!back){library_key_armed=1;return;}
-    if(!library_key_armed)return;
-    library_key_armed=0;
-    if(!back&&library_cursor==0){open_search();return;}
-    if(back){return_to_library();return;}
-    if(library_cursor==NES_LIBRARY_OPTIONS-1) {
-        int result=menu.count?NesLibrary_ToggleFavorite((unsigned)menu.index):-1;
-        update_menu_count(1);
-        return_to_library();
-        show_notice(result==1?"ADDED TO FAVORITES":result==0?"REMOVED FROM FAVORITES":
-                    result==-2?"FAVORITES LIST FULL":menu.count?"FAVORITE WRITE FAILED - CHECK SD":"NO GAME SELECTED");
-        return;
-    }
-    NesLibrary_ClearView();
-    (void)NesLibrary_SetFilter(library_cursor-1u);
-    library_check_total=NesLibrary_FilterPending();
-    if(library_check_total) {
-        lcd_fill_color(0,0,480,800,BLACK);
-        text(16,380,"CHECKING ROM HEADERS...");
-        text(16,458,"KEY1 CANCEL");
-        library_progress_due=now;
-        app_state=APP_LIBRARY_CHECK;
-        return;
-    }
-    update_menu_count(0);
-    return_to_library();
-}
 static void search_poll(uint32_t now)
 {
     const JoystickState *j=Joystick_Get();
@@ -700,7 +833,15 @@ static void search_poll(uint32_t now)
         NesSearch_Draw(&search);
     }
     if(KEY1_PRESSED||(SHIELD&PAD_B)||(nes_test_pad&2)) {
-        if(search_key_armed){search_key_armed=0;return_to_library();return;}
+        if(search_key_armed) {
+            search_key_armed=0;
+            if(search_from_settings) {
+                app_state=APP_SETTINGS;settings_page=NES_SETTINGS_PAGE_ROOT;
+                settings_key_armed=0;settings_msg[0]='\0';
+                draw_settings();
+            } else return_to_library();
+            return;
+        }
     } else search_key_armed=1;
     if(KEY2_PRESSED||(SHIELD&(PAD_A|PAD_F))||SW_PRESSED||(nes_test_pad&1)) {
         if(search_ok_armed) {
@@ -720,6 +861,60 @@ static void search_poll(uint32_t now)
         }
     } else search_ok_armed=1;
 }
+static void draw_details(void)
+{
+    NesDetails_Draw(&details);
+}
+static void open_details(void)
+{
+    const NesRomImage *game;
+    NesImportInfo import_info={0};
+    uint32_t size;
+    unsigned mapper=0xffffu;
+    int result;
+    if(!menu.count)return;
+    game=NesLibrary_Game((unsigned)menu.index);
+    if(!game)return;
+    snprintf(details_label,sizeof(details_label),"%s",game->label);
+    snprintf(details_file,sizeof(details_file),"%s",game->file);
+    size=game->size;
+    result=NesLibrary_Compatibility((unsigned)menu.index,1,&mapper);
+    import_info.mapper=(uint16_t)mapper;
+    if(result==NES_LIBRARY_COMPAT_HEADER_OK)
+        snprintf(details_status,sizeof(details_status),"HEADER OK");
+    else if(result==NES_LIBRARY_COMPAT_UNKNOWN)
+        snprintf(details_status,sizeof(details_status),"HEADER NOT CHECKED");
+    else if(result==NES_LIBRARY_COMPAT_READ_ERROR)
+        snprintf(details_status,sizeof(details_status),"ROM READ ERROR");
+    else NesImport_FormatReason(result,&import_info,details_status,sizeof(details_status));
+    details.label=details_label;
+    details.file=details_file;
+    details.status=details_status;
+    details.size=size;
+    details.index=(unsigned)menu.index;
+    details.count=(unsigned)menu.count;
+    details.mapper=mapper;
+    details.favorite=NesLibrary_IsFavorite((unsigned)menu.index);
+    details.flags=(unsigned)((mapper==20||strstr(details_file,".fds")||strstr(details_file,".FDS"))?
+                             NES_DETAILS_FDS:0);
+    details_key_armed=0;
+    app_state=APP_DETAILS;
+    draw_details();
+}
+static void details_poll(void)
+{
+    int back=KEY1_PRESSED||(SHIELD&PAD_B)||(nes_test_pad&2);
+    int ok=KEY2_PRESSED||(SHIELD&(PAD_A|PAD_F))||SW_PRESSED||(nes_test_pad&1);
+    if(!back&&!ok){details_key_armed=1;return;}
+    if(!details_key_armed)return;
+    details_key_armed=0;
+    if(back){return_to_library();return;}
+    /* Leave the menu disarmed so a still-held A cannot retry a failed load,
+     * and the B that closed GAME INFO cannot also open Settings. */
+    app_state=APP_MENU;
+    menu_armed=0;
+    start_selected();
+}
 static void menu_poll(uint32_t now)
 {
     const JoystickState *j=Joystick_Get();
@@ -727,17 +922,19 @@ static void menu_poll(uint32_t now)
     /* The cover is read from the card only after the stick has settled. */
     if(cover_pending&&(int32_t)(now-cover_due)>=0){cover_pending=0;NesMenu_DrawCover(&menu);menu_info(0);}
     {
-        /* Capacitive key flips the panel between portrait and landscape. */
+        /* CAP keeps its original one-key portrait/landscape toggle. It is
+         * still NES Select inside a running game. */
         const TouchpadState *cap=Touchpad_Get();
-        if(cap->ready&&cap->pressed){
-            if(cap_search_armed){cap_search_armed=0;nes_screen_landscape=nes_screen_landscape?0:1;return;}
-        } else cap_search_armed=1;
+        if(cap->ready&&cap->pressed) {
+            if(cap_rotate_armed){cap_rotate_armed=0;nes_screen_landscape=nes_screen_landscape?0:1;return;}
+        } else cap_rotate_armed=1;
     }
     {
-        /* Select steps down the list without using the stick. */
+        /* SELECT (shield E) opens GAME INFO. It no longer steps the list;
+         * holding it opens the page only once. */
         static uint8_t select_last;
         uint8_t sel=(SHIELD&PAD_E)?1u:0u;
-        if(sel&&!select_last&&NesMenu_Move(&menu,1)){load_error[0]='\0';menu_redraw_selection();}
+        if(sel&&!select_last){select_last=sel;open_details();return;}
         select_last=sel;
     }
     if(j->healthy&&j->calibrated) {
@@ -775,32 +972,16 @@ static void menu_poll(uint32_t now)
         int k2=KEY2_PRESSED;
         int ok=(SHIELD&PAD_A)||(SHIELD&PAD_F)||SW_PRESSED||((nes_test_pad&1)&&!k1&&!k2);
         if(k1) {
-            /* Tap KEY1 for Settings; holding it opens the library actions. */
-            if(!key1_pending){key1_pending=1;key1_down=now;}
-            else if((uint32_t)(now-key1_down)>=1000){
-                key1_pending=0;menu_armed=0;open_library_options();return;
-            }
+            /* Settings is a normal press now; nothing here needs a long hold. */
+            if(menu_armed){menu_armed=0;open_settings();return;}
         } else if(k2) {
-            /* KEY2 is the search shortcut. */
-            if(menu_armed){menu_armed=0;open_search();return;}
+            /* KEY2 remains the search shortcut. */
+            if(menu_armed){menu_armed=0;open_search(0);return;}
         } else if(menu_armed) {
             menu_armed=0;
             if(ok){start_selected();return;}
-            if(SHIELD&PAD_B)return;          /* B is back; nothing to leave here */
         }
-    } else {
-        menu_armed=1;
-        if(key1_pending){
-            key1_pending=0;
-            if((uint32_t)(now-key1_down)<1000){
-                app_state=APP_SETTINGS;sw_hold_active=0;settings_due=now;
-                settings_axis_armed=settings_center_seen=0;
-                NesSettings_Draw(menu.audio_ok);
-                NesSettings_Audio((uint8_t)NesAudio_GetOutput(),menu.audio_ok,0);
-                return;
-            }
-        }
-    }
+    } else menu_armed=1;
     if(load_error[0])menu_status(load_error);
     else if(notice[0]&&(int32_t)(now-notice_until)<0)menu_status(notice);
     else if(!strncmp(NesLibrary_Status(),"SD SAVE",7))menu_status(NesLibrary_Status());
@@ -833,11 +1014,28 @@ void NesApp_Init(uint8_t touch_ok)
     library_result=NesLibrary_Boot();
     nes_library_boot_ms=HAL_GetTick()-started;
     printf("SD library=%d\r\n",library_result);
+    settings_storage=(uint8_t)(library_result==0);
+    settings_page=NES_SETTINGS_PAGE_ROOT;
+    settings_cursor=0;settings_key_armed=0;
+    settings_x_armed=settings_x_seen=0;
+    settings_y_armed=settings_y_seen=0;
+    settings_save_failed=0;settings_output_failed=0;settings_msg[0]='\0';
+    {
+        NesLibrarySettings saved;
+        if(NesLibrary_LoadSettings(&saved)) {
+            NesAudio_SetVolume(saved.volume);
+            if(!result)(void)NesAudio_SetOutput((NesAudioOutput)saved.output);
+            if(saved.landscape)nes_screen_landscape=1;
+            printf("Settings: volume=%u output=%u landscape=%u\r\n",
+                (unsigned)saved.volume,(unsigned)saved.output,(unsigned)saved.landscape);
+        }
+    }
     NesMenu_Init(&menu,(uint16_t)NesLibrary_Count(),result==0,touch_ok);
     printf("Games=%u\r\n",NesLibrary_Count());
+    if(nes_screen_landscape)NesPort_SetLandscape(1);
     app_state=APP_MENU;
     loaded=0;
-    menu_axis_armed=0;menu_page_armed=0;menu_center_seen=0;menu_page_seen=0;menu_armed=0;key1_pending=0;
+    menu_axis_armed=0;menu_page_armed=0;menu_center_seen=0;menu_page_seen=0;menu_armed=0;
     draw_library();
     if(result) menu_status("AUDIO OFF - CHECK CODEC");
     else menu_status(NesLibrary_Status());
@@ -849,64 +1047,16 @@ void NesApp_Poll(void)
     NesPort_Input();
     if(app_state==APP_MENU) {menu_poll(now);return;}
     if(app_state==APP_SEARCH) {search_poll(now);return;}
-    if(app_state==APP_LIBRARY) {library_options_poll(now);return;}
+    if(app_state==APP_SETTINGS) {settings_poll(now);return;}
+    if(app_state==APP_DETAILS) {details_poll();return;}
     if(app_state==APP_LIBRARY_CHECK) {library_check_poll(now);return;}
     if(app_state==APP_SAVE_ERROR) {save_error_poll();return;}
-    /* Long press of SW leaves the game and returns to the menu. */
+    /* Long press of SW leaves the game and returns to the menu. Only the game
+     * state reaches this point; every pre-game screen has its own poll. */
     if(SW_PRESSED) {
         if(!sw_hold_active) {sw_hold_active=1;sw_hold_start=now;}
-        else if((uint32_t)(now-sw_hold_start)>=1500) {
-            if(app_state==APP_GAME)save_and_exit();
-            else return_to_library();
-            return;
-        }
+        else if((uint32_t)(now-sw_hold_start)>=1500) {save_and_exit();return;}
     } else sw_hold_active=0;
-    if(app_state==APP_SETTINGS) {
-        const JoystickState *j=Joystick_Get();
-        int dir=0,centered=0;
-        if(j->healthy&&j->calibrated) {
-            dir=j->x>0.65f?1:j->x< -0.65f?-1:0;
-            centered=j->x<0.25f && j->x> -0.25f;
-        }
-        if(nes_test_pad&0xc0){dir=(nes_test_pad&0x40)?-1:1;centered=0;}
-        if(centered) {
-            if(!settings_center_seen){settings_center_seen=1;settings_center_due=now+60;}
-            if((int32_t)(now-settings_center_due)>=0)settings_axis_armed=1;
-        } else {
-            settings_center_seen=0;
-            if(dir&&settings_axis_armed) {
-                int output=(int)NesAudio_GetOutput()+dir;
-                uint8_t failed;
-                settings_axis_armed=0;
-                if(output<0)output=NES_AUDIO_OFF;if(output>NES_AUDIO_OFF)output=0;
-                failed=NesAudio_SetOutput((NesAudioOutput)output);
-                NesSettings_Audio((uint8_t)NesAudio_GetOutput(),menu.audio_ok,failed);
-            }
-        }
-        if((int32_t)(now-settings_due)>=0) {
-            settings_due=now+50;
-            NesSettings_Update(PADdata,j->raw_x,j->raw_y,j->healthy&&j->calibrated,cap->ready,cap->raw);
-        }
-        /* Up/down flips the panel between portrait and the 800x480 layout. */
-        {
-            int vdir=0,vcentered=0;
-            if(j->healthy&&j->calibrated) {
-                vdir=j->y>0.65f?1:j->y< -0.65f?-1:0;
-                vcentered=j->y<0.25f && j->y> -0.25f;
-            }
-            if(vcentered) {
-                if(!settings_y_seen){settings_y_seen=1;settings_y_due=now+60;}
-                if((int32_t)(now-settings_y_due)>=0)settings_y_armed=1;
-            } else {
-                settings_y_seen=0;
-                if(vdir&&settings_y_armed) {
-                    settings_y_armed=0;
-                    nes_screen_landscape=nes_screen_landscape?0:1;
-                }
-            }
-        }
-        return;
-    }
     {
         const JoystickState *joy=Joystick_Get();
         uint8_t status=!joy->calibrated?0:joy->healthy?1:2;

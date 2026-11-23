@@ -30,14 +30,38 @@ void NesMenu_DrawCover(const NesMenuState *m);
 void NesMenu_Info(const char *msg);
 /* One-line message below the hints (ROM rejected, stick calibration, ...). */
 void NesMenu_Status(const char *msg);
-#define NES_LIBRARY_OPTIONS 7u
-void NesMenu_LibraryOptions(unsigned cursor, unsigned current_view, int favorite, int has_game);
+#define NES_DETAILS_FDS 1u
+typedef struct {
+    const char *label;      /* full UTF-8 catalog label, Chinese kept */
+    const char *file;       /* relative path on the card */
+    const char *status;     /* ASCII compatibility text */
+    uint32_t size;          /* file size in bytes */
+    unsigned index, count;  /* 0-based index and view size */
+    unsigned mapper;        /* 0xffff when the header was not readable */
+    int favorite;
+    unsigned flags;         /* NES_DETAILS_FDS */
+} NesDetails;
+void NesDetails_Draw(const NesDetails *details);
 void NesMenu_SaveError(const char *reason);
-/* Native diagnostics: no cartridge is loaded or run. */
-void NesSettings_Draw(uint8_t audio_ok);
-void NesSettings_Audio(uint8_t output,uint8_t audio_ok,uint8_t failed);
-void NesSettings_Screen(uint8_t landscape);
+/* Settings centre: one hierarchical list with view, search and device pages. */
+enum {
+    NES_SETTINGS_ALL=0, NES_SETTINGS_LOADABLE, NES_SETTINGS_UNSUPPORTED,
+    NES_SETTINGS_FAVORITES, NES_SETTINGS_RECENT, NES_SETTINGS_SEARCH,
+    NES_SETTINGS_CONTROL, NES_SETTINGS_AUDIO, NES_SETTINGS_SCREEN,
+    NES_SETTINGS_FAVORITE, NES_SETTINGS_ITEMS
+};
+enum {
+    NES_SETTINGS_PAGE_ROOT=0, NES_SETTINGS_PAGE_CONTROL,
+    NES_SETTINGS_PAGE_AUDIO, NES_SETTINGS_PAGE_SCREEN
+};
+void NesSettings_Root(unsigned cursor,unsigned view,int favorite,int has_game,
+                      uint8_t volume,uint8_t output,const char *status);
+void NesSettings_Control(void);
+void NesSettings_Audio(unsigned cursor,uint8_t volume,uint8_t output,
+                       uint8_t audio_ok,uint8_t failed,uint8_t save_failed);
+void NesSettings_Screen(uint8_t landscape,uint8_t save_failed);
 unsigned NesMenu_Rows(void);
+/* Live controller test drawn on the CONTROL page. */
 void NesSettings_Update(uint8_t pad,uint16_t raw_x,uint16_t raw_y,
                         uint8_t stick_ready,uint8_t cap_ready,uint16_t cap_raw);
 

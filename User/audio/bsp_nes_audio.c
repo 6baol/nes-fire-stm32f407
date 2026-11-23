@@ -9,7 +9,13 @@
 static I2C_HandleTypeDef control;
 static int16_t dma_pcm[FRAMES*4];
 static uint8_t mono[FRAMES];
-static uint8_t audio_output=NES_AUDIO_SPEAKER;
+/* 0xff means "nothing programmed yet": the first SetOutput must apply the
+ * route, otherwise a default equal to the request leaves the codec unrouted. */
+static uint8_t audio_output=0xff;
+/* Software gain: volume 0..100 maps to a Q8 multiplier in the renderer.
+ * The codec's output gain stays fixed so route changes do not need a rewrite. */
+static volatile uint8_t audio_volume=70;
+static volatile uint16_t audio_gain=179; /* round(70 * 256 / 100) */
 #define HP_VOLUME 40u
 #define SPK_VOLUME 36u
 volatile uint32_t nes_audio_ready,nes_audio_blocks,nes_audio_dma_errors;
@@ -34,7 +40,9 @@ void NesAudio_Render(int16_t *dest,unsigned frames)
     if(audio_output==NES_AUDIO_OFF){for(i=0;i<frames*2;i++)dest[i]=0;return;}
     for(i=0;i<frames;i++) {
         int value=((int)mono[i]-128)*128; /* half scale, mono -> both ears */
-        unsigned magnitude=(unsigned)(value<0?-value:value);
+        unsigned magnitude;
+        value=((value*(int)audio_gain)>>8);
+        magnitude=(unsigned)(value<0?-value:value);
         dest[2*i]=dest[2*i+1]=(int16_t)value;
         if(magnitude>peak)peak=magnitude;
         if(value)++nonzero;
@@ -58,6 +66,13 @@ void NesAudio_Mute(uint8_t on)
     if(!on)nes_audio_suspended=0;
 }
 NesAudioOutput NesAudio_GetOutput(void) {return (NesAudioOutput)audio_output;}
+void NesAudio_SetVolume(uint8_t volume)
+{
+    if(volume>100)volume=100;
+    audio_volume=volume;
+    audio_gain=(uint16_t)(((uint16_t)volume*256u+50u)/100u);
+}
+uint8_t NesAudio_GetVolume(void) {return audio_volume;}
 static uint8_t output_quiet(void)
 {
     uint8_t failed=0;
@@ -80,8 +95,10 @@ uint8_t NesAudio_SetOutput(NesAudioOutput output)
     /* Keep VMID/bias and the unused-output tie-off buffer enabled. No boost:
      * both speaker legs have the same DC level and equal, conservative gain.
      * R43 INVROUT2 makes mono PCM differential across SPK+ and SPK-. */
+    /* LOUT2/ROUT2 drive the BTL speaker, so they need power in the speaker
+     * route: R2 bits 2 and 3 (0x00c). Without them the speaker stays silent. */
     if(codec_write(1,0x00f)||codec_write(43,spk?0x10:0)||
-       codec_write(49,2)||codec_write(2,hp?0x180:0)||
+       codec_write(49,2)||codec_write(2,hp?0x180:(spk?0x00c:0))||
        codec_write(3,spk?0x06f:0x00f))goto failed;
     HAL_Delay(5);
     if(hp && (codec_write(52,HP_VOLUME)||codec_write(53,0x100|HP_VOLUME)))goto failed;
@@ -96,7 +113,7 @@ failed:
 uint8_t NesAudio_Init(void)
 {
     GPIO_InitTypeDef gpio={0};uint32_t begin;
-    nes_audio_suspended=1;audio_output=NES_AUDIO_SPEAKER;
+    nes_audio_suspended=1;audio_output=NES_AUDIO_SPEAKER;NesAudio_SetVolume(70);
     nes_audio_ready=nes_audio_blocks=nes_audio_dma_errors=0;
     nes_audio_codec_error=nes_audio_peak=nes_audio_nonzero=nes_audio_max_us=0;
     __HAL_RCC_GPIOB_CLK_ENABLE();__HAL_RCC_GPIOC_CLK_ENABLE();__HAL_RCC_I2C1_CLK_ENABLE();

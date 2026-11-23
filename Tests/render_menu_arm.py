@@ -100,20 +100,39 @@ for index in range(1,count):
  save(name);print(name,'LCD pixels',pixels[0]-before)
  assert_native_cover(images[index])
 assert struct.unpack('<hhh',u.mem_read(state,6))==(count-1,count,count-3),'last game should scroll into view'
-# Native controller diagnostics, including simultaneous B+A and all directions.
-call('NesSettings_Draw',1)
-call('NesSettings_Update',0,2048,2048,1,1,92);save('settings_idle.png')
-call('NesSettings_Audio',1,1,0);save('settings_speaker.png')
-call('NesSettings_Audio',2,1,0);save('settings_mute.png')
-call('NesSettings_Audio',0,1,0)
+# Settings centre: root list, controller test, audio and screen sub-pages.
+call('NesSettings_Root',0,0,0,1,70,1,0);save('settings_root.png')
+msg=0x2001d300;u.mem_write(msg,b'FAVORITE WRITE FAILED - CHECK SD\0')
+call('NesSettings_Root',9,4,1,1,70,1,msg);save('settings_root_favorite.png')
+call('NesSettings_Control')
+call('NesSettings_Update',0,2048,2048,1,1,92);save('settings_control_idle.png')
+call('NesSettings_Audio',0,70,1,1,0,0);save('settings_audio.png')
+call('NesSettings_Audio',1,70,2,1,0,0);save('settings_audio_mute.png')
+call('NesSettings_Audio',0,100,0,1,0,1);save('settings_audio_savefail.png')
+call('NesSettings_Screen',0,0);save('settings_screen_portrait.png')
+call('NesSettings_Screen',1,0);save('settings_screen_landscape.png')
+call('NesSettings_Control')
 call('NesSettings_Update',0xff,3200,900,1,1,142);save('settings_pressed.png')
 for x,y in [(104,198),(32,250),(160,250),(104,302),(300,222),(384,222),(56,374),(272,374)]:
  assert surface[y*480+x]==0x31f4,('settings button did not highlight',x,y)
 call('NesSettings_Update',0,2048,2048,0,0,0)
 for x,y in [(104,198),(32,250),(160,250),(104,302),(300,222),(384,222),(56,374),(272,374)]:
  assert surface[y*480+x]==0x194c,('settings button did not release',x,y)
+# A 96-byte catalog label falls back to the full filename stem.
+long_file='famicom/[北斗之拳4][日版]Hokuto no Ken 4 - Shichisei Haken Den - Hokuto Shinken no Kanata e (Japan).nes'
+long_stem=long_file.split('/',1)[1].rsplit('.',1)[0]
+long_label=long_stem.upper().encode('utf-8')[:96].decode('utf-8','ignore')
+label_at,file_at,status_at,detail_at=0x2001c400,0x2001c500,0x2001c600,0x2001c700
+u.mem_write(label_at,long_label.encode('utf-8')+b'\0')
+u.mem_write(file_at,long_file.encode('utf-8')+b'\0')
+u.mem_write(status_at,b'HEADER OK\0')
+w32(detail_at,label_at);w32(detail_at+4,file_at);w32(detail_at+8,status_at)
+w32(detail_at+12,262160);w32(detail_at+16,157);w32(detail_at+20,1557)
+w32(detail_at+24,1);w32(detail_at+28,0);w32(detail_at+32,0)
+call('NesDetails_Draw',detail_at)
+save('details_long.png')
 # Exercise the real app transition: KEY1 opens settings without a ROM load;
-# holding SW returns to the same selected game, without running the NES core.
+# B walks back one level at a time, without running the NES core.
 u.mem_map(0x40000000,0x30000)
 if not sd_mode:u.mem_map(0xe0000000,0x100000)
 def skip(uc,a,size,data):uc.reg_write(UC_ARM_REG_PC,uc.reg_read(UC_ARM_REG_LR))
@@ -144,25 +163,74 @@ w32(0x40020010,0);call('NesApp_Poll')
 assert bytes(u.mem_read(sy['app_state'],1))==b'\x02','KEY1 did not enter native settings'
 call('NesApp_Poll');save('settings_app.png')
 w32(sy['nes_audio_ready'],1)
+if sd_mode:u.mem_write(sy['settings_storage'],b'\x01')
+# A on the AUDIO row really enters the sub-page.
+u.mem_write(sy['settings_cursor'],b'\x07')
+w32(0x40020810,1<<13);w32(sy['uwTick'],1);call('NesApp_Poll')
+assert bytes(u.mem_read(sy['settings_page'],1))==b'\x02','A did not open the AUDIO page'
+w32(0x40020810,0);w32(sy['uwTick'],5);call('NesApp_Poll')
+# Right cycles the selected output row, then the volume row.
+u.mem_write(sy['audio_cursor'],b'\x01')
 w32(sy['uwTick'],10);call('NesApp_Poll')
 w32(sy['uwTick'],70);call('NesApp_Poll')
 u.mem_write(0x2001b008,struct.pack('<f',.8));w32(sy['uwTick'],80);call('NesApp_Poll')
 assert call('NesAudio_GetOutput')==2,'Settings right from default speaker did not select mute'
 w32(sy['uwTick'],90);call('NesApp_Poll')
-assert call('NesAudio_GetOutput')==2,'Held Settings stick repeated output choice'
-save('settings_app_mute.png')
-w32(0x40020410,0);w32(sy['uwTick'],100);call('NesApp_Poll')
-w32(sy['uwTick'],1600);call('NesApp_Poll')
-assert bytes(u.mem_read(sy['app_state'],1))==b'\0','SW hold did not return to library'
+assert call('NesAudio_GetOutput')==2,'Held settings stick repeated output choice'
+u.mem_write(sy['audio_cursor'],b'\x00')
+u.mem_write(0x2001b008,struct.pack('<f',0));w32(sy['uwTick'],150);call('NesApp_Poll')
+w32(sy['uwTick'],210);call('NesApp_Poll')
+u.mem_write(0x2001b008,struct.pack('<f',.8));w32(sy['uwTick'],220);call('NesApp_Poll')
+assert call('NesAudio_GetVolume')==75,'Volume did not step by five'
+u.mem_write(0x2001b008,struct.pack('<f',0))
+save('settings_app_audio.png')
+if sd_mode:
+ saved=0x2001d200
+ assert call('NesLibrary_LoadSettings',saved)==1,'Settings were not written to the card'
+ assert bytes(u.mem_read(saved,4))==bytes((1,0,75,2)),bytes(u.mem_read(saved,4))
+# B returns to the root list, then to the same selected game.
+w32(0x40020010,1);w32(sy['uwTick'],300);call('NesApp_Poll')
+w32(0x40020010,0);w32(sy['uwTick'],350);call('NesApp_Poll')
+assert bytes(u.mem_read(sy['app_state'],1))==b'\x02','B left Settings from a sub-page'
+assert bytes(u.mem_read(sy['settings_page'],1))==b'\x00','B did not return to the root list'
+w32(0x40020010,1);w32(sy['uwTick'],400);call('NesApp_Poll')
+w32(0x40020010,0);w32(sy['uwTick'],450);call('NesApp_Poll')
+assert bytes(u.mem_read(sy['app_state'],1))==b'\x00','B did not leave Settings'
 assert struct.unpack('<h',u.mem_read(app_menu,2))[0]==1,'settings lost selected game'
 assert call('NesAudio_GetOutput')==2,'Output choice lost when leaving Settings'
+assert call('NesAudio_GetVolume')==75,'Volume lost when leaving Settings'
+# CAP toggles the panel orientation in the menu (not GAME INFO).
+u.mem_write(0x2001b080,struct.pack('<HHBB2xII',0,0,1,1,0,0))
+w32(sy['uwTick'],470);call('NesApp_Poll')
+assert bytes(u.mem_read(sy['nes_screen_landscape'],1))==b'\x01','CAP did not rotate'
+u.mem_write(0x2001b080,struct.pack('<HHBB2xII',0,0,1,0,0,0))
+w32(sy['uwTick'],500);call('NesApp_Poll')
+u.mem_write(0x2001b080,struct.pack('<HHBB2xII',0,0,1,1,0,0))
+w32(sy['uwTick'],530);call('NesApp_Poll')
+assert bytes(u.mem_read(sy['nes_screen_landscape'],1))==b'\x00','CAP did not rotate back'
+u.mem_write(0x2001b080,struct.pack('<HHBB2xII',0,0,1,0,0,0))
+w32(sy['uwTick'],560);call('NesApp_Poll')
+# SELECT (shield E) opens GAME INFO without loading the ROM; B returns.
+u.mem_write(sy['pad_stable'],b'\x10')
+w32(sy['uwTick'],600);call('NesApp_Poll')
+assert bytes(u.mem_read(sy['app_state'],1))==b'\x07','SELECT did not open GAME INFO'
+save('details_app.png')
+u.mem_write(sy['pad_stable'],b'\x00')
+w32(sy['uwTick'],630);call('NesApp_Poll')
+w32(0x40020010,1);w32(sy['uwTick'],660);call('NesApp_Poll')
+assert bytes(u.mem_read(sy['app_state'],1))==b'\x00','B did not leave GAME INFO'
+w32(sy['uwTick'],680);call('NesApp_Poll')
+assert bytes(u.mem_read(sy['app_state'],1))==b'\x00','held B also opened Settings'
+w32(0x40020010,0);w32(sy['uwTick'],700);call('NesApp_Poll')
+assert struct.unpack('<h',u.mem_read(app_menu,2))[0]==1,'GAME INFO lost selected game'
 # A save error must remain visible even while the stick is calibrating.
 old_status=r32(sy['status']);error_text=0x2001c300
 u.mem_write(error_text,b'SD SAVE FAILED - CHECK CARD\0');w32(sy['status'],error_text)
 u.mem_write(0x2001b010,b'\0\0');call('NesApp_Poll')
 assert bytes(u.mem_read(sy['shown_status'],48)).split(b'\0')[0]==b'SD SAVE FAILED - CHECK CARD'
 w32(sy['status'],old_status);u.mem_write(0x2001b010,b'\1\1')
-# Real app navigation: one step per deflection, stable centre required.
+# Real app navigation: a deliberate deflection steps once, holding it repeats
+# on the 90 ms timer, and a new deflection re-arms only after a stable centre.
 w32(0x40020410,128);w32(0x40020010,0)
 def menu_sample(ms,y):
  w32(sy['uwTick'],ms);u.mem_write(0x2001b00c,struct.pack('<f',y));call('NesApp_Poll')
@@ -170,21 +238,23 @@ def menu_sample(ms,y):
 assert menu_sample(1700,0)==1
 assert menu_sample(1760,0)==1
 assert menu_sample(1800,.8)==2
-assert menu_sample(3000,.8)==2,'held stick repeated'
-assert menu_sample(3010,.5)==2
-assert menu_sample(3020,.7)==2,'threshold noise repeated'
-assert menu_sample(3030,-.8)==2,'rebound changed direction without centre'
-assert menu_sample(3040,0)==2
-assert menu_sample(3070,.8)==2,'brief centre rearmed selection'
-assert menu_sample(3080,0)==2
-assert menu_sample(3140,0)==2
-assert menu_sample(3150,-.8)==1,'new deliberate deflection did not move'
+assert menu_sample(1850,.8)==2,'repeated before the hold delay'
+assert menu_sample(1900,.8)==3,'held stick stopped repeating'
+assert menu_sample(2000,0)==3,'release moved the selection'
+assert menu_sample(2060,0)==3
+assert menu_sample(2100,-.8)==2,'deliberate reverse deflection did not move'
+assert menu_sample(2150,0)==2
+assert menu_sample(2210,0)==2
+assert menu_sample(2250,-.8)==1,'second deliberate deflection did not move'
+assert menu_sample(3000,0)==1
 if sd_mode:
- # Now allow the real loader/core and exercise the actual KEY2 -> SD/FDS
+ # Now allow the real loader/core and exercise the actual A -> SD/FDS
  # start -> long-SW return path, including audio arena ownership.
  for handle in rom_guard_hooks:u.hook_del(handle)
- u.mem_write(0x2001b00c,struct.pack('<f',0));w32(0x40020810,1<<13)
- call('NesApp_Poll')
+ u.mem_write(0x2001b00c,struct.pack('<f',0))
+ u.mem_write(sy['nes_test_pad'],b'\x01')
+ w32(sy['uwTick'],3010);call('NesApp_Poll')
+ u.mem_write(sy['nes_test_pad'],b'\x00')
  assert bytes(u.mem_read(sy['app_state'],1))==b'\x01' and bytes(u.mem_read(sy['loaded'],1))==b'\x01'
  assert bytes(u.mem_read(sy['nes_audio_suspended'],1))==b'\0'
  # A failed save pins the active game and SRAM until the player retries or resumes.
@@ -220,11 +290,12 @@ if sd_mode:
  assert struct.unpack('<h',u.mem_read(app_menu,2))[0]==1
  w32(0x40020810,0);call('NesApp_Poll')
 
- # Hold KEY1 from the library, then cancel after releasing the opening press.
+ # KEY1 opens the settings centre with a normal press; holding it must not
+ # trigger a second action. B/KEY1 then walks back to the library.
  w32(0x40020010,1);w32(sy['uwTick'],6700);call('NesApp_Poll')
  w32(sy['uwTick'],7800);call('NesApp_Poll')
- assert bytes(u.mem_read(sy['app_state'],1))==b'\x04'
- save('library_options.png')
+ assert bytes(u.mem_read(sy['app_state'],1))==b'\x02','KEY1 did not open settings'
+ save('settings_root_app.png')
  w32(0x40020010,0);call('NesApp_Poll')
  w32(0x40020010,1);call('NesApp_Poll')
  assert bytes(u.mem_read(sy['app_state'],1))==b'\0'
@@ -264,10 +335,14 @@ for scale in (2,3):
 before=pixels[0];call('PixelFont_Text',479,8,glyph_at,0xffdf,0x0865,1)
 assert pixels[0]==before
 report={'result':'PASS','scope':'actual Keil menu/LCD glyph code under Unicorn, not board LCD capture',
- 'checks':['all LCD rectangles bounded','all pixel streams bounded','three games without controller ROM','full game names','selection redraw avoids full clear','wrap/scroll','zero games','unknown cover and long title','8x8 font scaling','native settings button highlight/release','KEY1 opens settings without loading ROM','SW hold returns to same game','one selection per deflection; no hold/noise/rebound repeat','60ms stable centre rearm','all three covers match native source pixel for pixel after one scaling pass'],
+ 'checks':['all LCD rectangles bounded','all pixel streams bounded','three games without controller ROM','full game names','selection redraw avoids full clear','wrap/scroll','zero games','unknown cover and long title','8x8 font scaling','native settings button highlight/release','KEY1 opens settings without loading ROM','B backs out one level at a time and returns to the same game','one selection per deflection; no hold/noise/rebound repeat','60ms stable centre rearm','all three covers match native source pixel for pixel after one scaling pass'],
  'axf_sha256':hashlib.sha256((root/'Project/Output/Fire_F407ZG.axf').read_bytes()).hexdigest()}
 report['storage']='ARM FatFs / synthetic FAT32' if sd_mode else 'embedded regression'
-report['checks'].append('Settings output selector, no hold-repeat, choice retained on return')
+report['checks'].append('Settings volume/output change survives leaving the page; no hold-repeat')
+report['checks'].append('SETTINGS.BIN validated and read back with volume 75 and mute')
+report['checks'].append('SELECT opens GAME INFO; B returns to the same game')
+report['checks'].append('CAP toggles orientation; SELECT (E) opens GAME INFO')
+report['checks'].append('96-byte label falls back to the full filename')
 report['checks'].append('save failure remains visible over stick calibration hint')
 if sd_mode:report['checks'].append('actual KEY2 -> SD/FDS start and long SW return with audio pause/resume')
 (out/'menu_visual_results.json').write_text(json.dumps(report,indent=2),encoding='utf-8')

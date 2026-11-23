@@ -20,10 +20,17 @@
 ## v0.42 候选版
 
 - 游戏库按完整标题、文件名和已有拼音别名搜索。清空搜索或没有匹配会回到当前视图。旧 `SEARCH.IDX` 可以留在卡上，固件搜索直接读取完整目录。
-- 短按 KEY1 打开设置，长按 KEY1 打开库操作页。库操作页可切换全库、通过预检、不兼容、收藏和最近游玩，也可以对选中的游戏添加或移除收藏。CAP 键仍可直接进入搜索。
+- 短按 KEY1 打开设置中心，不再需要长按。第一层为 ALL GAMES / LOADABLE / UNSUPPORTED / FAVORITES / RECENTLY PLAYED / SEARCH / CONTROL / AUDIO / SCREEN / FAVORITE；A 进入子页，B/KEY1 返回上一层。SEARCH 同时保留 KEY2 快捷入口。音量、音源、默认横竖屏和收藏改动立即写入卡上 `NES/SETTINGS.BIN`，掉电重启后自动恢复；卡写失败只丢持久化，不影响当前运行。
 - 兼容提示显示 Mapper 和预检原因。首次选择兼容性筛选会分批检查，KEY1 可取消。可用 [prepare_library.py](tools/prepare_library.py) 在电脑上生成兼容性报告、当前目录专用的 `COMPAT.IDX` 和带拼音的目录副本。预检通过的游戏仍需验收画面、声音、后续关卡和存档。
 - 长按摇杆 SW 时自动保存电池存档。成功后回到游戏库并显示结果。写卡失败时保留当前运行状态，KEY2 / SW 重试，KEY1 返回游戏。
 - 目录上限 2,048 项，超限会提示遗漏数。允许文件名中出现连续点，拒绝 `.` 和 `..` 路径段。已有中文标题、拼音和同名封面继续使用。
+- 离线 ARM 渲染已覆盖设置中心首页、CONTROL/AUDIO/SCREEN 子页及 800×480 横屏；`Tests/test_settings_arm.py` 校验 `SETTINGS.BIN` 的记录/CRC/掉电回退和音量增益。预览为 `Tests/nes_output/settings_*.png`，仍是本地仿真输出，不是板上照片。
+- 2026-11-23 已通过 CMSIS-DAP 烧录 `NesFire_v0.63-settings.hex` 并完成 195,584 字节全片回读；SWD 实测设置首页、AUDIO 子页、SCREEN 切换写卡和逐层返回。此前板子仍运行 v0.41，上一轮只构建未下载；记录见 `Release/dap_download_v0.63-settings.json` 与 [设置中心文档](Doc/settings_centre.md)。
+- 中文字模改用 24 px 黑体重新生成，修复宋体细横/撇捺二值化后的断笔；新 `FONT.MAP`/`FONT.HZK` 在 `Assets/fonts/cjk`，旧宋体备份在 `backups/font_simsun24_20261123`。字模在 SD 卡上，已通过 SWD 写入实卡并逐块回读校验，旧文件保留为 `.OLD`；原因与验证见 [中文字模说明](Doc/cjk_font.md)。
+- 游戏库列表只显示拉丁标题（Flash 16 px 字体），不再逐行读中文字模；按 SELECT（扩展板 E）打开 GAME INFO，显示完整中文名、序号、大小、Mapper、头信息、收藏和 FDS。A 启动、B 返回。CAP 电容键保持原先的一键横竖屏切换；游戏内 CAP/SELECT 仍是 NES Select。详见 [列表与详情页](Doc/library_details.md)。
+- 卡上 `NES/famicom/` 有 1550 个 ROM + 1550 个 `.COV`（3100 项），FatFs 按路径线性扫描，实测封面约 1.25 秒、末尾 ROM 约 2.5 秒；前 7 个在 28 项根目录约 1 毫秒。`tools/bucket_sd.py` 可按 100 个一组分桶，并重映射收藏/最近记录、重置目录缓存；详见 [SD 分桶与封面来源](Doc/sd_bucketing.md)。
+- `NesFire_v0.65-details` 已通过 CMSIS-DAP 烧录并完成 196,608 字节全片回读；修复了 GAME INFO 按 B 返回后同一个仍按住的 B 又打开设置的问题（返回列表时清 `menu_armed`）。SWD 实测 `opened=7 → after_b=0`，继续按住仍为 0，松开后才重新武装。
+- `NesFire_v0.67-title` 已通过 CMSIS-DAP 烧录并完成 197,632 字节全片回读：CAP 恢复菜单横竖屏一键切换，SELECT（E）保留 GAME INFO；目录标签在 96 字节处截断时（例如第 158 项 `...(JAPAN`）列表和详情自动回退到完整文件名，补回缺失的右括号。
 - 构建版本见 [Release/VERSION](Release/VERSION)。上板检查、只读计数器和验收顺序见 [板测流程](Doc/board_validation.md)。此前经烧录和完整回读验证的发布记录见 [v0.41](Release/dap_download_v0.41-align.json)。
 
 ## v0.22 历史记录
@@ -170,7 +177,7 @@ v0.11 更新菜单：深色收藏库、左侧竖版封面、右侧游戏简介�
 | 扩展板 C | PE4，CN3-22，连发 A（约 6 Hz） |
 | 扩展板 D | PB6，CN3-24，连发 B（约 6 Hz） |
 | 扩展板 E | PE5，CN3-26，接 NES Select |
-| 扩展板 F | PE6，CN3-28，菜单返回 / 设置（等同 KEY1） |
+| 扩展板 F | PE6，CN3-28，菜单确认（等同 KEY2 / A） |
 | 扩展板 K | 摇杆按下，沿用 PB7 / CN3-23，Start / 确认（等同 KEY2） |
 | 扩展板 GND | 与板子 GND 共地；按键另一端已接 GND，内部上拉，无需外部电阻 |
 | 电容按键 | PA5 / TIM2_CH1，J78 跳帽接好 |
@@ -190,12 +197,16 @@ v0.11 更新菜单：深色收藏库、左侧竖版封面、右侧游戏简介�
 
 ## 游戏菜单
 
-上半区显示所选游戏的竖版封面、简介和平台年份，下半区有三行游戏列表。超过三项会随选中项滚动，首尾循环。缺少图片时显示原生图形和游戏名称；异常信息仍显示在底部状态行。
+上半区显示所选游戏的封面；列表行只显示拉丁标题（`[中文名][地区]` 前缀被去掉），完整中文名和元数据在 SELECT 打开的 GAME INFO 页。超过三项会随选中项滚动，首尾循环。缺少图片时显示原生图形和游戏名称；异常信息仍显示在底部状态行。
 
 | 操作 | 菜单行为 |
 |---|---|
-| 摇杆上/下 | 移动高亮，首次重复 400 ms、之后 180 ms |
-| KEY2 / 摇杆 SW | 载入所选 ROM 并进入游戏 |
+| 摇杆上/下 | 移动高亮，保持拨动按 90 ms 间隔连续滚动 |
+| 摇杆左/右 | 按一屏翻页，保持拨动按 150 ms 间隔连续翻页 |
+| KEY2 / 摇杆 SW / 扩展板 A、F | 载入所选 ROM 并进入游戏 |
+| KEY1 / 扩展板 B | 打开设置中心 |
+| SELECT（扩展板 E） | 打开 GAME INFO（完整中文名和详情） |
+| CAP 电容键 | 临时切换横竖屏；游戏中仍是 NES Select |
 | 游戏中长按 SW 1.5 s | 静音并退回菜单 |
 
 **SD 卡**：封面是 ROM 同目录同名的 `<文件名>.COV`，由 `tools/prepare_sd.py` 或自定义工具生成；
@@ -205,6 +216,21 @@ v0.11 更新菜单：深色收藏库、左侧竖版封面、右侧游戏简介�
 图片使用 256 色 RGB565 调色板，不需要运行期解码器。海报来源与提示词保存在 `Assets/posters/README.md`。
 
 ROM 表来自 `Roms/roms.json`。载入前静音，成功后恢复耳机输出；失败时在菜单状态行保留错误信息。菜单不显示 mapper 和 ROM 文件名等内部细节，UART 仍保留调试记录。
+
+### 设置中心
+
+设置中心是全屏列表，进入游戏之前的所有页面共用 A 确认、B 返回。摇杆每次拨动只处理一次，回中稳定 60 ms 后才接受下一次拨动。
+
+| 操作 | 行为 |
+|---|---|
+| 摇杆上/下 | 移动条目；AUDIO 子页选择 VOLUME 或 OUTPUT |
+| 摇杆左/右 | AUDIO：音量 ±5（0–100）或切换 HEADPHONES/SPEAKER/MUTE；SCREEN：切换默认方向 |
+| A / KEY2 / SW / F | 进入 CONTROL、AUDIO、SCREEN 子页，或循环当前值 |
+| B / KEY1 | 返回上一层；在首页返回游戏库 |
+| CONTROL 子页 | 实时显示八个按键、摇杆原始值和电容键状态，不载入 ROM |
+| FAVORITE | 对库中当前选中的游戏添加或移除收藏 |
+
+`NES/SETTINGS.BIN` 共 8 字节：版本、方向、音量、音源和 CRC32。启动时在 `NesApp_Init` 中校验并应用；删除该文件即可恢复默认（竖屏、音量 70、扬声器）。网页/PC 工具可直接读取该文件，格式见源码头文件注释。
 
 ## v0.7 修复
 

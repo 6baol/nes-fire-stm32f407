@@ -1,14 +1,20 @@
 """Generate the on-card CJK font used by the menu.
 
-Outputs (default: Release/SD_ROOT/NES):
+Outputs (default: Assets/fonts/cjk):
     FONT.HZK  slots x bytes-per-glyph, GB2312 order ((lead-0xA1)*94 + trail-0xA1)
     FONT.MAP  "NESFM1" + cell size + reserved + count + sorted (uint16 code, uint16 slot)
 
 Cell size is stored in FONT.MAP so the firmware adapts without a rebuild. Rendering
 a TTF is a build-time asset step, not per-ROM processing.
 
+SimSun at 24 px has 1 px horizontals; after the 128-level binarisation those
+strokes (and thin diagonals) break into isolated dots, which reads as "断续" on
+the panel.  SimHei keeps solid 2 px stems and connected counters at the same
+cell size.  Glyphs are rasterised on a 2x canvas and then cropped to the ink
+box, so ascenders/descenders cannot be clipped and every glyph is centred.
+
 Usage:
-    make_cjk_font.py [--size 24] [--font C:\\Windows\\Fonts\\simsun.ttc] [--output DIR]
+    make_cjk_font.py [--size 24] [--font C:\\Windows\\Fonts\\simhei.ttf]
 """
 import argparse, struct
 from pathlib import Path
@@ -16,16 +22,23 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 SLOTS = 94 * 94
+DEFAULT_FONT = r'C:\Windows\Fonts\simhei.ttf'
 
 
-def glyph_bytes(image, size):
-    image = image.point(lambda v: 255 if v >= 128 else 0).convert('1')
+def glyph_bytes(image, size, threshold):
+    image = image.point(lambda v: 255 if v >= threshold else 0).convert('1')
     # Centre the ink box: CJK fonts sit off-centre and thin strokes break up
     # when the glyph is shifted against the cell edge.
     box = image.getbbox()
     canvas = Image.new('1', (size, size), 0)
     if box:
         glyph = image.crop(box)
+        if glyph.width > size or glyph.height > size:
+            glyph = glyph.convert('L')
+            scale = min(size / glyph.width, size / glyph.height)
+            glyph = glyph.resize((max(1, int(glyph.width * scale)),
+                                  max(1, int(glyph.height * scale))), Image.LANCZOS)
+            glyph = glyph.point(lambda v: 255 if v >= threshold else 0).convert('1')
         canvas.paste(glyph, ((size - glyph.width) // 2, (size - glyph.height) // 2))
     image = canvas
     stride = (size + 7) // 8
@@ -37,7 +50,7 @@ def glyph_bytes(image, size):
     return bytes(out)
 
 
-def build(font_path, output, size):
+def build(font_path, output, size, threshold):
     font = ImageFont.truetype(str(font_path), size, index=0)
     per = ((size + 7) // 8) * size
     hzk = bytearray(SLOTS * per)
@@ -51,9 +64,10 @@ def build(font_path, output, size):
             if len(ch) != 1:
                 continue
             slot = (lead - 0xA1) * 94 + (trail - 0xA1)
-            image = Image.new('L', (size, size), 0)
-            ImageDraw.Draw(image).text((0, 0), ch, font=font, fill=255)
-            hzk[slot * per:(slot + 1) * per] = glyph_bytes(image, size)
+            # A 2x canvas leaves room for negative bearings and descenders.
+            image = Image.new('L', (size * 2, size * 2), 0)
+            ImageDraw.Draw(image).text((size // 2, size // 2), ch, font=font, fill=255)
+            hzk[slot * per:(slot + 1) * per] = glyph_bytes(image, size, threshold)
             mapping.append((ord(ch), slot))
     mapping.sort()
     out = Path(output)
@@ -81,8 +95,9 @@ def preview(font_path, text, path, size=24):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--font', default=r'C:\Windows\Fonts\simsun.ttc')
+    parser.add_argument('--font', default=DEFAULT_FONT)
     parser.add_argument('--size', type=int, default=24)
-    parser.add_argument('--output', type=Path, default=ROOT / 'Release/SD_ROOT/NES')
+    parser.add_argument('--threshold', type=int, default=128)
+    parser.add_argument('--output', type=Path, default=ROOT / 'Assets/fonts/cjk')
     args = parser.parse_args()
-    build(args.font, args.output, args.size)
+    build(args.font, args.output, args.size, args.threshold)

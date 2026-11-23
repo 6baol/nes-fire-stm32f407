@@ -43,6 +43,9 @@
 #define RECENT_MAX 32u
 #define PREFS_SLOT0 "0:/NES/PREFS0.DAT"
 #define PREFS_SLOT1 "0:/NES/PREFS1.DAT"
+#define SETTINGS_PATH "0:/NES/SETTINGS.BIN"
+#define SETTINGS_BYTES 8u
+#define SETTINGS_VERSION 1u
 
 typedef struct {
     uint32_t magic;
@@ -260,6 +263,49 @@ static int prefs_write(void)
     prefs = prefs_work;
     prefs_slot = (int)slot;
     return 1;
+}
+
+/* Settings are independent of the ROM catalog and cheap enough to rewrite on
+ * every change: one 512-byte sector, no dual slot needed. */
+int NesLibrary_LoadSettings(NesLibrarySettings *settings)
+{
+    uint8_t data[SETTINGS_BYTES];
+    UINT got;
+    FRESULT fr;
+    int ok;
+    if(!sd_active||!settings)return 0;
+    fr=f_open(&file,SETTINGS_PATH,FA_READ);
+    if(fr!=FR_OK)return 0;
+    ok=f_size(&file)==SETTINGS_BYTES&&f_read(&file,data,SETTINGS_BYTES,&got)==FR_OK&&
+       got==SETTINGS_BYTES;
+    fr=f_close(&file);
+    if(!ok||fr!=FR_OK)return 0;
+    if(data[0]!=SETTINGS_VERSION||data[1]>1||data[2]>100||data[3]>2||
+       le32(data+4)!=crc32(data,4))return 0;
+    settings->version=data[0];
+    settings->landscape=data[1];
+    settings->volume=data[2];
+    settings->output=data[3];
+    ++nes_sd_file_reads;
+    return 1;
+}
+int NesLibrary_SaveSettings(const NesLibrarySettings *settings)
+{
+    uint8_t data[SETTINGS_BYTES];
+    UINT wrote;
+    FRESULT fr;
+    if(!sd_active||!settings)return -1;
+    data[0]=SETTINGS_VERSION;
+    data[1]=settings->landscape?1:0;
+    data[2]=settings->volume>100?100:settings->volume;
+    data[3]=settings->output>2?2:settings->output;
+    put32(data+4,crc32(data,4));
+    if(f_open(&file,SETTINGS_PATH,FA_WRITE|FA_CREATE_ALWAYS)!=FR_OK)return -1;
+    fr=f_write(&file,data,SETTINGS_BYTES,&wrote);
+    if(fr==FR_OK&&wrote==SETTINGS_BYTES)fr=f_sync(&file);
+    else fr=FR_DISK_ERR;
+    if(f_close(&file)!=FR_OK)return -1;
+    return fr==FR_OK?0:-1;
 }
 
 static uint64_t prefs_key(const char *path)

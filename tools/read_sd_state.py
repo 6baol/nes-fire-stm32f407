@@ -20,7 +20,7 @@ DHCSR = 0xE000EDF0
 CFSR = 0xE000ED28
 HFSR = 0xE000ED2C
 STATE_NAMES = {0: 'menu', 1: 'game', 2: 'settings', 3: 'search', 4: 'library_options',
-               5: 'save_error', 6: 'library_check'}
+               5: 'save_error', 6: 'library_check', 7: 'details'}
 SRAM_RANGES = ((0x20000000, 0x20020000), (0x10000000, 0x10010000))
 COUNTERS = (
     'uwTick', 'app_state', 'sd_active', 'catalog_count', 'sd_count',

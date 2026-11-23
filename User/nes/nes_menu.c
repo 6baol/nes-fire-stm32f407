@@ -118,14 +118,109 @@ static unsigned split_line(const char *source,unsigned limit,char *line)
     while(source[n]==' ')++n;
     return n;
 }
-static void full_name(unsigned x,unsigned y,unsigned width,unsigned columns,const char *name,uint16_t bg,int centered)
+/* The catalog label is usually "[Chinese title][region]Latin title". The list
+ * only draws the Latin part with the Flash font, so scrolling does not read a
+ * CJK glyph from the card per row. The details page keeps the full label. */
+static void ascii_label(const char *source,char *out,unsigned cap)
 {
-    char line[NES_IMPORT_LABEL_MAX+1];unsigned used=0,row=0;
-    unsigned cell=CjkFont_Cell();
-    while(name[used] && row<2){
-        unsigned n=split_line(name+used,columns,line);
-        unsigned start=centered?(unsigned)((int)width-(int)(Utf8_Length(line)*cell))/2u:x;
-        Utf8_Draw((uint16_t)start,(uint16_t)(y+row*cell),line,INK,bg);used+=n;++row;
+    const char *p=source;
+    unsigned o=0;
+    int space=0;
+    while(*p=='[') {
+        const char *end=strchr(p,']');
+        if(!end)break;
+        p=end+1;
+    }
+    while(*p&&o+1<cap) {
+        unsigned char c=(unsigned char)*p;
+        if(c<0x80) {
+            if(c==' '){if(o&&!space){out[o++]=' ';space=1;}}
+            else {out[o++]=(char)c;space=0;}
+            p++;
+        } else {p+=utf8_seq(c);space=0;}
+    }
+    while(o&&out[o-1]==' ')--o;
+    out[o]='\0';
+}
+static const char *base_name(const char *path)
+{
+    const char *slash=strrchr(path,'/');
+    return slash?slash+1:path;
+}
+/* The catalog label is capped at NES_IMPORT_LABEL_MAX bytes. Long titles are
+ * cut there (for example missing the closing parenthesis); when the label is a
+ * prefix of the filename, return the full stem instead. Custom labels that do
+ * not match the filename are left untouched. */
+static const char *full_title(const char *label,const char *file,char *buffer,unsigned cap)
+{
+    const char *base;
+    unsigned n,i,label_len;
+    int match=1;
+    if(!label)label="";
+    label_len=(unsigned)strlen(label);
+    if(label_len<NES_IMPORT_LABEL_MAX)return label;
+    base=base_name(file?file:"");
+    n=(unsigned)strlen(base);
+    if(n>cap-1)n=cap-1;
+    memcpy(buffer,base,n);buffer[n]='\0';
+    {
+        char *dot=strrchr(buffer,'.');
+        if(dot)*dot='\0';
+    }
+    n=(unsigned)strlen(buffer);
+    for(i=0;i<n&&i<label_len;i++) {
+        unsigned char a=(unsigned char)label[i],b=(unsigned char)buffer[i];
+        if(a>='A'&&a<='Z')a=(unsigned char)(a+32);
+        if(b>='A'&&b<='Z')b=(unsigned char)(b+32);
+        if(a!=b){match=0;break;}
+    }
+    if(match&&i==label_len&&label_len<n)return buffer;
+    return label;
+}
+static void display_label(const NesRomImage *game,unsigned slot,char *out,unsigned cap)
+{
+    const char *file;
+    char full[NES_IMPORT_PATH_MAX+1];
+    char stem[NES_IMPORT_LABEL_MAX+1];
+    unsigned n;
+    if(game) {
+        ascii_label(full_title(game->label,game->file,full,sizeof(full)),out,cap);
+        if(out[0])return;
+        file=base_name(game->file);
+    } else file="";
+    n=(unsigned)strlen(file);
+    if(n>NES_IMPORT_LABEL_MAX)n=NES_IMPORT_LABEL_MAX;
+    memcpy(stem,file,n);stem[n]='\0';
+    {
+        char *dot=strrchr(stem,'.');
+        if(dot)*dot='\0';
+    }
+    ascii_label(stem,out,cap);
+    if(!out[0])snprintf(out,cap,"GAME %u",slot+1);
+}
+static void wrapped_ascii(unsigned x,unsigned y,unsigned columns,unsigned max_lines,
+                          const char *text,uint16_t bg)
+{
+    char line[NES_IMPORT_LABEL_MAX+1];
+    unsigned used=0,row=0;
+    if(!columns)return;
+    while(text[used]&&row<max_lines) {
+        unsigned n=split_line(text+used,columns,line);
+        PixelFont_Text((uint16_t)x,(uint16_t)(y+row*16u),line,INK,bg,2);
+        used+=n;++row;
+    }
+}
+static void wrapped_utf8(unsigned x,unsigned y,unsigned width,unsigned max_lines,
+                         const char *text,uint16_t bg)
+{
+    char line[NES_IMPORT_LABEL_MAX+1];
+    unsigned used=0,row=0,cell=CjkFont_Cell();
+    unsigned columns=width/cell;
+    if(!columns)return;
+    while(text[used]&&row<max_lines) {
+        unsigned n=split_line(text+used,columns,line);
+        Utf8_Draw((uint16_t)x,(uint16_t)(y+row*cell),line,INK,bg);
+        used+=n;++row;
     }
 }
 static void fallback_cover(int is_pad)
@@ -167,10 +262,16 @@ static void detail_header(const NesMenuState *m)
      * already carries the title. */
     if(nes_screen_landscape)return;
     fill(l->list_x,l->name_y,l->list_w,CjkFont_Cell()+4,BG);
-    if(!m->count){full_name(l->list_x,l->name_y,l->list_w,l->cols/CjkFont_Cell(),"NO GAMES",BG,0);return;}
+    if(!m->count){medium(l->list_x,l->name_y,"NO GAMES",MUTED,BG);return;}
     {
         const NesRomImage *game=NesLibrary_Game((unsigned)m->index);
-        if(game)full_name(l->list_x,l->name_y,l->list_w,l->cols/CjkFont_Cell(),game->label,BG,0);
+        if(game) {
+            char label[NES_IMPORT_LABEL_MAX+1];
+            unsigned limit=(l->list_w-8u)/16u;
+            display_label(game,(unsigned)m->index,label,sizeof(label));
+            if(strlen(label)>limit)label[limit]='\0';
+            medium(l->list_x,l->name_y,label,INK,BG);
+        }
     }
 }
 static void detail_cover(const NesMenuState *m)
@@ -188,17 +289,20 @@ static void row_draw(const NesMenuState *m,unsigned row)
 {
     const UiLayout *l=ui();
     unsigned y=l->list_y+row*l->row_h,slot=(unsigned)m->first+row;
-    unsigned cell=CjkFont_Cell(),columns=l->cols/cell;
+    unsigned columns=(l->list_w-l->text_off)/16u;
     uint16_t color=BG;
     fill(l->list_x,y,l->list_w,l->row_h-4,BG);
     if(slot>=m->count)return;
     if(slot==(unsigned)m->index){color=ACTIVE;fill(l->list_x,y,l->list_w,l->row_h-4,color);medium(l->list_x+4,y+(l->row_h-4u-16u)/2,">",ACCENT,color);}
     {
         const NesRomImage *game=NesLibrary_Game(slot);
-        const char *label=game?game->label:"ENTRY UNAVAILABLE";
-        unsigned lines=Utf8_Length(label)>columns?2u:1u;
-        unsigned top=y+((l->row_h-4u)-lines*cell)/2u;
-        full_name(l->list_x+l->text_off,top,l->list_w-l->text_off,columns,label,color,0);
+        char label[NES_IMPORT_LABEL_MAX+1];
+        unsigned lines,top;
+        if(game)display_label(game,slot,label,sizeof(label));
+        else snprintf(label,sizeof(label),"ENTRY UNAVAILABLE");
+        lines=(Utf8_Length(label)>columns&&!nes_screen_landscape)?2u:1u;
+        top=y+((l->row_h-4u)-lines*16u)/2u;
+        wrapped_ascii(l->list_x+l->text_off,top,columns,lines,label,color);
     }
 }
 void NesMenu_DrawSelection(const NesMenuState *m)
@@ -226,33 +330,118 @@ void NesMenu_Draw(const NesMenuState *m)
     fill(l->list_x,l->title_y+20u*l->title_scale,l->list_w,1,LINE);
     NesMenu_DrawSelection(m);
     fill(l->list_x,l->rule_y,l->list_w,1,LINE);
-    small(l->list_x,l->foot1_y,nes_screen_landscape?"UP/DN MOVE  L/R PAGE  A OK  B BACK":"UP/DN SELECT  A OK  B BACK  SEL DOWN",MUTED,BG);
-    small(l->list_x,l->foot2_y,nes_screen_landscape?"KEY1 SETTINGS  KEY2 LIBRARY  CAP ROTATE":"KEY1 SETTINGS  KEY2 LIBRARY  CAP ROTATE",MUTED,BG);
+    small(l->list_x,l->foot1_y,nes_screen_landscape?"UP/DN MOVE  L/R PAGE  A OK  B BACK  SEL DETAILS":"UP/DN SELECT  A OK  B BACK  SEL DETAILS",MUTED,BG);
+    small(l->list_x,l->foot2_y,"KEY1 SETTINGS  KEY2 SEARCH  CAP ROTATE",MUTED,BG);
     if(!m->audio_ok)small(l->w-72,l->foot2_y,"AUDIO OFF",ACCENT,BG);
     if(!m->touch_ok)small(l->w-72,l->foot1_y,"TOUCH OFF",MUTED,BG);
     NesMenu_Status("");
 }
 
-void NesMenu_LibraryOptions(unsigned cursor,unsigned current_view,int favorite,int has_game)
+/* ---- Settings centre -------------------------------------------------- */
+static void small_right(unsigned right,unsigned y,const char *s,uint16_t fg,uint16_t bg)
 {
-    static const char *const labels[]={"SEARCH", "ALL GAMES", "LOADABLE HEADERS",
-        "UNSUPPORTED", "FAVORITES", "RECENTLY PLAYED"};
-    unsigned i;
+    unsigned width=(unsigned)strlen(s)*8u;
+    small(width<right?right-width:0,y,s,fg,bg);
+}
+static const char *const settings_labels[NES_SETTINGS_ITEMS]={
+    "ALL GAMES","LOADABLE","UNSUPPORTED","FAVORITES","RECENTLY PLAYED",
+    "SEARCH","CONTROL","AUDIO","SCREEN","FAVORITE"
+};
+static const char *const audio_output_labels[]={"HEADPHONES","SPEAKER","MUTE"};
+void NesSettings_Root(unsigned cursor,unsigned view,int favorite,int has_game,
+                      uint8_t volume,uint8_t output,const char *status)
+{
     int wide=nes_screen_landscape;
-    unsigned w=wide?800:480,h=wide?480:800;
-    unsigned x0=wide?24:24,top=wide?72:126,step=wide?68:72;
+    unsigned w=wide?800:480,h=wide?480:800,x0=24;
+    unsigned title_y=wide?10:28,rule_y=wide?40:80;
+    unsigned top=wide?56:110,step=wide?38:62,row_h=wide?34:54;
+    unsigned i;
     fill(0,0,w,h,BG);
-    text(x0,20,"LIBRARY",INK,BG,3);
-    fill(x0,64,w-2*x0,1,LINE);
-    for(i=0;i<NES_LIBRARY_OPTIONS;i++) {
-        unsigned y=top+i*step;
-        uint16_t bg=i==cursor?ACTIVE:PANEL;
-        const char *label=i<6?labels[i]:favorite?"REMOVE FAVORITE":"ADD FAVORITE";
-        fill(x0,y,w-2*x0,52,bg);
-        if(i==current_view)medium(x0+16,y+12,">",ACCENT,bg);
-        medium(x0+46,y+12,label,i==6&&!has_game?MUTED:INK,bg);
+    text(x0,title_y,"SETTINGS",INK,BG,wide?2:3);
+    fill(x0,rule_y,w-2*x0,1,LINE);
+    for(i=0;i<NES_SETTINGS_ITEMS;i++) {
+        unsigned y=top+i*step,rw=w-2*x0;
+        uint16_t bg=i==cursor?ACTIVE:PANEL,fg=INK;
+        const char *label=settings_labels[i];
+        char value[24];
+        value[0]='\0';
+        if(i==NES_SETTINGS_FAVORITE) {
+            if(!has_game){label="NO GAME SELECTED";fg=MUTED;}
+            else label=favorite?"REMOVE FAVORITE":"ADD FAVORITE";
+        }
+        fill(x0,y,rw,row_h,bg);
+        if(i==cursor)medium(x0+8,y+(row_h-16u)/2u,">",ACCENT,bg);
+        medium(x0+30,y+(row_h-16u)/2u,label,fg,bg);
+        if(i==view&&i<=NES_SETTINGS_RECENT)snprintf(value,sizeof(value),"CURRENT");
+        else if(i==NES_SETTINGS_AUDIO)snprintf(value,sizeof(value),"%u%% %s",
+            (unsigned)volume,audio_output_labels[output>2?2:output]);
+        else if(i==NES_SETTINGS_SCREEN)snprintf(value,sizeof(value),"%s",
+            nes_screen_landscape?"LANDSCAPE":"PORTRAIT");
+        if(value[0])small_right(x0+rw-14u,y+(row_h-8u)/2u,value,i==view?ACCENT:MUTED,bg);
     }
-    small(x0,wide?450u:742u,"UP/DN MOVE   KEY2/SW SELECT   KEY1 BACK",MUTED,BG);
+    if(status&&status[0])small(x0,wide?452:742,status,ACCENT,BG);
+    else small(x0,wide?452:742,"UP/DN MOVE   A OK   B BACK",MUTED,BG);
+}
+void NesSettings_Control(void)
+{
+    int wide=nes_screen_landscape;
+    unsigned w=wide?800:480,h=wide?480:800,x0=24;
+    fill(0,0,w,h,BG);
+    text(x0,wide?18:28,"CONTROL",INK,BG,wide?2:3);
+    fill(x0,wide?48:80,w-2*x0,1,LINE);
+    small(x0,wide?60:96,"PRESS BUTTONS TO TEST INPUT",MUTED,BG);
+    small_right(w-24,wide?60:96,"B BACK",MUTED,BG);
+}
+void NesSettings_Audio(unsigned cursor,uint8_t volume,uint8_t output,
+                       uint8_t audio_ok,uint8_t failed,uint8_t save_failed)
+{
+    int wide=nes_screen_landscape;
+    unsigned w=wide?800:480,h=wide?480:800,x0=24;
+    unsigned top=wide?96:200,step=wide?84:104,row_h=wide?64:80;
+    unsigned rw=w-2*x0,i;
+    char volume_text[16],output_text[24];
+    if(volume>100)volume=100;
+    if(output>2)output=2;
+    snprintf(volume_text,sizeof(volume_text),"< %u%% >",(unsigned)volume);
+    snprintf(output_text,sizeof(output_text),"< %s >",audio_output_labels[output]);
+    fill(0,0,w,h,BG);
+    text(x0,wide?18:28,"AUDIO",INK,BG,wide?2:3);
+    fill(x0,wide?48:80,w-2*x0,1,LINE);
+    small(x0,wide?60:96,"UP/DN SELECT   LEFT/RIGHT ADJUST   A NEXT",MUTED,BG);
+    for(i=0;i<2;i++) {
+        unsigned y=top+i*step,tw;
+        uint16_t bg=i==cursor?ACTIVE:PANEL;
+        const char *label=i?"OUTPUT":"VOLUME";
+        const char *value=i?output_text:volume_text;
+        fill(x0,y,rw,row_h,bg);
+        if(i==cursor)medium(x0+10,y+(row_h-16u)/2u,">",ACCENT,bg);
+        medium(x0+32,y+(row_h-16u)/2u,label,INK,bg);
+        tw=(unsigned)strlen(value)*16u;
+        medium(x0+rw-14u-tw,y+(row_h-16u)/2u,value,i==cursor?ACCENT:INK,bg);
+    }
+    small(x0,wide?286:440,!audio_ok?"AUDIO OFF - CHECK CODEC":failed?"SWITCH FAILED - TRY AGAIN":
+          save_failed?"SETTINGS NOT SAVED - CHECK SD":"APPLIES TO ALL GAMES",
+          (!audio_ok||failed||save_failed)?ACCENT:MUTED,BG);
+    small_right(w-24,wide?456:742,"B BACK",MUTED,BG);
+}
+void NesSettings_Screen(uint8_t landscape,uint8_t save_failed)
+{
+    int wide=nes_screen_landscape;
+    unsigned w=wide?800:480,h=wide?480:800,x0=24;
+    unsigned cx=wide?160:24,cw=wide?480:432;
+    unsigned card_y=wide?130:220,card_h=96;
+    const char *label=landscape?"< LANDSCAPE >":"< PORTRAIT >";
+    unsigned tw=(unsigned)strlen(label)*16u;
+    fill(0,0,w,h,BG);
+    text(x0,wide?18:28,"SCREEN",INK,BG,wide?2:3);
+    fill(x0,wide?48:80,w-2*x0,1,LINE);
+    small(x0,wide?60:96,"DEFAULT ORIENTATION AT POWER-ON",MUTED,BG);
+    card(cx,card_y,cw,card_h,PANEL);
+    medium(cx+(cw-tw)/2u,card_y+(card_h-16u)/2u,label,ACCENT,PANEL);
+    small(x0,wide?252:352,landscape?"WIDE VIEW: 800x480 PANEL":"TALL VIEW: 480x800 PANEL",MUTED,BG);
+    small(x0,wide?276:376,"A/LEFT/RIGHT: SWITCH AND SAVE",MUTED,BG);
+    if(save_failed)small(x0,wide?300:400,"SETTINGS NOT SAVED - CHECK SD",ACCENT,BG);
+    small_right(w-24,wide?456:742,"B BACK",MUTED,BG);
 }
 
 void NesMenu_SaveError(const char *reason)
@@ -268,60 +457,49 @@ void NesMenu_SaveError(const char *reason)
     small(x0,wide?310u:368u,"KEEP POWER ON TO RETAIN THIS PROGRESS",MUTED,BG);
 }
 
+void NesDetails_Draw(const NesDetails *d)
+{
+    int wide=nes_screen_landscape;
+    unsigned w=wide?800:480,h=wide?480:800,x0=24;
+    unsigned title_y=wide?10:28,rule_y=wide?40:80;
+    unsigned name_y=wide?56:110;
+    unsigned meta_y=wide?176:248;
+    unsigned step=wide?24:26,y;
+    char line[80];
+    char full[NES_IMPORT_PATH_MAX+1];
+    const char *name=full_title(d->label,d->file,full,sizeof(full));
+    fill(0,0,w,h,BG);
+    text(x0,title_y,"GAME INFO",INK,BG,wide?2:3);
+    fill(x0,rule_y,w-2*x0,1,LINE);
+    wrapped_utf8(x0,name_y,w-2*x0,wide?3:4,name&&name[0]?name:"NO GAME",BG);
+    y=meta_y;
+    if(d->count) {
+        snprintf(line,sizeof(line),"INDEX %u/%u",d->index+1,d->count);
+        medium(x0,y,line,INK,BG);y+=step;
+    }
+    snprintf(line,sizeof(line),"SIZE %uK",(unsigned)((d->size+1023u)/1024u));
+    medium(x0,y,line,INK,BG);y+=step;
+    if(d->mapper!=0xffffu) {
+        snprintf(line,sizeof(line),"MAPPER %u",d->mapper);
+        medium(x0,y,line,INK,BG);y+=step;
+    }
+    if(d->status&&d->status[0]) {
+        medium(x0,y,d->status,MUTED,BG);y+=step;
+    }
+    if(d->favorite||(d->flags&NES_DETAILS_FDS)) {
+        snprintf(line,sizeof(line),"%s%s%s",d->favorite?"FAVORITE":"",
+                 (d->favorite&&(d->flags&NES_DETAILS_FDS))?"  ":"",
+                 (d->flags&NES_DETAILS_FDS)?"FDS DISK":"");
+        medium(x0,y,line,ACCENT,BG);
+    }
+    small(x0,wide?452:742,"A START   B BACK",MUTED,BG);
+}
+
 static void input_key(unsigned x,unsigned y,unsigned w,const char *label,int on)
 {
     uint16_t color=on?ACTIVE:PANEL;
     card(x,y,w,44,color);
     medium(x+(w-(unsigned)strlen(label)*16)/2,y+10,label,on?ACCENT:INK,color);
-}
-void NesSettings_Draw(uint8_t audio_ok)
-{
-    int wide=nes_screen_landscape;
-    unsigned w=wide?800:480,h=wide?480:800,x0=24;
-    fill(0,0,w,h,BG);
-    text(x0,wide?18u:28u,"SETTINGS",INK,BG,3);fill(x0,wide?62u:80u,w-2*x0,1,LINE);
-    medium(x0,wide?82u:106u,"CONTROLLER CHECK",INK,BG);
-    small(x0,wide?112u:142u,"PRESS BUTTONS TO TEST INPUT",MUTED,BG);
-    if(wide){
-        /* Two columns: controller test on the left, switches on the right. */
-        medium(460,82,"SCREEN",INK,BG);
-        NesSettings_Screen(nes_screen_landscape);
-        medium(460,190,"AUDIO OUTPUT",INK,BG);
-        NesSettings_Audio(1,audio_ok,0);
-        fill(x0,440,w-2*x0,1,LINE);
-        small(x0,452,"HOLD SW 1.5S: BACK",MUTED,BG);
-    } else {
-        medium(x0,500,"SCREEN",INK,BG);
-        NesSettings_Screen(nes_screen_landscape);
-        medium(x0,570,"AUDIO OUTPUT",INK,BG);
-        NesSettings_Audio(1,audio_ok,0);
-        fill(x0,726,w-2*x0,1,LINE);
-        small(x0,750,"HOLD SW 1.5S: BACK",MUTED,BG);
-    }
-}
-void NesSettings_Screen(uint8_t landscape)
-{
-    int wide=nes_screen_landscape;
-    unsigned x0=wide?460u:24u,w=wide?316u:480u;
-    unsigned top=wide?104u:530u;
-    const char *label=landscape?"< LANDSCAPE >":"< PORTRAIT >";
-    fill(x0,top,w,74,BG);
-    card(x0,top,w,44,PANEL);
-    medium(x0+(w-(unsigned)strlen(label)*16)/2,top+14,label,ACCENT,PANEL);
-    small(x0,top+52,"UP/DOWN: ROTATE 90",MUTED,BG);
-}
-void NesSettings_Audio(uint8_t output,uint8_t audio_ok,uint8_t failed)
-{
-    int wide=nes_screen_landscape;
-    unsigned x0=wide?460u:24u,w=wide?316u:480u;
-    unsigned top=wide?212u:600u;
-    const char *label=output==0?"< HEADPHONES >":output==1?"< SPEAKER >":"< MUTE >";
-    fill(x0,top,w,114,BG);
-    card(x0,top,w,48,PANEL);
-    medium(x0+(w-(unsigned)strlen(label)*16)/2,top+16,label,ACCENT,PANEL);
-    small(x0,top+70,!audio_ok?"AUDIO OFF - CHECK CODEC":failed?"SWITCH FAILED - TRY AGAIN":"LEFT/RIGHT: CHANGE OUTPUT",
-          (!audio_ok||failed)?ACCENT:MUTED,BG);
-    small(x0,top+94,"APPLIES TO ALL GAMES",MUTED,BG);
 }
 void NesSettings_Update(uint8_t pad,uint16_t raw_x,uint16_t raw_y,
                         uint8_t stick_ready,uint8_t cap_ready,uint16_t cap_raw)

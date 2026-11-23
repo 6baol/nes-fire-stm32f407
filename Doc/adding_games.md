@@ -4,7 +4,7 @@ v0.19：游戏库现为七款，新增恶魔城 III（USA）和 Just Breed（Jap
 
 **v0.17 默认使用 SD 游戏库。** 当前每库最多 64 项，每个镜像最多 640 KiB，库的总大小不再受内部 Flash 的 768 KiB 预算限制。导入后运行 `build.ps1` 会自动生成本机 `Release/SD_ROOT/NES`；也可单独运行 `python tools/prepare_sd.py`。确认读卡器盘符后用 `python tools/install_sd.py F:/ --update-index` 安装新增资源并明确允许更新固件索引；脚本不会格式化、删除文件或覆盖不同内容的 ROM/封面，也不会操作卡上的 TH06。`--update-index` 只允许更新 LIBRARY.IDX 与 SD17.JSON 两个生成的元数据文件。完整步骤见 [SD_card_v0.17.md](SD_card_v0.17.md)。下文旧的总镜像 768 KiB 限制仅适用于可选 `build.ps1 -Embedded` 全内置版本。
 
-当前游戏列表为五款：三款 Mario、Metroid、Wizards & Warriors。Controller Test 为菜单 KEY1 打开的原生 Settings 输入检查页，不作为 ROM 条目。开发用 controller_test.nes 文件保留，但不嵌入固件。
+当前游戏列表为五款：三款 Mario、Metroid、Wizards & Warriors。Controller Test 为设置中心 CONTROL 子页的输入检查页（首页 KEY1 → CONTROL），不作为 ROM 条目。开发用 controller_test.nes 文件保留，但不嵌入固件。
 
 在 `D:\Project\BA_Game` 打开 PowerShell。
 
