@@ -128,7 +128,9 @@ uint8_t NesPort_SetLandscape(uint8_t on)
     if(on==applied)return applied;
     applied=on;
     nes_screen_landscape=on;
-    lcd_gram_scan(on?3:2);
+    /* Mode 6 is the panel's native portrait orientation; 7 keeps the same
+     * mirroring after a quarter turn, so nothing comes back flipped. */
+    lcd_gram_scan(on?7:6);
     lcd_fill_color(0,0,(uint16_t)(on?800u:480u),(uint16_t)(on?480u:800u),BLACK);
     return applied;
 }
@@ -184,9 +186,11 @@ static uint8_t pad_poll(uint32_t now)
     return pad_stable;
 }
 #define SHIELD pad_stable
+/* System screens belong to the board keys and the capacitive pad; the shield
+ * only plays games (E is Select, F is Start). */
 #define SW_PRESSED (HAL_GPIO_ReadPin(JOYSTICK_SW_PORT,JOYSTICK_SW_PIN)==GPIO_PIN_RESET)
 #define KEY2_PRESSED (HAL_GPIO_ReadPin(KEY2_GPIO_PORT,KEY2_PIN)==GPIO_PIN_SET||SW_PRESSED)
-#define KEY1_PRESSED (HAL_GPIO_ReadPin(KEY1_GPIO_PORT,KEY1_PIN)==GPIO_PIN_SET||(SHIELD&PAD_F))
+#define KEY1_PRESSED (HAL_GPIO_ReadPin(KEY1_GPIO_PORT,KEY1_PIN)==GPIO_PIN_SET)
 
 static const char *const view_hints[]={
     "SEARCH RESULTS - HOLD KEY1 FOR LIBRARY", "LOADABLE HEADERS - HOLD KEY1 FOR LIBRARY",
@@ -289,6 +293,7 @@ void NesPort_Input(void)
     if(SHIELD&PAD_A)pad|=1;
     if(SHIELD&PAD_B)pad|=2;
     if(SHIELD&PAD_E)pad|=4;
+    if(SHIELD&PAD_F)pad|=8;
     if((SHIELD&PAD_C)&&((now/80u)&1u))pad|=1;
     if((SHIELD&PAD_D)&&((now/80u)&1u))pad|=2;
     if(j->healthy&&j->calibrated) {

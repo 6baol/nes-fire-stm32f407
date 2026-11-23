@@ -271,35 +271,45 @@ void NesSettings_Draw(uint8_t audio_ok)
     unsigned w=wide?800:480,h=wide?480:800,x0=24;
     fill(0,0,w,h,BG);
     text(x0,wide?18u:28u,"SETTINGS",INK,BG,3);fill(x0,wide?62u:80u,w-2*x0,1,LINE);
-    medium(x0,wide?86u:106u,"CONTROLLER CHECK",INK,BG);
-    small(x0,wide?122u:142u,"PRESS BUTTONS TO TEST INPUT",MUTED,BG);
-    medium(x0,wide?190u:500u,"SCREEN",INK,BG);
-    NesSettings_Screen(nes_screen_landscape);
-    medium(x0,wide?268u:570u,"AUDIO OUTPUT",INK,BG);
-    NesSettings_Audio(1,audio_ok,0);
-    fill(x0,wide?410u:726u,w-2*x0,1,LINE);
-    small(x0,wide?430u:750u,"HOLD SW 1.5S: BACK",MUTED,BG);
+    medium(x0,wide?82u:106u,"CONTROLLER CHECK",INK,BG);
+    small(x0,wide?112u:142u,"PRESS BUTTONS TO TEST INPUT",MUTED,BG);
+    if(wide){
+        /* Two columns: controller test on the left, switches on the right. */
+        medium(460,82,"SCREEN",INK,BG);
+        NesSettings_Screen(nes_screen_landscape);
+        medium(460,190,"AUDIO OUTPUT",INK,BG);
+        NesSettings_Audio(1,audio_ok,0);
+        fill(x0,440,w-2*x0,1,LINE);
+        small(x0,452,"HOLD SW 1.5S: BACK",MUTED,BG);
+    } else {
+        medium(x0,500,"SCREEN",INK,BG);
+        NesSettings_Screen(nes_screen_landscape);
+        medium(x0,570,"AUDIO OUTPUT",INK,BG);
+        NesSettings_Audio(1,audio_ok,0);
+        fill(x0,726,w-2*x0,1,LINE);
+        small(x0,750,"HOLD SW 1.5S: BACK",MUTED,BG);
+    }
 }
 void NesSettings_Screen(uint8_t landscape)
 {
     int wide=nes_screen_landscape;
-    unsigned x0=24,w=wide?800:480;
-    unsigned top=wide?220u:530u;
+    unsigned x0=wide?460u:24u,w=wide?316u:480u;
+    unsigned top=wide?104u:530u;
     const char *label=landscape?"< LANDSCAPE >":"< PORTRAIT >";
-    fill(x0,top,w-2*x0,74,BG);
-    card(x0,top,w-2*x0,44,PANEL);
-    medium(x0+(w-2*x0-(unsigned)strlen(label)*16)/2,top+14,label,ACCENT,PANEL);
+    fill(x0,top,w,74,BG);
+    card(x0,top,w,44,PANEL);
+    medium(x0+(w-(unsigned)strlen(label)*16)/2,top+14,label,ACCENT,PANEL);
     small(x0,top+52,"UP/DOWN: ROTATE 90",MUTED,BG);
 }
 void NesSettings_Audio(uint8_t output,uint8_t audio_ok,uint8_t failed)
 {
     int wide=nes_screen_landscape;
-    unsigned w=wide?800:480,x0=24;
-    unsigned top=wide?292u:600u;
+    unsigned x0=wide?460u:24u,w=wide?316u:480u;
+    unsigned top=wide?212u:600u;
     const char *label=output==0?"< HEADPHONES >":output==1?"< SPEAKER >":"< MUTE >";
-    fill(x0,top,w-2*x0,114,BG);
-    card(x0,top,w-2*x0,48,PANEL);
-    medium(x0+(w-2*x0-(unsigned)strlen(label)*16)/2,top+16,label,ACCENT,PANEL);
+    fill(x0,top,w,114,BG);
+    card(x0,top,w,48,PANEL);
+    medium(x0+(w-(unsigned)strlen(label)*16)/2,top+16,label,ACCENT,PANEL);
     small(x0,top+70,!audio_ok?"AUDIO OFF - CHECK CODEC":failed?"SWITCH FAILED - TRY AGAIN":"LEFT/RIGHT: CHANGE OUTPUT",
           (!audio_ok||failed)?ACCENT:MUTED,BG);
     small(x0,top+94,"APPLIES TO ALL GAMES",MUTED,BG);
@@ -308,20 +318,22 @@ void NesSettings_Update(uint8_t pad,uint16_t raw_x,uint16_t raw_y,
                         uint8_t stick_ready,uint8_t cap_ready,uint16_t cap_raw)
 {
     char value[40];
-    input_key(96,190,80,"UP",pad&16);
-    input_key(24,242,96,"LEFT",pad&64);
-    input_key(152,242,96,"RIGHT",pad&128);
-    input_key(96,294,80,"DOWN",pad&32);
-    input_key(292,214,64,"B",pad&2);
-    input_key(376,214,64,"A",pad&1);
-    input_key(48,366,160,"SELECT",pad&4);
-    input_key(264,366,160,"START",pad&8);
-    fill(24,440,432,100,BG);
+    int wide=nes_screen_landscape;
+    unsigned y0=wide?130u:190u;
+    input_key(wide?96u:96u,y0,80,"UP",pad&16);
+    input_key(wide?24u:24u,y0+52,96,"LEFT",pad&64);
+    input_key(wide?152u:152u,y0+52,96,"RIGHT",pad&128);
+    input_key(wide?96u:96u,y0+104,80,"DOWN",pad&32);
+    input_key(wide?284u:292u,y0+24,64,"B",pad&2);
+    input_key(wide?356u:376u,y0+24,64,"A",pad&1);
+    input_key(wide?24u:48u,y0+180,160,"SELECT",pad&4);
+    input_key(wide?196u:264u,y0+180,160,"START",pad&8);
+    fill(24,wide?390u:440u,wide?400u:432u,80,BG);
     snprintf(value,sizeof(value),"STICK X:%4u  Y:%4u",(unsigned)raw_x,(unsigned)raw_y);
-    small(24,446,value,MUTED,BG);
-    small(24,474,stick_ready?"STICK READY":"STICK CALIBRATING / RECONNECTING",stick_ready?MUTED:ACCENT,BG);
+    small(24,wide?396u:446u,value,MUTED,BG);
+    small(24,wide?418u:474u,stick_ready?"STICK READY":"STICK CALIBRATING / RECONNECTING",stick_ready?MUTED:ACCENT,BG);
     snprintf(value,sizeof(value),"CAP %s  RAW:%u",cap_ready?"READY":"CALIBRATING",(unsigned)cap_raw);
-    small(24,502,value,MUTED,BG);
+    small(24,wide?440u:502u,value,MUTED,BG);
 }
 
 /* ---- On-screen search ------------------------------------------------ */
