@@ -50,8 +50,13 @@ def main():
     from pyocd.core.target import Target
 
     hardware_reset = getattr(Target.ResetType,"HARDWARE",None) or Target.ResetType.HW
-    pack = args.pack or next(ROOT.parent.glob(
-        '*/4-*/MDK-KEIL与芯片包/芯片包/Keil.STM32F4xx_DFP.2.15.0.pack'), None)
+    pack = args.pack
+    if pack is None:
+        for pattern, base in (('.tools/packs/Keil.STM32F4xx_DFP*.pack', ROOT.parent),
+                              ('*/4-*/MDK-KEIL与芯片包/芯片包/Keil.STM32F4xx_DFP.2.15.0.pack', ROOT.parent)):
+            pack = next(base.glob(pattern), None)
+            if pack is not None:
+                break
     if pack is None or not pack.is_file():
         raise FileNotFoundError('STM32F4xx Device Family Pack not found. Supply --pack.')
     options = {'target_override':'stm32f407zgtx','pack':[str(pack)],'frequency':args.frequency,
