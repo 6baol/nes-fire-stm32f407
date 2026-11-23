@@ -130,6 +130,45 @@ static uint32_t notice_until;
 volatile uint8_t nes_screen_landscape;
 /* Panel scan modes: even = 480x800 portrait, odd = 800x480 rotated. Mode 3 is
  * the 90 degree counter-clockwise view the menus and the game are laid out for. */
+static void text(unsigned x,unsigned y,const char *s);
+static void draw_game_sides(void)
+{
+    unsigned side,x,y;const NesRomImage *game;const NesPoster *p;const char *title;
+    if(!nes_screen_landscape)return;
+    for(side=0;side<2;side++) {
+        unsigned x0=side?720u:0u;
+        lcd_open_window((uint16_t)x0,0,80,480);
+        for(y=0;y<480;y++) {
+            uint16_t c=(uint16_t)(0x0841u+(y*0x0421u)/480u);
+            for(x=0;x<80;x++)LCD_WRITE_DATA(c);
+        }
+    }
+    game=NesLibrary_Game((unsigned)menu.index);
+    if(!game)return;
+    p=NesLibrary_Poster(game);
+    if(p&&p->pixels) {
+        unsigned w=80u,h=63u,x0=0u,y0=90u;
+        lcd_open_window((uint16_t)x0,(uint16_t)y0,(uint16_t)w,(uint16_t)h);
+        for(y=0;y<h;y++) {
+            unsigned sy=y*p->height/h;
+            for(x=0;x<w;x++) {
+                unsigned sx=x*p->width/w,index;
+                if(p->pixel_bits==4)index=(p->pixels[(sy*p->width+sx)>>1]>>(((sy*p->width+sx)&1u)?0:4))&15u;
+                else index=p->pixels[sy*p->width+sx];
+                LCD_WRITE_DATA(p->palette[index]);
+            }
+        }
+    }
+    title=game->file;
+    {
+        const char *base=strrchr(title,'/');
+        char short_title[6];unsigned i;
+        if(base)title=base+1;
+        for(i=0;i<5u&&title[i]&&title[i]!='.';i++)short_title[i]=title[i];
+        short_title[i]='\0';
+        text(0,200,short_title);
+    }
+}
 uint8_t NesPort_SetLandscape(uint8_t on)
 {
     static uint8_t applied;
@@ -141,6 +180,7 @@ uint8_t NesPort_SetLandscape(uint8_t on)
      * meant to be used in (mode 5 mirrors the other way). */
     lcd_gram_scan(on?3:6);
     lcd_fill_color(0,0,(uint16_t)(on?800u:480u),(uint16_t)(on?480u:800u),BLACK);
+    if(on&&app_state==APP_GAME)draw_game_sides();
     return applied;
 }
 uint8_t NesPort_Landscape(void)
@@ -150,12 +190,15 @@ uint8_t NesPort_Landscape(void)
 static uint8_t disk_combo_latched;
 static unsigned disk_shown=~0u;
 
-/* Shield buttons A-F on CN3 18,20,22,24,26,28 - one column, so a single strip
- * reaches all six. K is the stick's push switch and already arrives as
- * JOYSTICK_SW on PB7. Active low against the internal pull-ups. */
+/* Shield buttons A-F. A used to arrive on CN3-18/PC6, but PC6 is the WM8978
+ * I2S2_MCK; reconfiguring it as an input in pad_init stopped the codec clock
+ * and muted both headphones and speaker. A is now wired to PE3. B-F are CN3
+ * 20,22,24,26,28 - one column, so a single strip reaches them. K is the
+ * stick's push switch and already arrives as JOYSTICK_SW on PB7. Active low
+ * against the internal pull-ups. */
 typedef struct {GPIO_TypeDef *port;uint16_t pin;} PadPin;
 static const PadPin pad_pins[6]={
-    {GPIOC,GPIO_PIN_6},  /* A   CN3-18 */
+    {GPIOE,GPIO_PIN_3},  /* A   PE3 */
     {GPIOC,GPIO_PIN_7},  /* B   CN3-20 */
     {GPIOE,GPIO_PIN_4},  /* C   CN3-22 */
     {GPIOB,GPIO_PIN_6},  /* D   CN3-24 */
@@ -526,6 +569,7 @@ static void save_error_poll(void)
     sw_hold_active=0;
     restart_frame_clock();
     app_state=APP_GAME;
+    draw_game_sides();
     NesAudio_Mute(0);
 }
 
@@ -574,6 +618,7 @@ static void start_selected(void)
     loaded=1;app_state=APP_GAME;
     rpg_direction=0;
     game_chrome();
+    draw_game_sides();
     restart_frame_clock();
 }
 
@@ -654,6 +699,8 @@ static void settings_flip(void)
 {
     nes_screen_landscape=nes_screen_landscape?0:1;
     settings_persist();
+    NesPort_SetLandscape(nes_screen_landscape);
+    draw_settings();
 }
 static void settings_move(int dir)
 {
@@ -746,6 +793,14 @@ static void settings_poll(uint32_t now)
     const JoystickState *j=Joystick_Get();
     const TouchpadState *cap=Touchpad_Get();
     int dx=0,dy=0,cx=0,cy=0;
+    /* CAP is the one-key portrait/landscape toggle on every page, including
+     * SETTINGS. Keep the CONTROL page's raw-CAP test working by skipping the
+     * rotation there. */
+    if(settings_page!=NES_SETTINGS_PAGE_CONTROL) {
+        if(cap->ready&&cap->pressed) {
+            if(cap_rotate_armed){cap_rotate_armed=0;settings_flip();return;}
+        } else cap_rotate_armed=1;
+    }
     if(j->healthy&&j->calibrated) {
         dx=j->x>0.65f?1:(j->x< -0.65f?-1:0);
         dy=j->y>0.65f?1:(j->y< -0.65f?-1:0);

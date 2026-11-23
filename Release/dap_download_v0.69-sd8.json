@@ -1,0 +1,11 @@
+{
+  "version": "0.69-sd8",
+  "programmer": "pyOCD CMSIS-DAP / SWD 100000Hz",
+  "bytes_verified": 196608,
+  "sha256": "55ef7e43c38f6db18dd0a2e0092da19cadcdc0d82162964be1faf2cbc1ff7cf3",
+  "full_readback_match": true,
+  "verify_only": false,
+  "backup": "D:\\Project\\BA_Game\\backups\\flash_20261123_205726_958943.bin",
+  "sector_bytes_verified": 262144,
+  "preserved_tail_bytes": 65536
+}

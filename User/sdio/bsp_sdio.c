@@ -45,8 +45,10 @@ SdBspResult SDIO_Config(void)
         g_sd_handle.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
         g_sd_handle.Init.BusWide = SDIO_BUS_WIDE_1B;
         g_sd_handle.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-        /* 48MHz / (46+2) = 1MHz. Retry with 1-bit/400kHz if setup fails. */
-        g_sd_handle.Init.ClockDiv = attempt?118:46;
+        /* 48MHz / (4+2) = 8MHz. The old 16MHz single-block polling overflowed
+         * the FIFO; multi-block reads keep the FIFO fed at 8MHz. Retry with
+         * 1-bit/400kHz if setup fails. */
+        g_sd_handle.Init.ClockDiv = attempt?118:4;
         HAL_Delay(20);
         if(HAL_SD_Init(&g_sd_handle)!=HAL_OK) {
             sd_last_error=g_sd_handle.ErrorCode;result=SD_BSP_ERR_INIT;continue;
@@ -70,24 +72,21 @@ uint8_t BSP_SD_IsReady(void)
 
 SdBspResult BSP_SD_ReadBlocks(uint8_t *buf, uint32_t block_addr, uint32_t block_count)
 {
-    uint32_t block;unsigned attempt;
+    unsigned attempt;
     if (!sd_initialised) return SD_BSP_ERR_INIT;
     if ((buf == NULL) || (block_count == 0u)) return SD_BSP_ERR_READ;
 
     if(block_addr>=g_sd_card_info.LogBlockNbr || block_count>g_sd_card_info.LogBlockNbr-block_addr)return SD_BSP_ERR_READ;
-    for(block=0;block<block_count;block++) {
-        for(attempt=0;attempt<2;attempt++) {
-            if(SD_WaitReady(SD_TIMEOUT_MS) &&
-               HAL_SD_ReadBlocks(&g_sd_handle,(uint8_t*)sd_sector,block_addr+block,1,SD_TIMEOUT_MS)==HAL_OK &&
-               SD_WaitReady(SD_TIMEOUT_MS))break;
-            sd_last_error=g_sd_handle.ErrorCode;++sd_read_retries;
-            (void)HAL_SD_Abort(&g_sd_handle);
-            SDIO->DCTRL=0;SDIO->ICR=SDIO_STATIC_DATA_FLAGS;
-        }
-        if(attempt==2)return SD_BSP_ERR_READ;
-        memcpy(buf+block*SD_BLOCK_SIZE,sd_sector,SD_BLOCK_SIZE);
-        ++sd_blocks_read;
+    for(attempt=0;attempt<2;attempt++) {
+        if(SD_WaitReady(SD_TIMEOUT_MS) &&
+           HAL_SD_ReadBlocks(&g_sd_handle,(uint8_t*)buf,block_addr,block_count,SD_TIMEOUT_MS)==HAL_OK &&
+           SD_WaitReady(SD_TIMEOUT_MS))break;
+        sd_last_error=g_sd_handle.ErrorCode;++sd_read_retries;
+        (void)HAL_SD_Abort(&g_sd_handle);
+        SDIO->DCTRL=0;SDIO->ICR=SDIO_STATIC_DATA_FLAGS;
     }
+    if(attempt==2)return SD_BSP_ERR_READ;
+    sd_blocks_read+=block_count;
     return SD_BSP_OK;
 }
 

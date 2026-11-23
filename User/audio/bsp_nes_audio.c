@@ -113,7 +113,7 @@ failed:
 uint8_t NesAudio_Init(void)
 {
     GPIO_InitTypeDef gpio={0};uint32_t begin;
-    nes_audio_suspended=1;audio_output=NES_AUDIO_SPEAKER;NesAudio_SetVolume(70);
+    nes_audio_suspended=1;audio_output=0xff;NesAudio_SetVolume(70);
     nes_audio_ready=nes_audio_blocks=nes_audio_dma_errors=0;
     nes_audio_codec_error=nes_audio_peak=nes_audio_nonzero=nes_audio_max_us=0;
     __HAL_RCC_GPIOB_CLK_ENABLE();__HAL_RCC_GPIOC_CLK_ENABLE();__HAL_RCC_I2C1_CLK_ENABLE();
@@ -165,7 +165,10 @@ uint8_t NesAudio_Init(void)
     DMA1_Stream4->CR|=DMA_SxCR_EN;SPI2->CR2=SPI_CR2_TXDMAEN;
     SPI2->I2SCFGR|=SPI_I2SCFGR_I2SE;
     if(codec_write(10,0)) {NesAudio_Stop();return 7;}
-    nes_audio_ready=1;return 0;
+    nes_audio_ready=1;
+    /* Nothing else programs a route at boot, so apply the default here. */
+    (void)NesAudio_SetOutput(NES_AUDIO_SPEAKER);
+    return 0;
 }
 void DMA1_Stream4_IRQHandler(void)
 {
