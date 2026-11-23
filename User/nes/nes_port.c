@@ -335,32 +335,41 @@ void NesPort_InvalidateDisplay(void)
     memset(displayed_valid,0,sizeof(displayed_valid));
 }
 
-/* Every eight NES pixels span exactly fifteen columns of the 480px LCD.
- * The first seven colors each occupy two columns and the eighth occupies one. */
+/* Portrait maps eight NES pixels onto fifteen LCD columns and 240 lines onto
+ * 450 rows; landscape fills the whole 800x480 panel, so the same eight pixels
+ * become twenty-five columns and every line becomes exactly two rows. */
 static void submit_changed_span(unsigned line,unsigned first,unsigned end,
                                 const uint8_t *pixels,const uint16_t *palette)
 {
-    static uint16_t row[480];
-    unsigned group,src,out=0,x,y;
-    unsigned y0=line*450/240,y1=(line+1)*450/240;
+    static uint16_t row[800];
+    unsigned group,src,out=0,x,y,y0,y1;
+    unsigned wide=nes_screen_landscape;
+    if(wide){y0=line*2u;y1=y0+2u;}
+    else {y0=line*450u/240u;y1=(line+1u)*450u/240u;}
     for(group=first;group<end;group++) {
         src=group*8;
-        for(x=0;x<7;x++) {
-            uint16_t color=palette[pixels[src+x]&63];
-            row[out++]=color;
-            row[out++]=color;
+        if(wide) {
+            for(x=0;x<7;x++) {
+                uint16_t color=palette[pixels[src+x]&63];
+                row[out++]=color;row[out++]=color;row[out++]=color;
+            }
+            {
+                uint16_t color=palette[pixels[src+7]&63];
+                row[out++]=color;row[out++]=color;row[out++]=color;row[out++]=color;
+            }
+        } else {
+            for(x=0;x<7;x++) {
+                uint16_t color=palette[pixels[src+x]&63];
+                row[out++]=color;
+                row[out++]=color;
+            }
+            row[out++]=palette[pixels[src+7]&63];
         }
-        row[out++]=palette[pixels[src+7]&63];
     }
-    if(nes_screen_landscape) {
-        /* The display is turned a quarter, so a source line becomes a vertical
-         * strip: 480 pixels tall, two columns wide, centred in the 800 wide
-         * panel. Image row 0 sits at the right edge and image x grows downwards,
-         * which is the counter-clockwise turn of the portrait mapping. */
-        unsigned x0=(800u-out)/2u+(450u-y1);
-        lcd_open_window((uint16_t)x0,0,(uint16_t)(y1-y0),(uint16_t)out);
-        for(x=0;x<out;x++)
-            for(y=y0;y<y1;y++)LCD_WRITE_DATA(row[x]);
+    if(wide) {
+        lcd_open_window((uint16_t)(first*25u),(uint16_t)y0,(uint16_t)out,(uint16_t)(y1-y0));
+        for(y=y0;y<y1;y++)
+            for(x=0;x<out;x++)LCD_WRITE_DATA(row[x]);
         lcd_frame_pixels+=out*(y1-y0);
         return;
     }

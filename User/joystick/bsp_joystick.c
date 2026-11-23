@@ -109,7 +109,9 @@ static void process_pair(uint32_t now)
     if (GAME_JOY_INVERT_Y) y = -y;
     /* The shield is mounted a quarter turn against the panel: portrait swaps
      * the axes, the landscape view uses them as they come. */
-    if (!nes_screen_landscape) { float swapped=x; x=y; y=-swapped; }
+    /* The shield is mounted a quarter turn against the panel, so the axes are
+     * swapped the same way in both layouts. */
+    { float swapped=x; x=y; y=-swapped; }
     length = sqrtf(x*x + y*y);
     if (length <= GAME_JOY_DEADZONE) { state.x = state.y = 0; return; }
     magnitude = (length-GAME_JOY_DEADZONE) / (1-GAME_JOY_DEADZONE);
