@@ -101,6 +101,7 @@ static uint32_t menu_center_due;
 static uint8_t menu_page_seen;
 static uint32_t menu_page_due;
 static uint8_t menu_armed;
+static uint32_t menu_repeat_due;
 static uint8_t cover_pending;
 static uint32_t cover_due;
 static uint8_t cap_search_armed=1;
@@ -128,9 +129,9 @@ uint8_t NesPort_SetLandscape(uint8_t on)
     if(on==applied)return applied;
     applied=on;
     nes_screen_landscape=on;
-    /* Mode 6 is the panel's native portrait orientation; 7 keeps the same
-     * mirroring after a quarter turn, so nothing comes back flipped. */
-    lcd_gram_scan(on?7:6);
+    /* Mode 6 is the panel's native portrait; 5 and 7 are the two quarter turns.
+     * 5 is the one whose left and right are not swapped. */
+    lcd_gram_scan(on?5:6);
     lcd_fill_color(0,0,(uint16_t)(on?800u:480u),(uint16_t)(on?480u:800u),BLACK);
     return applied;
 }
@@ -189,7 +190,7 @@ static uint8_t pad_poll(uint32_t now)
 /* System screens belong to the board keys and the capacitive pad; the shield
  * only plays games (E is Select, F is Start). */
 #define SW_PRESSED (HAL_GPIO_ReadPin(JOYSTICK_SW_PORT,JOYSTICK_SW_PIN)==GPIO_PIN_RESET)
-#define KEY2_PRESSED (HAL_GPIO_ReadPin(KEY2_GPIO_PORT,KEY2_PIN)==GPIO_PIN_SET||SW_PRESSED)
+#define KEY2_PRESSED (HAL_GPIO_ReadPin(KEY2_GPIO_PORT,KEY2_PIN)==GPIO_PIN_SET)
 #define KEY1_PRESSED (HAL_GPIO_ReadPin(KEY1_GPIO_PORT,KEY1_PIN)==GPIO_PIN_SET)
 
 static const char *const view_hints[]={
@@ -550,7 +551,7 @@ static void menu_redraw_selection(void)
     uint32_t started=DWT->CYCCNT;
     NesMenu_DrawRows(&menu);
     menu_info(0);
-    cover_pending=1;cover_due=HAL_GetTick()+60;
+    cover_pending=1;cover_due=HAL_GetTick();
     nes_menu_redraw_us=(DWT->CYCCNT-started)/(HAL_RCC_GetHCLKFreq()/1000000u);
     ++nes_menu_updates;
 }
@@ -704,11 +705,18 @@ static void menu_poll(uint32_t now)
     /* The cover is read from the card only after the stick has settled. */
     if(cover_pending&&(int32_t)(now-cover_due)>=0){cover_pending=0;NesMenu_DrawCover(&menu);menu_info(1);}
     {
-        /* Capacitive key is free in the menu and opens search directly. */
+        /* Capacitive key flips the panel between portrait and landscape. */
         const TouchpadState *cap=Touchpad_Get();
         if(cap->ready&&cap->pressed){
-            if(cap_search_armed){cap_search_armed=0;open_search();return;}
+            if(cap_search_armed){cap_search_armed=0;nes_screen_landscape=nes_screen_landscape?0:1;return;}
         } else cap_search_armed=1;
+    }
+    {
+        /* Select steps down the list without using the stick. */
+        static uint8_t select_last;
+        uint8_t sel=(SHIELD&PAD_E)?1u:0u;
+        if(sel&&!select_last&&NesMenu_Move(&menu,1)){load_error[0]='\0';menu_redraw_selection();}
+        select_last=sel;
     }
     if(j->healthy&&j->calibrated) {
         if(j->y>0.65f) dir=1; else if(j->y< -0.65f) dir=-1;
@@ -730,26 +738,32 @@ static void menu_poll(uint32_t now)
         if(!menu_page_seen){menu_page_seen=1;menu_page_due=now+60;}
         if((int32_t)(now-menu_page_due)>=0)menu_page_armed=1;
     } else menu_page_seen=0;
-    if(dir && menu_axis_armed) {
+    if(dir && (menu_axis_armed||(int32_t)(now-menu_repeat_due)>=0)) {
         menu_axis_armed=0;
+        menu_repeat_due=now+90;
         if(NesMenu_Move(&menu,dir)){load_error[0]='\0';menu_redraw_selection();}
     }
     if(page && menu_page_armed) {
         menu_page_armed=0;
         if(NesMenu_Page(&menu,page,5)){load_error[0]='\0';menu_redraw_selection();}
     }
-    if(KEY1_PRESSED||KEY2_PRESSED||SW_PRESSED||(nes_test_pad&3)) {
+    if(KEY1_PRESSED||KEY2_PRESSED||SW_PRESSED||SHIELD||(nes_test_pad&3)) {
         int k1=KEY1_PRESSED||(nes_test_pad&2);
+        int k2=KEY2_PRESSED;
+        int ok=(SHIELD&PAD_A)||(SHIELD&PAD_F)||SW_PRESSED||((nes_test_pad&1)&&!k1&&!k2);
         if(k1) {
-            /* Short press opens Settings; holding opens the library actions. */
+            /* Tap KEY1 for Settings; holding it still opens the library actions. */
             if(!key1_pending){key1_pending=1;key1_down=now;}
             else if((uint32_t)(now-key1_down)>=1000){
                 key1_pending=0;menu_armed=0;open_library_options();return;
             }
+        } else if(k2) {
+            /* KEY2 is the library shortcut. */
+            if(menu_armed){menu_armed=0;open_library_options();return;}
         } else if(menu_armed) {
             menu_armed=0;
-            if(KEY2_PRESSED||SW_PRESSED||(nes_test_pad&1)) start_selected();
-            return;
+            if(ok){start_selected();return;}
+            if(SHIELD&PAD_B)return;          /* B is back; nothing to leave here */
         }
     } else {
         menu_armed=1;

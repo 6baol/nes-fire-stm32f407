@@ -217,8 +217,8 @@ void NesMenu_Draw(const NesMenuState *m)
     fill(l->list_x,l->title_y+20u*l->title_scale,l->list_w,1,LINE);
     NesMenu_DrawSelection(m);
     fill(l->list_x,l->rule_y,l->list_w,1,LINE);
-    small(l->list_x,l->foot1_y,nes_screen_landscape?"UP/DN L/R  CAP SEARCH":"UP/DN SELECT  L/R PAGE  CAP SEARCH",MUTED,BG);
-    small(l->list_x,l->foot2_y,nes_screen_landscape?"KEY2/SW START  KEY1 SETUP":"KEY2/SW START  KEY1 SETTINGS  HOLD KEY1 LIBRARY",MUTED,BG);
+    small(l->list_x,l->foot1_y,nes_screen_landscape?"UP/DN MOVE  L/R PAGE  A OK  B BACK":"UP/DN SELECT  A OK  B BACK  SEL DOWN",MUTED,BG);
+    small(l->list_x,l->foot2_y,nes_screen_landscape?"KEY1 SETTINGS  KEY2 LIBRARY  CAP ROTATE":"KEY1 SETTINGS  KEY2 LIBRARY  CAP ROTATE",MUTED,BG);
     if(!m->audio_ok)small(l->w-72,l->foot2_y,"AUDIO OFF",ACCENT,BG);
     if(!m->touch_ok)small(l->w-72,l->foot1_y,"TOUCH OFF",MUTED,BG);
     NesMenu_Status("");

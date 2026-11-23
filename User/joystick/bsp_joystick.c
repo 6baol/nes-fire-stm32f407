@@ -107,9 +107,9 @@ static void process_pair(uint32_t now)
          4095-state.center_y : state.center_y);
     if (GAME_JOY_INVERT_X) x = -x;
     if (GAME_JOY_INVERT_Y) y = -y;
-    /* The panel can be turned a quarter, so the stick turns with it: a physical
-     * push to the right then still reads as right on the rotated screen. */
-    if (nes_screen_landscape) { float swapped=x; x=y; y=-swapped; }
+    /* The shield is mounted a quarter turn against the panel: portrait swaps
+     * the axes, the landscape view uses them as they come. */
+    if (!nes_screen_landscape) { float swapped=x; x=y; y=swapped; }
     length = sqrtf(x*x + y*y);
     if (length <= GAME_JOY_DEADZONE) { state.x = state.y = 0; return; }
     magnitude = (length-GAME_JOY_DEADZONE) / (1-GAME_JOY_DEADZONE);
