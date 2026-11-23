@@ -134,6 +134,30 @@ def main():
         assert h.call('NesLibrary_Poster',h.call('NesLibrary_Game',h.game_index(smb3+'.nes')))==0
     checks+=['cover truncation and CRC rejected']
 
+    # Runtime capture: the firmware writes a valid NCV1 from the live frame,
+    # the menu reads it back, and a second capture never overwrites it.
+    captured=dict(files)
+    captured['COVERTEST.nes']=make_rom(0,prg16=2,chr8=1)
+    n=SdArm(captured);assert n.boot()==0
+    indices=bytes(((x*3+y*5)&63) for y in range(240) for x in range(256))
+    runtime_pal=[(i*1097)&0xFFFF for i in range(64)]
+    n.u.mem_write(0x6c080000,indices)
+    n.u.mem_write(0x6c090000,struct.pack('<64H',*runtime_pal))
+    n.u.mem_write(0x6c091000,b'COVERTEST.nes\0')
+    assert n.call('NesLibrary_CoverExists',0x6c091000)==0
+    assert n.call('NesLibrary_SaveCover',0x6c091000,0x6c080000,0x6c090000)==0
+    assert n.call('NesLibrary_CoverExists',0x6c091000)==1
+    n.call('NesLibrary_EnterMenu')
+    g=n.call('NesLibrary_Game',n.game_index('COVERTEST.nes'));assert g
+    p=n.call('NesLibrary_Poster',g);assert p,'runtime cover not readable'
+    width,height=struct.unpack('<HH',n.u.mem_read(p+12,4))
+    assert (width,height)==(256,240)
+    packed=bytes(n.u.mem_read(n.r32(p+4),width*height))
+    pal=struct.unpack('<256H',n.u.mem_read(n.r32(p+8),512))
+    assert [pal[c] for c in packed]==[runtime_pal[c] for c in indices]
+    assert n.call('NesLibrary_SaveCover',0x6c091000,0x6c080000,0x6c090000)==1
+    checks.append('runtime start-screen capture writes a valid NCV1 and refuses to overwrite')
+
     with tempfile.TemporaryDirectory() as folder:
         path=Path(folder)/'cover.png'
         for width,height,full in ((3,5,False),(16,16,False),(16,16,True)):

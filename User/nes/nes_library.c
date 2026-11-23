@@ -1027,6 +1027,59 @@ static int cover_path(const char *path,char *out,unsigned cap)
     memcpy(out,path,len);memcpy(out+len,".COV",5);
     return 1;
 }
+int NesLibrary_CoverExists(const char *rom_path)
+{
+    char cover[NES_IMPORT_PATH_MAX+8];
+    char full[NES_PATH_MAX];
+    FIL file;
+    if(!sd_active)return 1; /* No card: runtime capture is a no-op. */
+    if(!rom_path||!rom_path[0]||!cover_path(rom_path,cover,sizeof(cover)))return 1;
+    snprintf(full,sizeof(full),"0:" NES_DIR "/%s",cover);
+    if(f_open(&file,full,FA_READ)!=FR_OK)return 0;
+    f_close(&file);
+    return 1;
+}
+int NesLibrary_SaveCover(const char *rom_path,const uint8_t *pixels,const uint16_t *palette)
+{
+    static const uint8_t zeros[384]={0};
+    char cover[NES_IMPORT_PATH_MAX+8];
+    char full[NES_PATH_MAX];
+    uint8_t header[24];
+    uint32_t crc=~0u;
+    unsigned i;
+    UINT wrote;
+    FIL file;
+    int failed=0;
+    if(!sd_active||!pixels||!palette)return -1;
+    if(!cover_path(rom_path,cover,sizeof(cover)))return -1;
+    snprintf(full,sizeof(full),"0:" NES_DIR "/%s",cover);
+    if(f_open(&file,full,FA_READ)==FR_OK){f_close(&file);return 1;}
+    /* 256 palette slots: the first 64 are the live NES palette, the rest
+     * stay black. Pixels are already 0..63 indices, so bits=8 is a direct
+     * copy with no quantization. */
+    crc=crc_step(crc,(const uint8_t*)palette,64u*2u);
+    crc=crc_step(crc,zeros,sizeof(zeros));
+    for(i=0;i<240u;i++)crc=crc_step(crc,pixels+i*256u,256u);
+    memset(header,0,sizeof(header));
+    memcpy(header,"NCV1",4);
+    header[5]=1;    /* width 256 low byte */
+    header[6]=240;  /* height 240 low byte */
+    header[8]=8;    /* 8-bit indices, count 256 */
+    header[11]=1;
+    put32(header+12,512u);
+    put32(header+16,240u*256u);
+    put32(header+20,~crc);
+    if(f_open(&file,full,FA_WRITE|FA_CREATE_ALWAYS)!=FR_OK)return -2;
+    if(f_write(&file,header,sizeof(header),&wrote)!=FR_OK||wrote!=sizeof(header))failed=1;
+    if(!failed&&(f_write(&file,palette,64u*2u,&wrote)!=FR_OK||wrote!=64u*2u))failed=1;
+    if(!failed&&(f_write(&file,zeros,sizeof(zeros),&wrote)!=FR_OK||wrote!=sizeof(zeros)))failed=1;
+    for(i=0;!failed&&i<240u;i++)
+        if(f_write(&file,pixels+i*256u,256u,&wrote)!=FR_OK||wrote!=256u)failed=1;
+    if(!failed&&f_sync(&file)!=FR_OK)failed=1;
+    if(f_close(&file)!=FR_OK)failed=1;
+    if(failed){f_unlink(full);return -3;}
+    return 0;
+}
 const NesPoster *NesLibrary_Poster(const NesRomImage *game)
 {
     uint32_t bytes,pal_bytes,pixel_bytes,count,pixels;uint8_t bits,flags;

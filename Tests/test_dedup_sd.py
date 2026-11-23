@@ -30,9 +30,15 @@ def main():
         famicom = nes / 'famicom'
         famicom.mkdir(parents=True)
         for name in ('A (Japan)', 'A (USA)', 'A (USA) (Rev 1)',
-                     'B (Japan)', 'B (USA)', 'C (Japan)'):
+                     'B (Japan)', 'B (USA)', 'C (Japan)',
+                     'D (USA)', 'D (Japan)', 'D (Hack)',
+                     'E (USA)', 'E (USA) (Translation)',
+                     'F (USA) (Beta)'):
             (famicom / f'{name}.nes').write_bytes(b'ROM ' + name.encode())
             (famicom / f'{name}.COV').write_bytes(b'COV ' + name.encode())
+        (famicom / 'hacks').mkdir()
+        (famicom / 'hacks' / 'G (USA).nes').write_bytes(b'hack G')
+        (famicom / 'G (USA).nes').write_bytes(b'retail G')
         (nes / 'ROOT.nes').write_bytes(b'root game')
         (nes / 'CATALOG.IDX').write_bytes(b'old catalog')
         (nes / 'CATALOG.BAK').write_bytes(b'old backup')
@@ -62,6 +68,14 @@ def main():
         assert not (famicom / 'B (Japan).nes').exists()
         assert (famicom / 'C (Japan).nes').exists()
         assert (nes / 'ROOT.nes').exists()
+        # Protected builds survive even when they share a retail title.
+        assert (famicom / 'D (USA).nes').exists()
+        assert not (famicom / 'D (Japan).nes').exists()
+        assert (famicom / 'D (Hack).nes').exists() and (famicom / 'D (Hack).COV').exists()
+        assert (famicom / 'E (USA) (Translation).nes').exists()
+        assert (famicom / 'F (USA) (Beta).nes').exists()
+        assert (famicom / 'G (USA).nes').exists()
+        assert (famicom / 'hacks' / 'G (USA).nes').exists()
         assert (nes / 'CATALOG.IDX.OLD').exists() and (nes / 'CATALOG.BAK.OLD').exists()
         assert not (nes / 'CATALOG.IDX').exists()
 

@@ -55,6 +55,13 @@ int NesLibrary_RecordPlayed(unsigned index);
 /* The arena is shared with cover loading only while no game is executing. */
 void NesLibrary_EnterMenu(void);
 const NesPoster *NesLibrary_Poster(const NesRomImage *game);
+/* Runtime poster capture. CoverExists returns 1 when a .COV is already
+ * present, or when there is no card (nothing to capture). SaveCover writes a
+ * 256x240 8-bit NCV1 from the live NES frame: palette is the 64-entry RGB565
+ * table, pixels are 0..63 indices. Returns 0 on success, 1 when the cover
+ * already exists, negative on I/O failure. Never rebuilds the catalog. */
+int NesLibrary_CoverExists(const char *rom_path);
+int NesLibrary_SaveCover(const char *rom_path,const uint8_t *pixels,const uint16_t *palette);
 int NesLibrary_Load(unsigned index);
 /* 0=native controls, 1=known Just Breed RPG stick/confirmation profile. */
 unsigned NesLibrary_InputProfile(void);

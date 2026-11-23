@@ -61,6 +61,15 @@ static uint8_t displayed_pixels[240][256]
     __attribute__((section(".bss.ARM.__at_0x10000000"),aligned(4)));
 static uint8_t displayed_valid[240];
 static uint16_t displayed_palette[64];
+/* Runtime poster capture: if a ROM has no .COV, the first start screen is
+ * saved as its default poster after ~3 seconds of gameplay. */
+#define COVER_CAPTURE_FRAMES 180u
+#define COVER_CAPTURE_FDS_FRAMES 360u
+#define COVER_CAPTURE_GIVEUP 900u
+static char cover_capture_path[NES_IMPORT_PATH_MAX+1];
+static uint8_t cover_capture_pending;
+static uint16_t cover_capture_tries;
+static uint32_t cover_capture_due;
 volatile uint32_t nes_lcd_pixels,nes_lcd_us,nes_lcd_updates_total,nes_lcd_pixels_total;
 static uint32_t lcd_frame_pixels,lcd_frame_cycles;
 /* SWD diagnostics: one requested RGB565 frame at 0x6c040000. No copy otherwise. */
@@ -429,6 +438,18 @@ static void submit_changed_span(unsigned line,unsigned first,unsigned end,
     lcd_frame_pixels+=out*(y1-y0);
 }
 
+static int cover_frame_ready(void)
+{
+    uint8_t base=displayed_pixels[0][0];
+    unsigned x,y,i,different=0;
+    for(i=0;i<64;i++)if(displayed_palette[i])break;
+    if(i==64)return 0; /* Palette still blank: the game has not drawn yet. */
+    for(y=0;y<240;y++)
+        for(x=0;x<256;x+=2)
+            if(displayed_pixels[y][x]!=base&&++different>=8)return 1;
+    return 0;
+}
+
 void NesPort_Line(int line,const uint8_t *pixels,const uint16_t *palette)
 {
     uint32_t started=DWT->CYCCNT;
@@ -467,6 +488,19 @@ void NesPort_Line(int line,const uint8_t *pixels,const uint16_t *palette)
         nes_lcd_pixels_total+=lcd_frame_pixels;
         if(lcd_frame_pixels)++nes_lcd_updates_total;
         nes_lcd_us=lcd_frame_cycles/(HAL_RCC_GetHCLKFreq()/1000000u);
+        if(app_state==APP_GAME&&cover_capture_pending&&
+           logic_frames>=cover_capture_due) {
+            if(cover_frame_ready()) {
+                int saved;
+                cover_capture_pending=0;
+                saved=NesLibrary_SaveCover(cover_capture_path,
+                                           displayed_pixels[0],displayed_palette);
+                printf("cover capture rc=%d file=%s\r\n",saved,cover_capture_path);
+            } else if(++cover_capture_tries>=COVER_CAPTURE_GIVEUP) {
+                cover_capture_pending=0;
+                printf("cover capture skipped (blank): %s\r\n",cover_capture_path);
+            }
+        }
     }
 }
 
@@ -617,6 +651,14 @@ static void start_selected(void)
     NesAudio_Mute(0);
     loaded=1;app_state=APP_GAME;
     rpg_direction=0;
+    cover_capture_pending=0;cover_capture_tries=0;cover_capture_path[0]='\0';
+    cover_capture_due=COVER_CAPTURE_FRAMES;
+    if(file[0]&&!NesLibrary_CoverExists(file)) {
+        snprintf(cover_capture_path,sizeof(cover_capture_path),"%s",file);
+        cover_capture_due=(strstr(file,".fds")||strstr(file,".FDS"))?
+                          COVER_CAPTURE_FDS_FRAMES:COVER_CAPTURE_FRAMES;
+        cover_capture_pending=1;
+    }
     game_chrome();
     draw_game_sides();
     restart_frame_clock();

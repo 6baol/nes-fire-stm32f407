@@ -11,6 +11,11 @@ Dry-run is the default.  --apply moves each removed ROM plus its same-stem
 .COV to a quarantine directory outside NES, remaps PREFS0/1.DAT path keys to
 the keeper, and renames CATALOG.IDX/.NEW/.BAK to .OLD so the firmware rescans.
 
+Hacks, translations, prototypes, betas, demos and bootlegs are protected:
+they are excluded from grouping and never moved, even when they share the
+retail title or live beside it.  Files under a hacks/ directory are protected
+as well.
+
     python tools/dedup_sd.py F:/NES/famicom
     python tools/dedup_sd.py F:/NES/famicom --apply
 """
@@ -23,6 +28,36 @@ from pathlib import Path
 import bucket_sd
 
 ROM_SUFFIXES = ('.nes', '.fds')
+
+# Files carrying these tags are hacks, translations, unreleased or bootleg
+# builds.  They often share the retail title, so they must never be grouped
+# with the original and moved away as a "duplicate".
+PROTECTED_TAGS = {
+    'hack', 'kaizo', 'kaoshi', 'translation', 'pirate', 'bootleg', 'unl',
+    'proto', 'beta', 'demo', 'homebrew', 'patch', 'trainer', 'sample',
+}
+PROTECTED_RE = re.compile(r'\[h\d*\]|\[h[ab]\]', re.IGNORECASE)
+TRANSLATION_RE = re.compile(
+    r't[+-]?(eng|chi|chinese|jpn|japanese|rus|ger|fre|spa|ita|kor|por|dut|swe)$',
+    re.IGNORECASE)
+
+
+def is_protected(path):
+    """True for hacks/translations/betas that must survive a dedup run."""
+    lowered = {part.lower() for part in path.parts}
+    if 'hacks' in lowered or 'hack' in lowered:
+        return True
+    if PROTECTED_RE.search(path.stem):
+        return True
+    for match in re.findall(r'\(([^)]*)\)|\[([^\]]*)\]', path.stem):
+        tag = (match[0] or match[1]).strip().lower()
+        if not tag:
+            continue
+        if tag in PROTECTED_TAGS or TRANSLATION_RE.match(tag):
+            return True
+        if tag.startswith(('hack', 'kaizo', 'translat')):
+            return True
+    return False
 
 
 def english_title(path):
@@ -100,6 +135,12 @@ def main():
     if not roms:
         raise SystemExit('No .nes/.fds files under the source directory.')
 
+    protected = [p for p in roms if is_protected(p)]
+    roms = [p for p in roms if not is_protected(p)]
+    if not roms:
+        print(f'No unprotected ROMs under {source}; nothing to dedup.')
+        return
+
     groups = {}
     for rom in roms:
         groups.setdefault(normalized(english_title(rom)), []).append(rom)
@@ -146,6 +187,7 @@ def main():
         print(json.dumps({
             'source': str(source),
             'roms': len(roms),
+            'protected': [str(p.relative_to(source)) for p in protected],
             'titles': len(groups),
             'duplicate_groups': len(dup_groups),
             'keep': len(keepers),
@@ -165,6 +207,10 @@ def main():
     print(f'source: {source}')
     print(f'roms: {len(roms)}  english titles: {len(groups)}  '
           f'duplicate groups: {len(dup_groups)}  keep: {len(keepers)}  remove: {len(removed)}')
+    if protected:
+        print(f'  protected (hack/translation/beta), left untouched: {len(protected)}')
+        for name in protected[:8]:
+            print(f'    {name.relative_to(source)}')
     if missing_covers:
         print(f'  removed files without a matching .COV: {len(missing_covers)}')
         for name in missing_covers[:8]:

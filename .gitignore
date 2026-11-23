@@ -21,6 +21,8 @@ Release/*.o
 Release/*disasm*.txt
 Release/SD_ROOT/
 Release/*_before_v*/
+Release/gui/
+build/gui/
 Tests/output/
 Tests/nes_output/
 Tests/__pycache__/
