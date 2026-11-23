@@ -71,9 +71,18 @@ NesFire 是一个运行在 **野火 STM32F407ZGT6 霸天虎 V2** 上的 NES / Fa
 
 ![界面布局](Doc/images/ui-layout.png)
 
+### 实机界面
+
+下面都是设备实际 LCD 输出，由离线 ARM 渲染生成（不接板子，也不是电脑模拟器窗口截图）：
+
 <p align="center">
-  <img src="Doc/images/ui-settings-landscape.png" width="49%" alt="横屏设置页">
-  <img src="Doc/images/ui-screen-landscape.png" width="49%" alt="屏幕设置页">
+  <img src="Doc/images/device-menu-portrait.png" width="300" alt="竖屏菜单">
+  <img src="Doc/images/device-menu-landscape.png" width="520" alt="横屏菜单">
+</p>
+
+<p align="center">
+  <img src="Doc/images/device-settings-portrait.png" width="300" alt="竖屏设置页">
+  <img src="Doc/images/device-settings-landscape.png" width="520" alt="横屏设置页">
 </p>
 
 ### 声音：不是“能响就行”
