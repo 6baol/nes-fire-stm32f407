@@ -1,6 +1,6 @@
 ﻿{
-    "version":  "0.44-landscape",
-    "git_commit":  "fe364bd5ad2e81f561286c267d32d5e8631e38c1",
+    "version":  "0.45-landmenu",
+    "git_commit":  "ed9ebbe6a8015c1985b92663d55c462d6281495c",
     "source_dirty":  true,
     "target":  "STM32F407ZGT6 / Batianhu V2 / 480x800 MCU LCD",
     "compiler":  "Arm Compiler 6.24 (Keil project selection)",
@@ -10,7 +10,7 @@
     "storage_mode":  "SD library; first game embedded as fallback",
     "embedded_game_count":  1,
     "wiring":  "VRx=PA4 (CN3-25), VRy=PA6 (CN3-21), SW=PB7 (CN3-23), 3V3/GND; camera disconnected",
-    "firmware_prefix":  "NesFire_v0.44-landscape",
+    "firmware_prefix":  "NesFire_v0.45-landmenu",
     "rom":  {
                 "name":  "smb.nes",
                 "mapper":  0,
@@ -71,25 +71,25 @@
                           ]
             },
     "files":  {
-                  "NesFire_v0.44-landscape.hex":  {
-                                                      "bytes":  541525,
-                                                      "sha256":  "2e1198ca3a98177a659767c8726e8d877b7bd5a94c9ae3d2f136aa91885d0000"
-                                                  },
-                  "NesFire_v0.44-landscape.bin":  {
-                                                      "bytes":  192512,
-                                                      "sha256":  "842ae32f8e1a89743e585eebd4cc8660d8ed8425b0f9dea4630d8b34c5676fc0"
-                                                  },
-                  "NesFire_v0.44-landscape.axf":  {
-                                                      "bytes":  887264,
-                                                      "sha256":  "f51c65cde0a928270a57c3fecf97e2bc6a3ff409d559353ac9320741ecbe60a9"
-                                                  },
-                  "NesFire_v0.44-landscape.map":  {
-                                                      "bytes":  932160,
-                                                      "sha256":  "8bd1674973aa51c8134fb18d51e097275fd99369218d45577612e1cd813e8408"
-                                                  }
+                  "NesFire_v0.45-landmenu.hex":  {
+                                                     "bytes":  541525,
+                                                     "sha256":  "27de150364605027e7d52af8808049a5299a983307f794f4aceb7111f5e60223"
+                                                 },
+                  "NesFire_v0.45-landmenu.bin":  {
+                                                     "bytes":  192512,
+                                                     "sha256":  "af17e2cc99bb231a5fc12cbd48d3137c571e52966b5227afa8f6aecdab196d0f"
+                                                 },
+                  "NesFire_v0.45-landmenu.axf":  {
+                                                     "bytes":  888124,
+                                                     "sha256":  "08725db3b458f773b2451919d9cc480db4d2d4d85dbf9b60aa30bcde7833963a"
+                                                 },
+                  "NesFire_v0.45-landmenu.map":  {
+                                                     "bytes":  932499,
+                                                     "sha256":  "d72b6175f7f90df5fdf069cbfd123122884bb898d6e47ced0cb1720cdbd025e0"
+                                                 }
               },
     "linker_bytes":  {
-                         "code":  133080,
+                         "code":  133188,
                          "read_only":  57716,
                          "read_write":  296,
                          "zero_initialized":  166696

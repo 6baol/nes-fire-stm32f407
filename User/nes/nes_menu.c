@@ -29,14 +29,14 @@ typedef struct {
     unsigned count_y;
     unsigned name_y;             /* detail name under the cover */
     unsigned cover_x,cover_y,cover_w,cover_h;
-    unsigned list_x,list_y,list_w,row_h,text_off;
+    unsigned list_x,list_y,list_w,row_h,text_off,rows;
     unsigned info_y;
     unsigned rule_y,foot1_y,foot2_y,status_y;
     unsigned cols;               /* usable columns in a list row */
 } UiLayout;
 
-static const UiLayout PORTRAIT={480,800, 12,28,3, 36, 484, 12,104,456,360, 12,550,456,52,64, 530, 726,742,758,774, 404};
-static const UiLayout LANDSCAPE={800,480, 16,6,2, 8, 36, 396,56,388,291, 16,92,360,46,30, 330, 404,414,432,452, 340};
+static const UiLayout PORTRAIT={480,800, 12,28,3, 36, 484, 12,104,456,360, 12,550,456,52,64,3, 530, 726,742,758,774, 404};
+static const UiLayout LANDSCAPE={800,480, 16,6,2, 8, 36, 396,56,388,291, 16,92,360,56,30,4, 322, 380,392,412,440, 330};
 
 static const UiLayout *ui(void)
 {return nes_screen_landscape?&LANDSCAPE:&PORTRAIT;}
@@ -73,7 +73,7 @@ void NesMenu_Init(NesMenuState *m,uint16_t count,uint8_t audio_ok,uint8_t touch_
 {m->count=count;m->index=0;m->first=0;m->audio_ok=audio_ok;m->touch_ok=touch_ok;}
 int NesMenu_Move(NesMenuState *m,int dir)
 {
-    int next;
+    int next;unsigned rows=ui()->rows;
     if(!m->count || !dir)return 0;
     next=(int)m->index+dir;
     if(next<0)next=m->count-1;
@@ -81,12 +81,12 @@ int NesMenu_Move(NesMenuState *m,int dir)
     if(next==m->index)return 0;
     m->index=(int16_t)next;
     if(next<m->first)m->first=(uint16_t)next;
-    else if(next>=m->first+NES_MENU_ROWS)m->first=(uint16_t)(next-NES_MENU_ROWS+1);
+    else if(next>=(int)(m->first+rows))m->first=(uint16_t)(next-(int)rows+1);
     return 1;
 }
 int NesMenu_Page(NesMenuState *m,int dir,unsigned step)
 {
-    int next;
+    int next;unsigned rows=ui()->rows;
     if(!m->count || !dir)return 0;
     next=(int)m->index+(int)dir*(int)step;
     if(next<0)next=0;
@@ -94,7 +94,7 @@ int NesMenu_Page(NesMenuState *m,int dir,unsigned step)
     if(next==m->index)return 0;
     m->index=(int16_t)next;
     if(next<m->first)m->first=(uint16_t)next;
-    else if(next>=m->first+NES_MENU_ROWS)m->first=(uint16_t)(next-NES_MENU_ROWS+1);
+    else if(next>=(int)(m->first+rows))m->first=(uint16_t)(next-(int)rows+1);
     return 1;
 }
 /* Text wraps at word boundaries; game names are never abbreviated here.
@@ -151,14 +151,17 @@ static void detail_header(const NesMenuState *m)
     const UiLayout *l=ui();
     char count[16];
     /* Update only the name and the index; the cover may follow later. */
+    /* Landscape has no room for a second name line: the highlighted row
+     * already carries the title, so only the counter is updated there. */
+    if(nes_screen_landscape)return;
     fill(l->list_x,l->name_y,l->list_w,CjkFont_Cell()+4,BG);
     fill(l->w-108,l->count_y,96,16,BG);
     snprintf(count,sizeof(count),"%u/%u",m->count?(unsigned)m->index+1:0,(unsigned)m->count);
     small((uint16_t)(l->w-12u-8u*(unsigned)strlen(count)),l->count_y,count,MUTED,BG);
-    if(!m->count){full_name(l->list_x,l->name_y,l->list_w,l->cols,"NO GAMES",BG,0);return;}
+    if(!m->count){full_name(l->list_x,l->name_y,l->list_w,l->cols/CjkFont_Cell(),"NO GAMES",BG,0);return;}
     {
         const NesRomImage *game=NesLibrary_Game((unsigned)m->index);
-        if(game)full_name(l->list_x,l->name_y,l->list_w,l->cols,game->label,BG,0);
+        if(game)full_name(l->list_x,l->name_y,l->list_w,l->cols/CjkFont_Cell(),game->label,BG,0);
     }
 }
 static void detail_cover(const NesMenuState *m)
@@ -176,7 +179,7 @@ static void row_draw(const NesMenuState *m,unsigned row)
 {
     const UiLayout *l=ui();
     unsigned y=l->list_y+row*l->row_h,slot=(unsigned)m->first+row;
-    unsigned cell=CjkFont_Cell(),columns=l->cols;
+    unsigned cell=CjkFont_Cell(),columns=l->cols/cell;
     uint16_t color=BG;
     fill(l->list_x,y,l->list_w,l->row_h-4,BG);
     if(slot>=m->count)return;
@@ -190,9 +193,9 @@ static void row_draw(const NesMenuState *m,unsigned row)
     }
 }
 void NesMenu_DrawSelection(const NesMenuState *m)
-{unsigned i;detail_draw(m);for(i=0;i<NES_MENU_ROWS;i++)row_draw(m,i);}
+{unsigned i,rows=ui()->rows;detail_draw(m);for(i=0;i<rows;i++)row_draw(m,i);}
 void NesMenu_DrawRows(const NesMenuState *m)
-{unsigned i;detail_header(m);for(i=0;i<NES_MENU_ROWS;i++)row_draw(m,i);}
+{unsigned i,rows=ui()->rows;detail_header(m);for(i=0;i<rows;i++)row_draw(m,i);}
 void NesMenu_DrawCover(const NesMenuState *m){detail_cover(m);}
 void NesMenu_Info(const char *msg)
 {
