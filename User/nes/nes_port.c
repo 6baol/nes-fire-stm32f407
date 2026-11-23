@@ -349,13 +349,12 @@ static void submit_changed_span(unsigned line,unsigned first,unsigned end,
     for(group=first;group<end;group++) {
         src=group*8;
         if(wide) {
-            for(x=0;x<7;x++) {
+            /* 640x480 centred in the 800 wide panel: eight pixels span twenty
+             * columns, alternating three and two so the stretch stays even. */
+            for(x=0;x<8;x++) {
                 uint16_t color=palette[pixels[src+x]&63];
-                row[out++]=color;row[out++]=color;row[out++]=color;
-            }
-            {
-                uint16_t color=palette[pixels[src+7]&63];
-                row[out++]=color;row[out++]=color;row[out++]=color;row[out++]=color;
+                if(x&1){row[out++]=color;row[out++]=color;}
+                else {row[out++]=color;row[out++]=color;row[out++]=color;}
             }
         } else {
             for(x=0;x<7;x++) {
@@ -367,7 +366,7 @@ static void submit_changed_span(unsigned line,unsigned first,unsigned end,
         }
     }
     if(wide) {
-        lcd_open_window((uint16_t)(first*25u),(uint16_t)y0,(uint16_t)out,(uint16_t)(y1-y0));
+        lcd_open_window((uint16_t)(80u+first*20u),(uint16_t)y0,(uint16_t)out,(uint16_t)(y1-y0));
         for(y=y0;y<y1;y++)
             for(x=0;x<out;x++)LCD_WRITE_DATA(row[x]);
         lcd_frame_pixels+=out*(y1-y0);
@@ -726,7 +725,7 @@ static void menu_poll(uint32_t now)
     const JoystickState *j=Joystick_Get();
     int dir=0,page=0,cy=0,cx=0;
     /* The cover is read from the card only after the stick has settled. */
-    if(cover_pending&&(int32_t)(now-cover_due)>=0){cover_pending=0;NesMenu_DrawCover(&menu);menu_info(1);}
+    if(cover_pending&&(int32_t)(now-cover_due)>=0){cover_pending=0;NesMenu_DrawCover(&menu);menu_info(0);}
     {
         /* Capacitive key flips the panel between portrait and landscape. */
         const TouchpadState *cap=Touchpad_Get();
