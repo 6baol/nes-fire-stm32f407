@@ -1,6 +1,6 @@
 ﻿{
-    "version":  "0.49-fix",
-    "git_commit":  "fb855f012ee12235d9b61e486752c82c6ce3a843",
+    "version":  "0.50-mode7",
+    "git_commit":  "6c8fd4d4ce6897abcbdf4691b23df4b9bd7097f2",
     "source_dirty":  true,
     "target":  "STM32F407ZGT6 / Batianhu V2 / 480x800 MCU LCD",
     "compiler":  "Arm Compiler 6.24 (Keil project selection)",
@@ -10,7 +10,7 @@
     "storage_mode":  "SD library; first game embedded as fallback",
     "embedded_game_count":  1,
     "wiring":  "VRx=PA4 (CN3-25), VRy=PA6 (CN3-21), SW=PB7 (CN3-23), 3V3/GND; camera disconnected",
-    "firmware_prefix":  "NesFire_v0.49-fix",
+    "firmware_prefix":  "NesFire_v0.50-mode7",
     "rom":  {
                 "name":  "smb.nes",
                 "mapper":  0,
@@ -71,22 +71,22 @@
                           ]
             },
     "files":  {
-                  "NesFire_v0.49-fix.hex":  {
-                                                "bytes":  541525,
-                                                "sha256":  "1e4809e9ee467931c9c66184fa6284e7d6b6ce7d19aeccc45c7a5ab778a2a1a1"
-                                            },
-                  "NesFire_v0.49-fix.bin":  {
-                                                "bytes":  192512,
-                                                "sha256":  "7442d024b6bb2b8dc84d92a279f14698f4c34d83c21ad2bc1a900783a87ab453"
-                                            },
-                  "NesFire_v0.49-fix.axf":  {
-                                                "bytes":  891136,
-                                                "sha256":  "bc02289b8f1d88417d28fd02b887ba542a24ee80107714a55c5abc71de4f5b2c"
-                                            },
-                  "NesFire_v0.49-fix.map":  {
-                                                "bytes":  933811,
-                                                "sha256":  "e3ad7697acef79736e7d0607d4f0a1c770e3eaed9d9744b7b2d31b04d8baf9bc"
-                                            }
+                  "NesFire_v0.50-mode7.hex":  {
+                                                  "bytes":  541525,
+                                                  "sha256":  "7638351f54447752f0fcee95573611a7168804838a7e52ceeb91a0b617122f6a"
+                                              },
+                  "NesFire_v0.50-mode7.bin":  {
+                                                  "bytes":  192512,
+                                                  "sha256":  "db954deafa7d4ce11c542662b38dfcff106b843266579d4c3863e8aaf4e0bc3c"
+                                              },
+                  "NesFire_v0.50-mode7.axf":  {
+                                                  "bytes":  891136,
+                                                  "sha256":  "77166614c320829a8cfea33a098c0947b39f86de755f5c836fd3412df2ad9307"
+                                              },
+                  "NesFire_v0.50-mode7.map":  {
+                                                  "bytes":  933811,
+                                                  "sha256":  "e3ad7697acef79736e7d0607d4f0a1c770e3eaed9d9744b7b2d31b04d8baf9bc"
+                                              }
               },
     "linker_bytes":  {
                          "code":  133772,
