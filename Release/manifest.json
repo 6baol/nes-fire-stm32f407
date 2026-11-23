@@ -1,6 +1,6 @@
 ﻿{
-    "version":  "0.54-stick",
-    "git_commit":  "d2efede4eb47bedf2eac259e67577baace87cdba",
+    "version":  "0.55-landgame",
+    "git_commit":  "aa834499822d49c2d6d48940df8ae23e4e04fcbc",
     "source_dirty":  true,
     "target":  "STM32F407ZGT6 / Batianhu V2 / 480x800 MCU LCD",
     "compiler":  "Arm Compiler 6.24 (Keil project selection)",
@@ -10,7 +10,7 @@
     "storage_mode":  "SD library; first game embedded as fallback",
     "embedded_game_count":  1,
     "wiring":  "VRx=PA4 (CN3-25), VRy=PA6 (CN3-21), SW=PB7 (CN3-23), 3V3/GND; camera disconnected",
-    "firmware_prefix":  "NesFire_v0.54-stick",
+    "firmware_prefix":  "NesFire_v0.55-landgame",
     "rom":  {
                 "name":  "smb.nes",
                 "mapper":  0,
@@ -71,25 +71,25 @@
                           ]
             },
     "files":  {
-                  "NesFire_v0.54-stick.hex":  {
-                                                  "bytes":  544405,
-                                                  "sha256":  "9eac5dfc4ca02be0bb92223583f44c98a79d411cf5fa0515b295e2a7293fb96c"
-                                              },
-                  "NesFire_v0.54-stick.bin":  {
-                                                  "bytes":  193536,
-                                                  "sha256":  "3b83c16c731cd859c98ac9a8f59625cab1ede86ca4be5bd93b8f6eec953d1a5a"
-                                              },
-                  "NesFire_v0.54-stick.axf":  {
-                                                  "bytes":  892600,
-                                                  "sha256":  "e17543b65073bc4f468ac7e646f7b9b830624be6aec62ae8a9f464152c2fdbf5"
-                                              },
-                  "NesFire_v0.54-stick.map":  {
-                                                  "bytes":  934459,
-                                                  "sha256":  "ed7371898f9b97d89d616b5c083b3fa129092e85cdb80ac5384f6a6e5ed7da46"
-                                              }
+                  "NesFire_v0.55-landgame.hex":  {
+                                                     "bytes":  544405,
+                                                     "sha256":  "159dcee981d9cf4d7ca900f72817bed721418ae882d94e1e8515cdace4ef2fa6"
+                                                 },
+                  "NesFire_v0.55-landgame.bin":  {
+                                                     "bytes":  193536,
+                                                     "sha256":  "23b24a03667a02df7d2091cbeda0874e4fc584cc83ce9f330a9e1ded89880f84"
+                                                 },
+                  "NesFire_v0.55-landgame.axf":  {
+                                                     "bytes":  894232,
+                                                     "sha256":  "616443617c6cddeb1eaa15ef81ecd119f353a6d245ebfc2d39e9cc2772e40f27"
+                                                 },
+                  "NesFire_v0.55-landgame.map":  {
+                                                     "bytes":  934616,
+                                                     "sha256":  "02c9b52af1439063d50e2642bfb148691bd923aab2da6475edd60ad84227b0ac"
+                                                 }
               },
     "linker_bytes":  {
-                         "code":  133832,
+                         "code":  134504,
                          "read_only":  57712,
                          "read_write":  296,
                          "zero_initialized":  166704

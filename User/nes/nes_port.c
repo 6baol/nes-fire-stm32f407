@@ -352,6 +352,18 @@ static void submit_changed_span(unsigned line,unsigned first,unsigned end,
         }
         row[out++]=palette[pixels[src+7]&63];
     }
+    if(nes_screen_landscape) {
+        /* The display is turned a quarter, so a source line becomes a vertical
+         * strip: 480 pixels tall, two columns wide, centred in the 800 wide
+         * panel. Image row 0 sits at the right edge and image x grows downwards,
+         * which is the counter-clockwise turn of the portrait mapping. */
+        unsigned x0=(800u-out)/2u+(450u-y1);
+        lcd_open_window((uint16_t)x0,0,(uint16_t)(y1-y0),(uint16_t)out);
+        for(x=0;x<out;x++)
+            for(y=y0;y<y1;y++)LCD_WRITE_DATA(row[x]);
+        lcd_frame_pixels+=out*(y1-y0);
+        return;
+    }
     lcd_open_window((uint16_t)(first*15),(uint16_t)(112+y0),(uint16_t)out,(uint16_t)(y1-y0));
     for(y=y0;y<y1;y++)
         for(x=0;x<out;x++)LCD_WRITE_DATA(row[x]);
