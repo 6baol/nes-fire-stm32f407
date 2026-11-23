@@ -121,12 +121,14 @@ volatile uint8_t nes_screen_landscape;
  * the 90 degree counter-clockwise view the menus and the game are laid out for. */
 uint8_t NesPort_SetLandscape(uint8_t on)
 {
+    static uint8_t applied;
     on=on?1:0;
-    if(on==nes_screen_landscape)return nes_screen_landscape;
+    if(on==applied)return applied;
+    applied=on;
     nes_screen_landscape=on;
     lcd_gram_scan(on?3:2);
     lcd_fill_color(0,0,(uint16_t)(on?800u:480u),(uint16_t)(on?480u:800u),BLACK);
-    return nes_screen_landscape;
+    return applied;
 }
 uint8_t NesPort_Landscape(void)
 {
@@ -254,6 +256,16 @@ void NesPort_Input(void)
 {
     uint32_t now=HAL_GetTick();uint8_t pad=0,aa,bb,ss;
     const JoystickState *j;
+    /* The landscape flag is a plain variable so SWD or the settings page can
+     * flip it; the panel scan mode is applied here, once. */
+    {
+        static uint8_t watched;
+        if(nes_screen_landscape!=watched){
+            watched=nes_screen_landscape;
+            NesPort_SetLandscape(watched);
+            if(app_state==APP_MENU)NesMenu_Draw(&menu);
+        }
+    }
     pad_stable=pad_poll(now);
     Joystick_Poll(now);j=Joystick_Get();
     Touchpad_Poll(now);

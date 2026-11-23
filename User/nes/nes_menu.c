@@ -1,4 +1,7 @@
-/* 480x800 cover library. Art stays in Flash; no menu framebuffer. */
+/* Cover library drawn straight to the panel; no menu framebuffer.
+ * Two layouts share one set of drawing routines: the portrait 480x800 one and
+ * the 800x480 landscape one, which puts the list on the left and the cover on
+ * the right. nes_screen_landscape selects between them. */
 #include <stdio.h>
 #include <string.h>
 #include "nes_menu.h"
@@ -17,9 +20,27 @@
 #define MUTED 0x9D5B
 #define ACCENT 0xFE8B
 #define ACTIVE 0x31F4
-#define ROW_TOP 550
-#define ROW_H 52
-#define STATUS_Y 774
+
+extern volatile uint8_t nes_screen_landscape;
+
+typedef struct {
+    unsigned w,h;
+    unsigned title_x,title_y,title_scale;
+    unsigned count_y;
+    unsigned name_y;             /* detail name under the cover */
+    unsigned cover_x,cover_y,cover_w,cover_h;
+    unsigned list_x,list_y,list_w,row_h,text_off;
+    unsigned info_y;
+    unsigned rule_y,foot1_y,foot2_y,status_y;
+    unsigned cols;               /* usable columns in a list row */
+} UiLayout;
+
+static const UiLayout PORTRAIT={480,800, 12,28,3, 36, 484, 12,104,456,360, 12,550,456,52,64, 530, 726,742,758,774, 404};
+static const UiLayout LANDSCAPE={800,480, 16,6,2, 8, 36, 396,56,388,291, 16,92,360,46,30, 330, 404,414,432,452, 340};
+
+static const UiLayout *ui(void)
+{return nes_screen_landscape?&LANDSCAPE:&PORTRAIT;}
+
 static void text(unsigned x,unsigned y,const char *s,uint16_t fg,uint16_t bg,unsigned scale)
 {PixelFont_Text((uint16_t)x,(uint16_t)(y+4),s,fg,bg,scale);}
 static void small(unsigned x,unsigned y,const char *s,uint16_t fg,uint16_t bg)
@@ -92,50 +113,52 @@ static unsigned split_line(const char *source,unsigned limit,char *line)
     while(source[n]==' ')++n;
     return n;
 }
-static void full_name(unsigned x,unsigned y,unsigned columns,const char *name,uint16_t bg,int centered)
+static void full_name(unsigned x,unsigned y,unsigned width,unsigned columns,const char *name,uint16_t bg,int centered)
 {
     char line[NES_IMPORT_LABEL_MAX+1];unsigned used=0,row=0;
     unsigned cell=CjkFont_Cell();
     while(name[used] && row<2){
         unsigned n=split_line(name+used,columns,line);
-        unsigned start=centered?(480u-Utf8_Length(line)*cell)/2u:x;
+        unsigned start=centered?(unsigned)((int)width-(int)(Utf8_Length(line)*cell))/2u:x;
         Utf8_Draw((uint16_t)start,(uint16_t)(y+row*cell),line,INK,bg);used+=n;++row;
     }
 }
 static void fallback_cover(int is_pad)
 {
-    fill(12,104,456,360,PANEL);
-    if(is_pad){medium(160,150,"CONTROLLER",INK,PANEL);medium(208,178,"TEST",INK,PANEL);}
-    else medium(176,166,"NO COVER",MUTED,PANEL);
-    card(140,254,200,102,INK);
-    fill(156,282,58,22,BG);fill(174,264,22,58,BG);fill(176,284,18,18,MUTED);
-    card(260,282,24,24,ACCENT);card(294,282,24,24,0xE986);
-    fill(228,326,20,5,MUTED);fill(256,326,20,5,MUTED);
+    const UiLayout *l=ui();
+    unsigned x=l->cover_x,y=l->cover_y,w=l->cover_w,h=l->cover_h;
+    fill(x,y,w,h,PANEL);
+    if(is_pad){
+        medium(x+w/2-80,y+h/2-40,"CONTROLLER",INK,PANEL);
+        medium(x+w/2-32,y+h/2-12,"TEST",INK,PANEL);
+    } else medium(x+w/2-64,y+h/2-8,"NO COVER",MUTED,PANEL);
 }
 static void cover_draw(const NesRomImage *game)
 {
+    const UiLayout *l=ui();
     const NesPoster *p=NesLibrary_Poster(game);
     if(!p){fallback_cover(!strcmp(game->file,"controller_test.nes"));return;}
-    fill(12,104,456,360,p->background);
+    fill(l->cover_x,l->cover_y,l->cover_w,l->cover_h,p->background);
     /* Wide title captures; portrait posters retain their proportions. */
     if(p->full_art) {
-        unsigned w=360u*p->width/p->height,h=360;
-        if(w>456){w=456;h=456u*p->height/p->width;}
-        bitmap_scaled((480-w)/2,104+(360-h)/2,w,h,p);
-    } else bitmap_scaled(12,104,456,360,p);
+        unsigned w=l->cover_h*p->width/p->height,h=l->cover_h;
+        if(w>l->cover_w){w=l->cover_w;h=l->cover_w*p->height/p->width;}
+        bitmap_scaled(l->cover_x+(l->cover_w-w)/2,l->cover_y+(l->cover_h-h)/2,w,h,p);
+    } else bitmap_scaled(l->cover_x,l->cover_y,l->cover_w,l->cover_h,p);
 }
 static void detail_header(const NesMenuState *m)
 {
+    const UiLayout *l=ui();
     char count[16];
     /* Update only the name and the index; the cover may follow later. */
-    fill(12,484,456,48,BG);
-    fill(380,36,88,16,BG);
+    fill(l->list_x,l->name_y,l->list_w,CjkFont_Cell()+4,BG);
+    fill(l->w-108,l->count_y,96,16,BG);
     snprintf(count,sizeof(count),"%u/%u",m->count?(unsigned)m->index+1:0,(unsigned)m->count);
-    small((uint16_t)(468u-8u*(unsigned)strlen(count)),36,count,MUTED,BG);
-    if(!m->count){full_name(0,484,480u/CjkFont_Cell(),"NO GAMES",BG,1);return;}
+    small((uint16_t)(l->w-12u-8u*(unsigned)strlen(count)),l->count_y,count,MUTED,BG);
+    if(!m->count){full_name(l->list_x,l->name_y,l->list_w,l->cols,"NO GAMES",BG,0);return;}
     {
         const NesRomImage *game=NesLibrary_Game((unsigned)m->index);
-        if(game)full_name(0,484,480u/CjkFont_Cell(),game->label,BG,1);
+        if(game)full_name(l->list_x,l->name_y,l->list_w,l->cols,game->label,BG,0);
     }
 }
 static void detail_cover(const NesMenuState *m)
@@ -151,18 +174,19 @@ static void detail_draw(const NesMenuState *m)
 }
 static void row_draw(const NesMenuState *m,unsigned row)
 {
-    unsigned y=ROW_TOP+row*ROW_H,slot=(unsigned)m->first+row;
-    unsigned cell=CjkFont_Cell(),columns=404u/cell;
+    const UiLayout *l=ui();
+    unsigned y=l->list_y+row*l->row_h,slot=(unsigned)m->first+row;
+    unsigned cell=CjkFont_Cell(),columns=l->cols;
     uint16_t color=BG;
-    fill(12,y,456,48,BG);
+    fill(l->list_x,y,l->list_w,l->row_h-4,BG);
     if(slot>=m->count)return;
-    if(slot==(unsigned)m->index){color=ACTIVE;fill(12,y,456,48,color);medium(40,y+(48u-16u)/2,">",ACCENT,color);}
+    if(slot==(unsigned)m->index){color=ACTIVE;fill(l->list_x,y,l->list_w,l->row_h-4,color);medium(l->list_x+4,y+(l->row_h-4u-16u)/2,">",ACCENT,color);}
     {
         const NesRomImage *game=NesLibrary_Game(slot);
         const char *label=game?game->label:"ENTRY UNAVAILABLE";
         unsigned lines=Utf8_Length(label)>columns?2u:1u;
-        unsigned top=y+(48u-lines*cell)/2u;
-        full_name(76,top,columns,label,color,0);
+        unsigned top=y+((l->row_h-4u)-lines*cell)/2u;
+        full_name(l->list_x+l->text_off,top,l->list_w-l->text_off,columns,label,color,0);
     }
 }
 void NesMenu_DrawSelection(const NesMenuState *m)
@@ -171,19 +195,29 @@ void NesMenu_DrawRows(const NesMenuState *m)
 {unsigned i;detail_header(m);for(i=0;i<NES_MENU_ROWS;i++)row_draw(m,i);}
 void NesMenu_DrawCover(const NesMenuState *m){detail_cover(m);}
 void NesMenu_Info(const char *msg)
-{fill(12,530,456,16,BG);if(msg&&msg[0])small(12,530,msg,MUTED,BG);}
+{
+    const UiLayout *l=ui();
+    fill(l->list_x,l->info_y,l->list_w,16,BG);
+    if(msg&&msg[0])small(l->list_x,l->info_y,msg,MUTED,BG);
+}
 void NesMenu_Status(const char *msg)
-{fill(12,STATUS_Y,456,14,BG);if(msg && msg[0])small(12,STATUS_Y,msg,ACCENT,BG);}
+{
+    const UiLayout *l=ui();
+    fill(l->list_x,l->status_y,l->list_w,14,BG);
+    if(msg && msg[0])small(l->list_x,l->status_y,msg,ACCENT,BG);
+}
 void NesMenu_Draw(const NesMenuState *m)
 {
-    fill(0,0,480,800,BG);
-    text(12,28,"NES FIRE",INK,BG,3);fill(12,80,456,1,LINE);
+    const UiLayout *l=ui();
+    fill(0,0,l->w,l->h,BG);
+    text(l->title_x,l->title_y,"NES FIRE",INK,BG,l->title_scale);
+    fill(l->list_x,l->title_y+20u*l->title_scale,l->list_w,1,LINE);
     NesMenu_DrawSelection(m);
-    fill(12,726,456,1,LINE);
-    small(24,742,"UP/DN SELECT  L/R PAGE  CAP SEARCH",MUTED,BG);
-    small(24,758,"KEY2/SW START  KEY1 SETTINGS  HOLD KEY1 LIBRARY",MUTED,BG);
-    if(!m->audio_ok)small(12,732,"AUDIO OFF",ACCENT,BG);
-    if(!m->touch_ok)small(396,732,"TOUCH OFF",MUTED,BG);
+    fill(l->list_x,l->rule_y,l->list_w,1,LINE);
+    small(l->list_x,l->foot1_y,nes_screen_landscape?"UP/DN L/R  CAP SEARCH":"UP/DN SELECT  L/R PAGE  CAP SEARCH",MUTED,BG);
+    small(l->list_x,l->foot2_y,nes_screen_landscape?"KEY2/SW START  KEY1 SETUP":"KEY2/SW START  KEY1 SETTINGS  HOLD KEY1 LIBRARY",MUTED,BG);
+    if(!m->audio_ok)small(l->w-72,l->foot2_y,"AUDIO OFF",ACCENT,BG);
+    if(!m->touch_ok)small(l->w-72,l->foot1_y,"TOUCH OFF",MUTED,BG);
     NesMenu_Status("");
 }
 
@@ -192,29 +226,34 @@ void NesMenu_LibraryOptions(unsigned cursor,unsigned current_view,int favorite,i
     static const char *const labels[]={"SEARCH", "ALL GAMES", "LOADABLE HEADERS",
         "UNSUPPORTED", "FAVORITES", "RECENTLY PLAYED"};
     unsigned i;
-    fill(0,0,480,800,BG);
-    text(24,28,"LIBRARY",INK,BG,3);
-    fill(24,80,432,1,LINE);
+    int wide=nes_screen_landscape;
+    unsigned w=wide?800:480,h=wide?480:800;
+    unsigned x0=wide?24:24,top=wide?72:126,step=wide?68:72;
+    fill(0,0,w,h,BG);
+    text(x0,20,"LIBRARY",INK,BG,3);
+    fill(x0,64,w-2*x0,1,LINE);
     for(i=0;i<NES_LIBRARY_OPTIONS;i++) {
-        unsigned y=126+i*72;
+        unsigned y=top+i*step;
         uint16_t bg=i==cursor?ACTIVE:PANEL;
         const char *label=i<6?labels[i]:favorite?"REMOVE FAVORITE":"ADD FAVORITE";
-        fill(24,y,432,52,bg);
-        if(i==current_view)medium(40,y+12,">",ACCENT,bg);
-        medium(70,y+12,label,i==6&&!has_game?MUTED:INK,bg);
+        fill(x0,y,w-2*x0,52,bg);
+        if(i==current_view)medium(x0+16,y+12,">",ACCENT,bg);
+        medium(x0+46,y+12,label,i==6&&!has_game?MUTED:INK,bg);
     }
-    small(24,742,"UP/DN MOVE   KEY2/SW SELECT   KEY1 BACK",MUTED,BG);
+    small(x0,wide?450u:742u,"UP/DN MOVE   KEY2/SW SELECT   KEY1 BACK",MUTED,BG);
 }
 
 void NesMenu_SaveError(const char *reason)
 {
-    fill(0,0,480,800,BG);
-    text(24,28,"SAVE FAILED",ACCENT,BG,3);
-    fill(24,80,432,1,LINE);
-    small(24,155,reason,MUTED,BG);
-    medium(24,244,"KEY2/SW RETRY SAVE",INK,BG);
-    medium(24,294,"KEY1 RESUME GAME",INK,BG);
-    small(24,368,"KEEP POWER ON TO RETAIN THIS PROGRESS",MUTED,BG);
+    int wide=nes_screen_landscape;
+    unsigned w=wide?800:480,h=wide?480:800,x0=wide?24:24;
+    fill(0,0,w,h,BG);
+    text(x0,wide?20u:28u,"SAVE FAILED",ACCENT,BG,3);
+    fill(x0,wide?64u:80u,w-2*x0,1,LINE);
+    small(x0,wide?120u:155u,reason,MUTED,BG);
+    medium(x0,wide?190u:244u,"KEY2/SW RETRY SAVE",INK,BG);
+    medium(x0,wide?240u:294u,"KEY1 RESUME GAME",INK,BG);
+    small(x0,wide?310u:368u,"KEEP POWER ON TO RETAIN THIS PROGRESS",MUTED,BG);
 }
 
 static void input_key(unsigned x,unsigned y,unsigned w,const char *label,int on)
@@ -225,24 +264,29 @@ static void input_key(unsigned x,unsigned y,unsigned w,const char *label,int on)
 }
 void NesSettings_Draw(uint8_t audio_ok)
 {
-    fill(0,0,480,800,BG);
-    text(24,28,"SETTINGS",INK,BG,3);fill(24,80,432,1,LINE);
-    medium(24,106,"CONTROLLER CHECK",INK,BG);
-    small(24,142,"PRESS BUTTONS TO TEST INPUT",MUTED,BG);
-    medium(24,570,"AUDIO OUTPUT",INK,BG);
+    int wide=nes_screen_landscape;
+    unsigned w=wide?800:480,h=wide?480:800,x0=24;
+    fill(0,0,w,h,BG);
+    text(x0,wide?18u:28u,"SETTINGS",INK,BG,3);fill(x0,wide?62u:80u,w-2*x0,1,LINE);
+    medium(x0,wide?86u:106u,"CONTROLLER CHECK",INK,BG);
+    small(x0,wide?122u:142u,"PRESS BUTTONS TO TEST INPUT",MUTED,BG);
+    medium(x0,wide?268u:570u,"AUDIO OUTPUT",INK,BG);
     NesSettings_Audio(1,audio_ok,0);
-    fill(24,726,432,1,LINE);
-    small(24,750,"HOLD SW 1.5S: BACK",MUTED,BG);
+    fill(x0,wide?410u:726u,w-2*x0,1,LINE);
+    small(x0,wide?430u:750u,"HOLD SW 1.5S: BACK",MUTED,BG);
 }
 void NesSettings_Audio(uint8_t output,uint8_t audio_ok,uint8_t failed)
 {
+    int wide=nes_screen_landscape;
+    unsigned w=wide?800:480,x0=24;
+    unsigned top=wide?292u:600u;
     const char *label=output==0?"< HEADPHONES >":output==1?"< SPEAKER >":"< MUTE >";
-    fill(24,600,432,114,BG);
-    card(24,600,432,48,PANEL);
-    medium(24+(432-(unsigned)strlen(label)*16)/2,616,label,ACCENT,PANEL);
-    small(24,670,!audio_ok?"AUDIO OFF - CHECK CODEC":failed?"SWITCH FAILED - TRY AGAIN":"LEFT/RIGHT: CHANGE OUTPUT",
+    fill(x0,top,w-2*x0,114,BG);
+    card(x0,top,w-2*x0,48,PANEL);
+    medium(x0+(w-2*x0-(unsigned)strlen(label)*16)/2,top+16,label,ACCENT,PANEL);
+    small(x0,top+70,!audio_ok?"AUDIO OFF - CHECK CODEC":failed?"SWITCH FAILED - TRY AGAIN":"LEFT/RIGHT: CHANGE OUTPUT",
           (!audio_ok||failed)?ACCENT:MUTED,BG);
-    small(24,694,"APPLIES TO ALL GAMES",MUTED,BG);
+    small(x0,top+94,"APPLIES TO ALL GAMES",MUTED,BG);
 }
 void NesSettings_Update(uint8_t pad,uint16_t raw_x,uint16_t raw_y,
                         uint8_t stick_ready,uint8_t cap_ready,uint16_t cap_raw)
@@ -282,35 +326,39 @@ void NesSearch_Init(NesSearchState *s)
 static void search_draw_query(const NesSearchState *s)
 {
     char line[NES_SEARCH_QUERY+2];
+    int wide=nes_screen_landscape;
     unsigned i;
     for(i=0;i<s->length;i++)line[i]=s->query[i];
     line[s->length]='_';
     line[s->length+1]='\0';
-    fill(24,214,432,20,BG);
-    medium(24,214,line,INK,BG);
+    fill(24,wide?128u:214u,wide?640u:432u,20,BG);
+    medium(24,wide?128u:214u,line,INK,BG);
 }
 void NesSearch_Draw(const NesSearchState *s)
 {
     unsigned row,col;
-    fill(0,0,480,800,BG);
-    text(12,28,"SEARCH",INK,BG,3);
-    fill(12,80,456,1,LINE);
-    small(24,180,"TYPE LETTERS, THEN * TO SEARCH",MUTED,BG);
+    int wide=nes_screen_landscape;
+    unsigned w=wide?800:480,h=wide?480:800;
+    unsigned top=wide?168u:300u,step=wide?60u:76u,cell_h=wide?52u:72u,cell_w=wide?54u:54u;
+    fill(0,0,w,h,BG);
+    text(12,wide?14u:28u,"SEARCH",INK,BG,3);
+    fill(12,wide?60u:80u,w-24,1,LINE);
+    small(24,wide?96u:180u,"TYPE LETTERS, THEN * TO SEARCH",MUTED,BG);
     search_draw_query(s);
     for(row=0;row<SEARCH_ROWS;row++){
         for(col=0;col<SEARCH_COLS;col++){
-            unsigned x=12+col*57,y=300+row*76;
+            unsigned x=12+col*(cell_w+3),y=top+row*step;
             unsigned idx=row*SEARCH_COLS+col;
             uint16_t color=idx==s->cursor?ACTIVE:BG;
             char one[2];
-            fill(x,y,54,72,color);
-            if(color!=BG)fill(x+1,y+1,52,70,BORDER);
+            fill(x,y,cell_w,cell_h,color);
+            if(color!=BG)fill(x+1,y+1,cell_w-2,cell_h-2,BORDER);
             one[0]=search_grid[row][col];one[1]='\0';
-            medium(x+(54u-16u)/2u,y+(72u-16u)/2u,one,idx==39?ACCENT:INK,color);
+            medium(x+(cell_w-16u)/2u,y+(cell_h-16u)/2u,one,idx==39?ACCENT:INK,color);
         }
     }
-    small(24,742,"STICK MOVE   KEY2 INSERT   * SEARCH",MUTED,BG);
-    small(24,758,"KEY1 BACK",MUTED,BG);
+    small(24,wide?452u:742u,wide?"STICK MOVE  KEY2 INSERT  * SEARCH  KEY1 BACK":"STICK MOVE   KEY2 INSERT   * SEARCH",MUTED,BG);
+    if(!wide)small(24,758,"KEY1 BACK",MUTED,BG);
 }
 int NesSearch_Move(NesSearchState *s,int dx,int dy)
 {

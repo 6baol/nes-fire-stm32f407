@@ -1,6 +1,6 @@
 ﻿{
     "version":  "0.43",
-    "git_commit":  "cb29369aa66cad5ac5cc52ca1a2f6ca52cce28af",
+    "git_commit":  "6bd31bb924f384365e5ba956e87e3fda7117ebbd",
     "source_dirty":  true,
     "target":  "STM32F407ZGT6 / Batianhu V2 / 480x800 MCU LCD",
     "compiler":  "Arm Compiler 6.24 (Keil project selection)",
@@ -72,25 +72,25 @@
             },
     "files":  {
                   "NesFire_v0.43.hex":  {
-                                            "bytes":  535765,
-                                            "sha256":  "ebf1e03e0626c762c11c49bfe3e1e45843f14e823999286d5938a3bcdab55bb8"
+                                            "bytes":  538645,
+                                            "sha256":  "54b68cf24efffd78499e26970c031c3c5a122edb4acf45582efed11a4da84648"
                                         },
                   "NesFire_v0.43.bin":  {
-                                            "bytes":  190464,
-                                            "sha256":  "8ec06aff3576d75f9904fcb8f85bf9fa8818037dfa89ad8fcc0225d7bb9dab41"
+                                            "bytes":  191488,
+                                            "sha256":  "045236e0fd732a3938c9fb6d584e155d64613ba46d722b181ba41059546cc5a3"
                                         },
                   "NesFire_v0.43.axf":  {
-                                            "bytes":  879888,
-                                            "sha256":  "73c3d749bac94a6b1b110eed13038b6bdf1173618d9574b12f2d8ad836a2f0c7"
+                                            "bytes":  882560,
+                                            "sha256":  "8a0324a36dbaf729fa719045be7d6f845d2b6dd8c29e62035fbac5c180d815d4"
                                         },
                   "NesFire_v0.43.map":  {
-                                            "bytes":  926368,
-                                            "sha256":  "726a2d0433ceed76da5d39a85ecd19fd3134c3cedfacd769a00c5f25a7d20745"
+                                            "bytes":  929064,
+                                            "sha256":  "1d5c230180f0fa07f48636a028befbe4efdd1f51a411edda8ba89f821f0e27b5"
                                         }
               },
     "linker_bytes":  {
-                         "code":  131544,
-                         "read_only":  57636,
+                         "code":  132608,
+                         "read_only":  57672,
                          "read_write":  296,
                          "zero_initialized":  166680
                      },
