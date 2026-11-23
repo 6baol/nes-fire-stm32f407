@@ -85,6 +85,8 @@ extern volatile uint32_t touchpad_press_count;
 enum {APP_MENU=0,APP_GAME=1,APP_SETTINGS=2,APP_SEARCH=3,APP_LIBRARY=4,APP_SAVE_ERROR=5,APP_LIBRARY_CHECK=6};
 static uint32_t settings_due;
 static uint8_t settings_axis_armed,settings_center_seen;
+static uint8_t settings_y_armed,settings_y_seen;
+static uint32_t settings_y_due;
 static uint32_t settings_center_due;
 static uint8_t app_state=APP_MENU;
 static NesMenuState menu;
@@ -264,6 +266,11 @@ void NesPort_Input(void)
             watched=nes_screen_landscape;
             NesPort_SetLandscape(watched);
             if(app_state==APP_MENU)NesMenu_Draw(&menu);
+            else if(app_state==APP_SETTINGS){
+                NesSettings_Draw(menu.audio_ok);
+                NesSettings_Audio((uint8_t)NesAudio_GetOutput(),menu.audio_ok,0);
+            }
+            else if(app_state==APP_SEARCH)NesSearch_Draw(&search);
         }
     }
     pad_stable=pad_poll(now);
@@ -837,6 +844,24 @@ void NesApp_Poll(void)
         if((int32_t)(now-settings_due)>=0) {
             settings_due=now+50;
             NesSettings_Update(PADdata,j->raw_x,j->raw_y,j->healthy&&j->calibrated,cap->ready,cap->raw);
+        }
+        /* Up/down flips the panel between portrait and the 800x480 layout. */
+        {
+            int vdir=0,vcentered=0;
+            if(j->healthy&&j->calibrated) {
+                vdir=j->y>0.65f?1:j->y< -0.65f?-1:0;
+                vcentered=j->y<0.25f && j->y> -0.25f;
+            }
+            if(vcentered) {
+                if(!settings_y_seen){settings_y_seen=1;settings_y_due=now+60;}
+                if((int32_t)(now-settings_y_due)>=0)settings_y_armed=1;
+            } else {
+                settings_y_seen=0;
+                if(vdir&&settings_y_armed) {
+                    settings_y_armed=0;
+                    nes_screen_landscape=nes_screen_landscape?0:1;
+                }
+            }
         }
         return;
     }

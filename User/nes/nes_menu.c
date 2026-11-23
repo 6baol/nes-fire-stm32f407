@@ -270,10 +270,23 @@ void NesSettings_Draw(uint8_t audio_ok)
     text(x0,wide?18u:28u,"SETTINGS",INK,BG,3);fill(x0,wide?62u:80u,w-2*x0,1,LINE);
     medium(x0,wide?86u:106u,"CONTROLLER CHECK",INK,BG);
     small(x0,wide?122u:142u,"PRESS BUTTONS TO TEST INPUT",MUTED,BG);
+    medium(x0,wide?190u:500u,"SCREEN",INK,BG);
+    NesSettings_Screen(nes_screen_landscape);
     medium(x0,wide?268u:570u,"AUDIO OUTPUT",INK,BG);
     NesSettings_Audio(1,audio_ok,0);
     fill(x0,wide?410u:726u,w-2*x0,1,LINE);
     small(x0,wide?430u:750u,"HOLD SW 1.5S: BACK",MUTED,BG);
+}
+void NesSettings_Screen(uint8_t landscape)
+{
+    int wide=nes_screen_landscape;
+    unsigned x0=24,w=wide?800:480;
+    unsigned top=wide?220u:530u;
+    const char *label=landscape?"< LANDSCAPE >":"< PORTRAIT >";
+    fill(x0,top,w-2*x0,74,BG);
+    card(x0,top,w-2*x0,44,PANEL);
+    medium(x0+(w-2*x0-(unsigned)strlen(label)*16)/2,top+14,label,ACCENT,PANEL);
+    small(x0,top+52,"UP/DOWN: ROTATE 90",MUTED,BG);
 }
 void NesSettings_Audio(uint8_t output,uint8_t audio_ok,uint8_t failed)
 {

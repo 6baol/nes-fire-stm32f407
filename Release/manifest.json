@@ -1,6 +1,6 @@
 ﻿{
-    "version":  "0.43",
-    "git_commit":  "6bd31bb924f384365e5ba956e87e3fda7117ebbd",
+    "version":  "0.44-landscape",
+    "git_commit":  "fe364bd5ad2e81f561286c267d32d5e8631e38c1",
     "source_dirty":  true,
     "target":  "STM32F407ZGT6 / Batianhu V2 / 480x800 MCU LCD",
     "compiler":  "Arm Compiler 6.24 (Keil project selection)",
@@ -10,7 +10,7 @@
     "storage_mode":  "SD library; first game embedded as fallback",
     "embedded_game_count":  1,
     "wiring":  "VRx=PA4 (CN3-25), VRy=PA6 (CN3-21), SW=PB7 (CN3-23), 3V3/GND; camera disconnected",
-    "firmware_prefix":  "NesFire_v0.43",
+    "firmware_prefix":  "NesFire_v0.44-landscape",
     "rom":  {
                 "name":  "smb.nes",
                 "mapper":  0,
@@ -71,28 +71,28 @@
                           ]
             },
     "files":  {
-                  "NesFire_v0.43.hex":  {
-                                            "bytes":  538645,
-                                            "sha256":  "54b68cf24efffd78499e26970c031c3c5a122edb4acf45582efed11a4da84648"
-                                        },
-                  "NesFire_v0.43.bin":  {
-                                            "bytes":  191488,
-                                            "sha256":  "045236e0fd732a3938c9fb6d584e155d64613ba46d722b181ba41059546cc5a3"
-                                        },
-                  "NesFire_v0.43.axf":  {
-                                            "bytes":  882560,
-                                            "sha256":  "8a0324a36dbaf729fa719045be7d6f845d2b6dd8c29e62035fbac5c180d815d4"
-                                        },
-                  "NesFire_v0.43.map":  {
-                                            "bytes":  929064,
-                                            "sha256":  "1d5c230180f0fa07f48636a028befbe4efdd1f51a411edda8ba89f821f0e27b5"
-                                        }
+                  "NesFire_v0.44-landscape.hex":  {
+                                                      "bytes":  541525,
+                                                      "sha256":  "2e1198ca3a98177a659767c8726e8d877b7bd5a94c9ae3d2f136aa91885d0000"
+                                                  },
+                  "NesFire_v0.44-landscape.bin":  {
+                                                      "bytes":  192512,
+                                                      "sha256":  "842ae32f8e1a89743e585eebd4cc8660d8ed8425b0f9dea4630d8b34c5676fc0"
+                                                  },
+                  "NesFire_v0.44-landscape.axf":  {
+                                                      "bytes":  887264,
+                                                      "sha256":  "f51c65cde0a928270a57c3fecf97e2bc6a3ff409d559353ac9320741ecbe60a9"
+                                                  },
+                  "NesFire_v0.44-landscape.map":  {
+                                                      "bytes":  932160,
+                                                      "sha256":  "8bd1674973aa51c8134fb18d51e097275fd99369218d45577612e1cd813e8408"
+                                                  }
               },
     "linker_bytes":  {
-                         "code":  132608,
-                         "read_only":  57672,
+                         "code":  133080,
+                         "read_only":  57716,
                          "read_write":  296,
-                         "zero_initialized":  166680
+                         "zero_initialized":  166696
                      },
     "bios":  {
                  "source":  "Roms\\disksys.rom",
