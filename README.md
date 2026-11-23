@@ -41,13 +41,14 @@ NesFire 是一个运行在 **野火 STM32F407ZGT6 霸天虎 V2** 上的 NES / Fa
 
 ![功能亮点](Doc/images/features.png)
 
-## 三步开始
+## 开始使用
 
-![三步开始](Doc/images/workflow.png)
+![从 ROM 到开玩](Doc/images/workflow.png)
 
-1. **准备 ROM**：把 `.nes` / `.fds` 放进电脑上的一个文件夹。
-2. **导入 SD 卡**：从 [Releases](https://github.com/6baol/nes-fire-stm32f407/releases) 下载 `NesImportGUI.exe`，选择来源和 `X:\NES`，扫描后导入。
-3. **上机开玩**：插卡上电；第一次开机自动重建目录，没有封面的游戏会在首玩后自动生成海报。
+1. **烧录固件**：从 [Releases](https://github.com/6baol/nes-fire-stm32f407/releases) 下载 `NesFire-1.0.hex`，烧到 `0x08000000`。固件已内置开源 FDS BIOS，NES / FDS 都可直接玩。
+2. **准备 ROM**：把 `.nes` / `.fds` 放进电脑上的一个文件夹。
+3. **导入 SD 卡**：运行 `NesImportGUI.exe`，选择来源和 `X:\NES`，扫描后导入。
+4. **上机开玩**：插卡上电；第一次开机自动重建目录，没有封面的游戏会在首玩后自动生成海报。
 
 完整步骤（烧录、接线、按键、常见问题）见 **[新手教程 TUTORIAL.md](TUTORIAL.md)**。
 
@@ -101,12 +102,18 @@ NesFire 是一个运行在 **野火 STM32F407ZGT6 霸天虎 V2** 上的 NES / Fa
 
 > 导入助手的下载和详细说明见 [Doc/external_roms.md](Doc/external_roms.md)。
 
+### FDS BIOS：开箱即用，也能一键替换
+
+- Release 固件内置 **[OpenDiskSysROM](https://github.com/RetrolariumLab/OpenDiskSysROM)**（LGPL-3.0），FDS 游戏直接可玩，不需要原版 BIOS。
+- 想换成你自己的 BIOS：**维护 → FDS BIOS → 一键导入 disksys.rom**，写入 `NES/DISKSYS.ROM`，重启游戏机后生效。
+- 卡上 BIOS 优先于固件内置；文件大小或复位向量不合法时自动回退，不会把机器刷坏。
+
 ### 兼容性
 
 | 类别 | 支持 |
 |---|---|
 | NES mapper | 0, 1, 2, 3, 4, 5 (MMC5), 7 (AxROM), 11, 16, 33, 40, 66, 71, 74, 117 |
-| FDS | Mapper 20；换面、FDS 音源；只读磁盘 |
+| FDS | Mapper 20；换面、FDS 音源；只读磁盘；内置 OpenDiskSysROM（LGPL-3.0） |
 | 存档 | 带 battery 标志卡带的 8 KiB SRAM，双槽 + CRC |
 | 未实现 | MMC2/4、VRC、Namco、Sunsoft 等；PAL/VS/PlayChoice；即时存档、FDS 写盘、双人 |
 
@@ -143,5 +150,5 @@ NesFire 是一个运行在 **野火 STM32F407ZGT6 霸天虎 V2** 上的 NES / Fa
 ## 许可与素材
 
 代码以 **MIT** 许可发布。ROM、FDS BIOS、封面和字模不属于代码许可范围；
-请只使用你自己合法拥有的文件。仓库不提供成品固件镜像，构建步骤见
-[TUTORIAL.md](TUTORIAL.md)。
+请只使用你自己合法拥有的文件。Release 提供不含商业 ROM/原版 BIOS 的干净固件，
+其中 FDS BIOS 为 OpenDiskSysROM（LGPL-3.0），源码与许可证随源码包提供。

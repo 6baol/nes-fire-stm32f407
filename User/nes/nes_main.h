@@ -24,6 +24,10 @@ extern u8 *NES_RAM,*NES_SRAM,*spr_ram;
 void cpu6502_init(void);
 void run6502(u32 cycles256);
 int Nes_Load(const u8 *data, uint32_t size);
+/* Optional 8 KiB card BIOS (NES/DISKSYS.ROM). NesLibrary_Boot fills this when
+ * the card carries a valid image; otherwise the embedded BIOS is used. */
+extern const u8 *nes_fds_bios_override;
+extern u32 nes_fds_bios_override_size;
 /* Experimental preloaded PRG-RAM snapshot only. Does not emulate an FDS drive
  * or load .fds disk files; the menu must not infer this format from a vector. */
 int Nes_LoadFds(const u8 *data, uint32_t size, const u8 *bios, uint32_t bios_size);

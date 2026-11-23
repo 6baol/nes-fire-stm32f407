@@ -101,6 +101,23 @@ static uint16_t compatibility[NES_CATALOG_MAX];
 static LibraryPrefs prefs,prefs_work;
 static int prefs_slot;
 static uint8_t sd_active,arena_menu=1;
+/* A user-supplied FDS BIOS on the card takes precedence over the embedded one.
+ * 8 KiB is read once at boot; an invalid size/vector leaves the fallback. */
+static uint8_t card_fds_bios[8192];
+const uint8_t *nes_fds_bios_override;
+uint32_t nes_fds_bios_override_size;
+static void load_card_fds_bios(void)
+{
+    UINT got;
+    nes_fds_bios_override=0;nes_fds_bios_override_size=0;
+    if(f_open(&file,"0:/NES/DISKSYS.ROM",FA_READ)!=FR_OK)return;
+    if(f_size(&file)!=8192){f_close(&file);return;}
+    if(f_read(&file,card_fds_bios,8192,&got)!=FR_OK||got!=8192){f_close(&file);return;}
+    if(f_close(&file)!=FR_OK)return;
+    if(((uint32_t)card_fds_bios[0x1ffc]|((uint32_t)card_fds_bios[0x1ffd]<<8))<0xe000)return;
+    nes_fds_bios_override=card_fds_bios;
+    nes_fds_bios_override_size=8192;
+}
 static uint8_t input_profile;
 unsigned NesLibrary_InputProfile(void){return input_profile;}
 static int cached_cover=-1;
@@ -709,6 +726,7 @@ int NesLibrary_Boot(void)
     uint32_t snapshot,cat_snapshot=0,cat_count=0;unsigned count,i;
     SdBspResult sd_result;FRESULT mount_result;
     sd_active=0;catalog_count=0;arena_menu=1;cached_cover=-1;error="";save_active=0;input_profile=0;
+    nes_fds_bios_override=0;nes_fds_bios_override_size=0;
     window_valid=0;status="";sd_status[0]=0;overflow_count=0;
     view_filter=NES_LIBRARY_FILTER_ALL;
     search_failed=0;
@@ -724,6 +742,7 @@ int NesLibrary_Boot(void)
     }
     mount_result=f_mount(&fs,"0:",1);
     if(mount_result!=FR_OK){status=mount_result==FR_NO_FILESYSTEM?"SD FORMAT ERROR - USE FAT32":"SD READ ERROR - RESTART";return -2;}
+    load_card_fds_bios();
     if(!directory_pass(&snapshot,&count)){status=error[0]?error:"SD READ ERROR";return -3;}
     if(!count){status="NO GAMES ON SD - BUILT-IN GAME";return -3;}
     if(count>NES_CATALOG_MAX){overflow_count=count-NES_CATALOG_MAX;count=NES_CATALOG_MAX;}

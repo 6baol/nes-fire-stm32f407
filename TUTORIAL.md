@@ -21,18 +21,23 @@
 | ROM | `.nes` / `.fds` 文件，**只使用你自己合法拥有的游戏** |
 | 电脑 | Windows 10/11（烧录和导入助手都在 Windows 上最方便） |
 
-> 仓库不包含任何 ROM、FDS BIOS、封面或字模。FDS 游戏需要 `DISKSYS.ROM`；
-> 自己编译并需要 FDS 支持时，请自备 `Roms/disksys.rom`。
+> 仓库不包含商业 ROM、原版 FDS BIOS 或商业封面。Release 固件已内置
+> 开源 **OpenDiskSysROM**（LGPL-3.0），FDS 游戏可以直接玩；你也可以导入自己的 BIOS。
 
 ---
 
 ## 2. 烧录固件
 
-### 2.1 为什么 Release 里没有固件镜像
+### 2.1 Release 里的干净固件
 
-固件会内置 FDS BIOS、演示 ROM 和封面，这些内容不能公开分发。因此本仓库
-**只提供源码和工具**，不提供成品 `.hex`；Release 里提供的是免 Python 的
-导入助手 `NesImportGUI.exe`。请按 2.2 在本地编译固件。
+Release 提供 `NesFire-1.0.hex` / `.bin`：
+
+- 内置原创 **CONTROLLER TEST** 回退 ROM（公开测试卡带）；
+- 内置 **OpenDiskSysROM**（LGPL-3.0）FDS BIOS；
+- 不含商业 ROM、原版 FDS BIOS 或商业封面。
+
+烧录后即可使用，NES / FDS 游戏从 SD 卡读取。想内置自己的 ROM/BIOS
+或修改固件时，再按 2.2 从源码编译。
 
 ### 2.2 自己编译（推荐）
 
@@ -52,7 +57,7 @@
 **STM32CubeProgrammer**：
 
 1. 连接 DAP-Link / ST-Link，给板子上电。
-2. 选择 `Project/Output/Fire_F407ZG.hex`。
+2. 选择 Release 里的 `NesFire-1.0.hex`（自己编译时用 `Project/Output/Fire_F407ZG.hex`）。
 3. 起始地址保持 `0x08000000`。
 4. 点 **Download**，等待完成。
 5. 断电再上电。
@@ -61,6 +66,19 @@
 
 > 也可以使用 `tools/dap_flash.py`，但它需要发布清单和 pyOCD 环境；
 > 普通用户用 CubeProgrammer/Keil 更简单。
+
+### 2.4 换成你自己的 FDS BIOS（可选）
+
+Release 固件已经内置 OpenDiskSysROM，FDS 开箱即用。想换成你自己的 BIOS：
+
+- **不用重编译（推荐）**：把 8192 字节的 `disksys.rom` 放到 SD 卡
+  `NES/DISKSYS.ROM`，或在导入助手里 **维护 → FDS BIOS → 一键导入**；
+  重启游戏机后生效。卡上 BIOS 优先于固件内置。
+- **内置到固件**：把 `disksys.rom` 放到 `Roms/`，运行
+  `python tools/embed_fds_bios.py`，再 Build。
+
+开源 BIOS 源码与许可证：
+<https://github.com/RetrolariumLab/OpenDiskSysROM>（LGPL-3.0）。
 
 ---
 
@@ -127,6 +145,8 @@ ROM 增删时才会重建，正常开机直接读取目录，速度快很多。
 - **按英文名排序**：目录重建后运行，让菜单按英文标题排序。
 - **填充拼音索引**：给中文标题补拼音，方便搜索。
 - **重建目录**：`CATALOG.*` → `.OLD`，下次开机重扫。
+- **FDS BIOS**：一键导入 8 KiB 的 `disksys.rom` 到 `NES/DISKSYS.ROM`；
+  卡上 BIOS 优先，重启后生效。
 
 ---
 
@@ -220,8 +240,9 @@ python tools\bucket_sd.py F:\NES\famicom --bucket-size 100 --apply
 PC6 不要接按键。耳机和扬声器都不响时，优先检查 PC6/MCLK。
 
 **Q：FDS 游戏提示 `BAD FDS BIOS`？**
-官方固件已内置 BIOS；自己编译时把 `Roms/disksys.rom` 放好并运行
-`python tools/embed_fds_bios.py`。
+Release 固件已内置 OpenDiskSysROM，正常不会出现。自己编译且未内置 BIOS 时，
+按 2.4 把 `disksys.rom` 放到 `NES/DISKSYS.ROM`（或导入助手里一键导入），
+或把 `Roms/disksys.rom` 放好并运行 `python tools/embed_fds_bios.py` 再 Build。
 
 **Q：去重后收藏丢了？**
 正常情况下工具会重映射收藏/最近记录。如果仍有问题，从

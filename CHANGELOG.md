@@ -2,6 +2,13 @@
 
 > 这里保留各版本的技术记录、烧录细节和验证报告。普通用户只需要看 [README.md](README.md) 和 [TUTORIAL.md](TUTORIAL.md)。
 
+## 1.0 公开交付
+
+- 公开固件：原创 CONTROLLER TEST 回退 ROM + OpenDiskSysROM（LGPL-3.0），无商业 ROM/原版 BIOS/商业封面。
+- 启动时优先读取 SD 卡 `NES/DISKSYS.ROM`；GUI 支持一键导入，坏文件自动回退内置 BIOS。
+- Release 资产：`NesFire-1.0.hex`/`.bin`/manifest、源码包、SD 卡模板、`NesImportGUI.exe`、`TUTORIAL.md`。
+- 源码包附 OpenDiskSysROM 源码与 LGPL-3.0 许可证。
+
 ## v0.72 外部导入与默认海报
 
 - 新增图形化导入助手 `tools/nes_import_gui.py`（Windows 双击 `tools/NesImportGUI.bat`）：扫描来源、标记 Hack/汉化/缺封面/重复，多选复制到 `NES/imports` 或 `NES/hacks`，并内置封面生成、去重、排序、重建目录和拼音填充。

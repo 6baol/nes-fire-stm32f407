@@ -27,6 +27,7 @@ import subprocess
 import sys
 import threading
 import traceback
+import webbrowser
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -456,6 +457,22 @@ class ImportAssistant(tk.Tk):
                   style='Muted.TLabel').grid(row=8, column=0, columnspan=4, sticky='w',
                                              pady=(10, 0))
 
+        ttk.Separator(tab).grid(row=9, column=0, columnspan=4, sticky='ew', pady=10)
+        ttk.Label(tab, text='FDS BIOS', font=('Segoe UI', 11, 'bold')).grid(
+            row=10, column=0, columnspan=4, sticky='w', pady=(2, 2))
+        ttk.Label(tab,
+                  text='FDS 游戏需要 8 KiB 的 disksys.rom。卡上的 NES/DISKSYS.ROM 优先于固件内置 BIOS。',
+                  style='Muted.TLabel').grid(row=11, column=0, columnspan=4, sticky='w')
+        bios_row = ttk.Frame(tab)
+        bios_row.grid(row=12, column=0, columnspan=4, sticky='w', pady=(6, 0))
+        ttk.Button(bios_row, text='一键导入 disksys.rom…', style='Accent.TButton',
+                   command=self.import_fds_bios).pack(side='left')
+        ttk.Button(bios_row, text='刷新状态', command=self.refresh_bios_status).pack(
+            side='left', padx=8)
+        ttk.Button(bios_row, text='获取开源 BIOS', command=self.open_bios_page).pack(side='left')
+        self.bios_status = ttk.Label(tab, text='', style='Muted.TLabel')
+        self.bios_status.grid(row=13, column=0, columnspan=4, sticky='w', pady=(6, 0))
+
     def _build_help_tab(self):
         text = tk.Text(self.help_tab, bg='#0b0d11', fg='#c8cfdb', relief='flat',
                        wrap='word', font=('Segoe UI', 10), padx=14, pady=12)
@@ -540,6 +557,8 @@ class ImportAssistant(tk.Tk):
             return
         famicom = nes / 'famicom'
         self.dedup_dir_var.set(str(famicom if famicom.is_dir() else nes))
+        if hasattr(self, 'bios_status'):
+            self.refresh_bios_status()
 
     # ---------------------------------------------------------------- scan
     def scan_source(self):
@@ -959,6 +978,81 @@ class ImportAssistant(tk.Tk):
             return
         self._start_task('拼音', lambda: self._pinyin_worker(catalog))
 
+    @staticmethod
+    def install_fds_bios(source: Path, nes: Path) -> Path:
+        data = Path(source).read_bytes()
+        if len(data) != 8192:
+            raise ValueError(f'disksys.rom 必须是 8192 字节，当前为 {len(data)} 字节。')
+        vector = data[0x1FFC] | (data[0x1FFD] << 8)
+        if vector < 0xE000:
+            raise ValueError(f'复位向量 0x{vector:04X} 无效，可能不是 FDS BIOS。')
+        if len(set(data)) < 8:
+            raise ValueError('文件内容不像 8 KiB BIOS。')
+        target = Path(nes) / 'DISKSYS.ROM'
+        target.write_bytes(data)
+        return target
+
+    def import_fds_bios(self):
+        nes = self._nes_path()
+        if nes is None:
+            return
+        path = filedialog.askopenfilename(
+            title='选择 disksys.rom（8192 字节）',
+            filetypes=[('FDS BIOS', '*.rom *.bin'), ('所有文件', '*.*')])
+        if not path:
+            return
+        target = nes / 'DISKSYS.ROM'
+        if target.exists() and not messagebox.askyesno(
+                '覆盖 BIOS',
+                f'{target} 已存在。\n\n用新文件覆盖吗？游戏机重启后生效。'):
+            return
+        try:
+            saved = self.install_fds_bios(Path(path), nes)
+        except Exception as error:
+            messagebox.showerror('导入失败', str(error))
+            return
+        self.log(f'已导入 FDS BIOS：{saved}（重启游戏机后生效）')
+        self.refresh_bios_status()
+        messagebox.showinfo(
+            '已导入',
+            'BIOS 已写入 NES/DISKSYS.ROM。\n\n'
+            '重启游戏机后生效；卡上 BIOS 优先于固件内置 BIOS。')
+
+    def refresh_bios_status(self):
+        if not hasattr(self, 'bios_status'):
+            return
+        text = self.nes_var.get().strip()
+        if not text:
+            self.bios_status.configure(text='未选择 NES 目录')
+            return
+        target = Path(text) / 'DISKSYS.ROM'
+        if not target.exists():
+            self.bios_status.configure(
+                text='未导入：使用固件内置 BIOS（Release 固件已内置开源 OpenDiskSysROM）')
+            return
+        try:
+            data = target.read_bytes()
+        except OSError as error:
+            self.bios_status.configure(text=f'无法读取：{error}')
+            return
+        if len(data) != 8192:
+            self.bios_status.configure(
+                text=f'大小异常：{len(data)} 字节（应为 8192）')
+            return
+        vector = data[0x1FFC] | (data[0x1FFD] << 8)
+        if vector < 0xE000:
+            self.bios_status.configure(
+                text=f'已导入，但复位向量 0x{vector:04X} 异常')
+            return
+        self.bios_status.configure(
+            text=f'已导入：DISKSYS.ROM（8192 字节，向量 0x{vector:04X}），重启后生效')
+
+    def open_bios_page(self):
+        url = 'https://github.com/6baol/nes-fire-stm32f407/releases'
+        self.log(f'开源 BIOS 下载/源码：{url}')
+        self.log('OpenDiskSysROM 源码：https://github.com/RetrolariumLab/OpenDiskSysROM')
+        webbrowser.open(url)
+
     def _start_task(self, label: str, worker):
         if self._busy:
             return
@@ -1057,10 +1151,18 @@ HELP_TEXT = """NesFire 导入助手
   · 按英文名排序：目录重建后运行，让菜单顺序按英文标题排列。
   · 填充拼音索引：给中文标题补拼音，方便搜索。
 
-四、注意
+四、FDS BIOS
+  · FDS 游戏需要 8 KiB 的 disksys.rom。
+  · 卡上的 NES/DISKSYS.ROM 优先；没有时使用固件内置 BIOS。
+  · 维护页 -> FDS BIOS -> “一键导入 disksys.rom…”；重启游戏机后生效。
+  · Release 固件内置开源 OpenDiskSysROM（LGPL-3.0），
+    源码：https://github.com/RetrolariumLab/OpenDiskSysROM
+  · 也可以导入你自己合法拥有的 FDS BIOS。
+
+五、注意
   · 操作前建议先备份 NES 文件夹。
   · 去重会把文件移到 NES 文件夹外的 _dedup_removed_* 目录，不会直接删除。
-  · 本程序不会修改 ROM 内容，也不会联网。
+  · 本程序不会修改 ROM 内容，也不会上传数据；只有“获取开源 BIOS”会打开浏览器。
 """
 
 

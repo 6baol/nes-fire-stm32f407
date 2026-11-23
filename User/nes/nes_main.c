@@ -61,6 +61,8 @@ int Nes_Load(const u8 *data,u32 size)
     int validation=NesImport_Header(data,size,&info);
     u32 prg,chr;
     if(info.fds) {
+        if(nes_fds_bios_override&&nes_fds_bios_override_size==8192)
+            return Nes_LoadDisk(data,size,nes_fds_bios_override,nes_fds_bios_override_size);
         return Nes_LoadDisk(data,size,nes_fds_bios,nes_fds_bios_size);
     }
     switch(validation) {
