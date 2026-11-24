@@ -104,7 +104,7 @@ NesFire 是一个运行在 **野火 STM32F407ZGT6 霸天虎 V2** 上的 NES / Fa
 - 去重只按英文标题保留一个版本；**Hack、汉化、Beta、Proto、Bootleg、`[h]`、`hacks/` 永远不参与**。
 - 目录重建后可按英文名排序、填充拼音。
 - 没有 `.COV` 的 ROM：首玩约 3 秒（FDS 约 6 秒）自动截取开始画面，空白画面自动重试。
-- 有一个我个人比较喜欢的资源库：https://tieba.baidu.com/p/9628347423
+- 有一个我个人比较喜欢的资源库：(Ròm怀旧包 官方原版典藏包（FC/NES篇）)https://tieba.baidu.com/p/9628347423
   
 <p align="center">
   <img src="Doc/images/import-gui.png" width="900" alt="NesFire 导入助手（完整窗口）">
@@ -143,7 +143,7 @@ NesFire 是一个运行在 **野火 STM32F407ZGT6 霸天虎 V2** 上的 NES / Fa
 | 开发板 | 野火 STM32F407ZGT6 霸天虎 V2 |
 | 屏幕 | 480×800 MCU LCD |
 | 音频 | WM8978，扬声器 / 3.5 mm 耳机 |
-| 输入 | 摇杆、KEY1、KEY2、SW、电容键；扩展 A=PE3 |
+| 输入 | JoyStick Shield PS2游戏摇杆扩展板、电容键(可以自行在源码调整按键输入)|
 | 存储 | SD 卡 FAT32；`NES/SAVES/` 存档 |
 
 ### 文档
