@@ -73,7 +73,7 @@ NesFire 是一个运行在 **野火 STM32F407ZGT6 霸天虎 V2** 上的 NES / Fa
 
 ### 实机界面
 
-下面都是设备实际 LCD 输出，由离线 ARM 渲染生成（不接板子，也不是电脑模拟器窗口截图）：
+下面都是设备实际 LCD 输出，由离线 ARM 渲染生成：
 
 <p align="center">
   <img src="Doc/images/device-menu-portrait.png" width="300" alt="竖屏菜单">
@@ -85,11 +85,11 @@ NesFire 是一个运行在 **野火 STM32F407ZGT6 霸天虎 V2** 上的 NES / Fa
   <img src="Doc/images/device-settings-landscape.png" width="520" alt="横屏设置页">
 </p>
 
-### 声音：不是“能响就行”
+### 声音：
 
 - WM8978 编解码器，I2S2：扬声器、耳机、静音三种输出。
 - NES APU + FDS 波表/包络/调制 + MMC5 音频。
-- **PC6 固定为 I2S2_MCLK**；硬件 A 键使用 **PE3**，不要把按键接回 PC6。
+- **PC6 固定为 I2S2_MCLK**
 
 ### 存档、收藏与设置
 
@@ -104,7 +104,8 @@ NesFire 是一个运行在 **野火 STM32F407ZGT6 霸天虎 V2** 上的 NES / Fa
 - 去重只按英文标题保留一个版本；**Hack、汉化、Beta、Proto、Bootleg、`[h]`、`hacks/` 永远不参与**。
 - 目录重建后可按英文名排序、填充拼音。
 - 没有 `.COV` 的 ROM：首玩约 3 秒（FDS 约 6 秒）自动截取开始画面，空白画面自动重试。
-
+- 有一个我个人比较喜欢的资源库：https://tieba.baidu.com/p/9628347423
+  
 <p align="center">
   <img src="Doc/images/import-gui.png" width="900" alt="NesFire 导入助手（完整窗口）">
 </p>
